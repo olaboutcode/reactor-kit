@@ -12,7 +12,7 @@ public static class MauiProgram
     {
         var builder = MauiApp.CreateBuilder();
         builder
-            .UseMauiReactorApp<HomePage>(app => { },
+            .UseMauiReactorApp<GlazeTestPage>(app => { },
             unhandledExceptionAction: e =>
             {
                 System.Diagnostics.Debug.WriteLine(e.ExceptionObject);
@@ -20,6 +20,7 @@ public static class MauiProgram
 #if DEBUG
             .UseMauiReactorHotReload()
 #endif
+            .UseReactorKit()
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");

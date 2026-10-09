@@ -36,3 +36,8 @@ generated_code = true
 # UIKit requires this entry-point type to be named AppDelegate.
 [samples/**/AppDelegate.cs]
 dotnet_diagnostic.CA1711.severity = none
+
+# GlazeView and its factory share this file. The node inherits the non-generic child list.
+[src/ReactorKit/GlazeComponent.cs]
+dotnet_diagnostic.CA1010.severity = none
+dotnet_diagnostic.MA0048.severity = none
