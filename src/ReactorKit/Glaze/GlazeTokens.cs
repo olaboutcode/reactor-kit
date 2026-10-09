@@ -4,7 +4,7 @@ namespace Reactor.Kit.Glaze;
 /// Shared acrylic recipe. Platform blur is only the backlight.
 /// Tint, noise, and stroke use the same numbers on every OS.
 /// </summary>
-public static class GlazeTokens
+internal static class GlazeTokens
 {
     public const float BlurRadius = 24f;
     public const float TintOpacity = 0.48f;
@@ -13,7 +13,6 @@ public static class GlazeTokens
 
     /// <summary>Windows 11 Mica light base, not pure white.</summary>
     public static readonly Color LightTint = Color.FromRgba(243, 243, 243, 255);
-    public static readonly Color DarkTint = Color.FromRgba(28, 28, 30, 255);
     public static readonly Color Stroke = Color.FromRgba(255, 255, 255, 46);
 
     /// <summary>
