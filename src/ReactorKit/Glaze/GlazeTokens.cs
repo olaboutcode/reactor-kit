@@ -6,8 +6,8 @@ namespace Reactor.Kit.Glaze;
 /// </summary>
 internal static class GlazeTokens
 {
-    public const float BlurRadius = 12f;
-    public const float TintOpacity = 0.32f;
+    public const float BlurRadius = 8f;
+    public const float TintOpacity = 0.28f;
     public const float NoiseOpacity = 0.015f;
     public const float FallbackTintOpacity = 0.76f;
 

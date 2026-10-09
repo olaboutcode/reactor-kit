@@ -55,7 +55,7 @@ sealed class GlazePlatformView : Grid
         var tint = ToWindowsColor(view.TintColor);
         _acrylic.TintColor = tint;
         _acrylic.TintOpacity = wash;
-        _acrylic.TintLuminosityOpacity = 0.15;
+        _acrylic.TintLuminosityOpacity = 0.05;
         _acrylic.FallbackColor = ToWindowsColor(view.TintColor.WithAlpha(wash));
         _noise.Opacity = view.NoiseOpacity;
         _cornerRadius = view.CornerRadius;
