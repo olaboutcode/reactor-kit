@@ -10,7 +10,7 @@ GlazeView(Button("Test Button").Center())
     .CornerRadius(22)
 ```
 
-The shared recipe is a 12dp blur, a very fine dusting of noise, and an 18% white hairline. The light tint is a thin Mica wash so content behind the panel stays visible. A dark tint stays heavier at the same setting. Android 11 and earlier keep the tint, noise, and stroke, and raise the tint so the panel is not a hole.
+The shared recipe is a 12dp blur, a very fine dusting of noise, and a 0.7pt hairline of white at 80%. The light tint is a thin Mica wash so content behind the panel stays visible. A dark tint stays heavier at the same setting. Android 11 and earlier keep the tint, noise, and stroke, and raise the tint so the panel is not a hole.
 
 Controls live in `src/ReactorKit`. The package id is `Reactor.Kit`, and the namespace is `Reactor.Kit`. `samples/KitTests` is a MauiReactor app for trying them.
 

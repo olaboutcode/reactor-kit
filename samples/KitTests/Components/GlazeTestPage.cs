@@ -45,8 +45,6 @@ sealed class GlazeTestPage : Component
                     .Height(44)
                     .Padding(22, 0)
                     .CornerRadius(22)
-                    .Stroke(Color.FromArgb("#CCFFFFFF"))
-                    .StrokeThickness(0.7)
                     .HCenter()
                     .Shadow(new MauiReactor.Shadow()
                         .Brush(Brush.Black)

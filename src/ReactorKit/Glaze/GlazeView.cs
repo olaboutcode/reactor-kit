@@ -21,7 +21,7 @@ public class GlazeView : ContentView
         nameof(Stroke), typeof(Color), typeof(GlazeView), GlazeTokens.Stroke);
 
     public static readonly BindableProperty StrokeThicknessProperty = BindableProperty.Create(
-        nameof(StrokeThickness), typeof(double), typeof(GlazeView), 1d);
+        nameof(StrokeThickness), typeof(double), typeof(GlazeView), (double)GlazeTokens.StrokeThickness);
 
     public static readonly BindableProperty CornerRadiusProperty = BindableProperty.Create(
         nameof(CornerRadius), typeof(double), typeof(GlazeView), 0d);
