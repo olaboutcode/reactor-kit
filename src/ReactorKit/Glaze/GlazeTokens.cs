@@ -6,9 +6,9 @@ namespace Reactor.Kit.Glaze;
 /// </summary>
 internal static class GlazeTokens
 {
-    public const float BlurRadius = 24f;
-    public const float TintOpacity = 0.48f;
-    public const float NoiseOpacity = 0.04f;
+    public const float BlurRadius = 12f;
+    public const float TintOpacity = 0.32f;
+    public const float NoiseOpacity = 0.015f;
     public const float FallbackTintOpacity = 0.76f;
 
     /// <summary>Windows 11 Mica light base, not pure white.</summary>

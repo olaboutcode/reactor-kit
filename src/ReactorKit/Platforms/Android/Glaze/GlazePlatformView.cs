@@ -1,4 +1,5 @@
 using Android.Graphics;
+using Android.Graphics.Drawables;
 using Android.OS;
 using Android.Views;
 using Android.Widget;
@@ -16,7 +17,7 @@ namespace Reactor.Kit.Glaze;
 /// </summary>
 sealed class GlazePlatformView : FrameLayout
 {
-    const int Sample = 4;
+    const int Sample = 2;
 
     readonly ImageView _backdrop;
     readonly View _tint;
@@ -38,8 +39,13 @@ sealed class GlazePlatformView : FrameLayout
         _backdrop = new ImageView(context) { Clickable = false };
         _tint = new View(context) { Clickable = false };
         _noise = new ImageView(context) { Clickable = false };
-        _noise.SetImageBitmap(NoiseBitmap());
-        _noise.SetScaleType(ImageView.ScaleType.FitXy);
+        var noise = NoiseBitmap();
+        if (noise is not null)
+        {
+            var tiled = new BitmapDrawable(context.Resources, noise);
+            tiled.SetTileModeXY(Shader.TileMode.Repeat, Shader.TileMode.Repeat);
+            _noise.SetImageDrawable(tiled);
+        }
         _stroke = new StrokeView(context);
         _listener = new BackdropListener(this);
 

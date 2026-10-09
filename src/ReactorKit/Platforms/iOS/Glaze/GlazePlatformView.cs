@@ -133,7 +133,11 @@ sealed class GlazePlatformView : UIView
 
         System.Runtime.InteropServices.Marshal.Copy(pixels, 0, context.Data, pixels.Length);
         using var image = context.ToImage();
-        return _noiseImage = image is null ? new UIImage() : UIImage.FromImage(image);
+        if (image is null)
+            return _noiseImage = new UIImage();
+
+        var scaled = UIImage.FromImage(image, UIScreen.MainScreen.Scale, UIImageOrientation.Up);
+        return _noiseImage = scaled.CreateResizableImage(new UIEdgeInsets(0, 0, 0, 0), UIImageResizingMode.Tile);
     }
 
     static byte[] Premultiply(byte[] straight)
