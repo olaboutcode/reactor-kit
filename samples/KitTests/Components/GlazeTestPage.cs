@@ -20,19 +20,27 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
             Grid(
                 ScrollView(
                     VStack(Lines(ink))
-                    .Padding(24, 96)
-                    .Spacing(0)),
+                    .Padding(18)
+                    .Spacing(0)
+                )
+                .VerticalScrollBarVisibility(ScrollBarVisibility.Never)
+                .Margin(0,0,0,16),
                 GlazeView(
                     Label("Text scrolls behind")
-                        .FontSize(17)
-                        .TextColor(Ink)
-                        .HCenter()
-                        .VCenter())
-                    .Height(72)
-                    .VStart(),
+                    .FontSize(17)
+                    .TextColor(Ink)
+                    .HCenter()
+                    .VCenter()
+                )
+                .Height(64)
+                .VStart(),
                 Samples(),
-                ThemeButton()))
-            .BackgroundColor(State.Dark ? Night : Paper);
+                ThemeButton(),
+                BottomSearchBar()
+                .VEnd()
+            )
+        )
+        .BackgroundColor(State.Dark ? Night : Paper);
     }
 
     protected override void OnMounted()
@@ -68,32 +76,20 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
 
     static VStack Samples()
         => VStack(
-                GlazeView(Plus())
-                    .Width(44)
-                    .Height(44)
-                    .CornerRadius(22)
-                    .HCenter()
-                    .Shadow(new MauiReactor.Shadow()
-                        .Brush(Brush.Black)
-                        .Offset(0.3, 0.3)
-                        .Radius(4)
-                        .Opacity(0.28f)),
+                RoundButton(),
                 MochaButton(),
                 GlazeView(
                     VStack(
-                        Label("One child")
-                            .FontSize(22)
-                            .TextColor(Ink),
                         Entry()
-                            .Placeholder("Stays sharp")
+                            .Placeholder("Enter text")
                             .TextColor(Ink)
-                            .PlaceholderColor(Ink)
+                            .PlaceholderColor(Colors.Grey.WithAlpha(0.7f))
                             .BackgroundColor(Colors.Transparent),
                         Button("Test Button")
                             .TextColor(Ink)
                             .BackgroundColor(Colors.White))
-                    .Spacing(8))
-                .Padding(16, 16)
+                    .Spacing(16))
+                .Padding(16)
                 .CornerRadius(22),
                 GlazeView(
                     VStack(
@@ -107,6 +103,29 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
             .Spacing(16)
             .Padding(8)
             .Center();
+
+    static GlazeView RoundButton()
+        => GlazeView(
+            new MauiReactor.Shapes.Path()
+            .Data("M 12 4.5 V 19.5 M 19.5 12 H 4.5")
+            .Stroke(Ink)
+            .StrokeThickness(1.5)
+            .StrokeLineCap(MauiControls.Shapes.PenLineCap.Round)
+            .Width(24)
+            .Height(24)
+            .HCenter()
+            .VCenter()
+        )
+        .Width(44)
+        .Height(44)
+        .CornerRadius(22)
+        .HCenter()
+        .Shadow(new MauiReactor.Shadow()
+            .Brush(Brush.Black)
+            .Offset(0.3, 0.3)
+            .Radius(4)
+            .Opacity(0.28f)
+        );
 
     static GlazeView MochaButton()
         => GlazeView(
@@ -127,17 +146,33 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
             .Opacity(0.28f)
         );
 
-    /// <summary>Heroicons outline plus. The view box is 24 and the stroke is 1.5 with round caps.</summary>
-    static MauiReactor.Shapes.Path Plus()
-        => new MauiReactor.Shapes.Path()
-            .Data("M 12 4.5 V 19.5 M 19.5 12 H 4.5")
-            .Stroke(Ink)
-            .StrokeThickness(1.5)
-            .StrokeLineCap(MauiControls.Shapes.PenLineCap.Round)
-            .Width(24)
-            .Height(24)
-            .HCenter()
-            .VCenter();
+    static GlazeView BottomSearchBar()
+        => GlazeView(
+            Grid("auto,auto", "",
+                Entry()
+                    .Placeholder("Enter text")
+                    .TextColor(Ink)
+                    .PlaceholderColor(Colors.Grey.WithAlpha(0.7f))
+                    .BackgroundColor(Colors.Transparent),
+                HStack(
+                    
+                )
+                .GridRow(1)
+                .Height(44)
+                .BackgroundColor(Colors.LightBlue)
+            )
+            .RowSpacing(8)
+            .Padding(8)
+        )
+        .Margin(16,0)
+        .CornerRadius(12)
+        .Shadow(
+            new MauiReactor.Shadow()
+            .Brush(Brush.Black)
+            .Offset(0.3, 0.3)
+            .Radius(4)
+            .Opacity(0.28f)
+        );
 
     static VisualNode[] Lines(Color ink)
     {
@@ -149,7 +184,7 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
             var label = Label($"Line {i + 1}    The glass stays put while this text moves underneath.")
                 .FontSize(16)
                 .TextColor(band ? Ink : ink)
-                .Padding(12, 10);
+                .Padding(10);
             lines[i] = band
                 ? label.BackgroundColor(Color.FromArgb(bands[(i / 6) % bands.Length]))
                 : label;
