@@ -14,10 +14,7 @@ internal static class GlazeTokens
     /// <summary>Windows 11 Mica light base, not pure white.</summary>
     public static readonly Color LightTint = Color.FromRgba(243, 243, 243, 255);
 
-    /// <summary>White at 80% opacity. Alpha is in the color.</summary>
-    public static readonly Color Stroke = Color.FromArgb("#CCFFFFFF");
-
-    public const float StrokeThickness = 0.7f;
+    public static readonly Color Stroke = Color.FromRgba(255, 255, 255, 46);
 
     /// <summary>
     /// A white wash at <paramref name="opacity"/> covers the blur. A dark wash does not.
