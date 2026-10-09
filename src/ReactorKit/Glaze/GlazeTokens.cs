@@ -7,12 +7,26 @@ namespace Reactor.Kit.Glaze;
 public static class GlazeTokens
 {
     public const float BlurRadius = 24f;
-    public const float TintOpacity = 0.64f;
+    public const float TintOpacity = 0.48f;
     public const float NoiseOpacity = 0.04f;
     public const float StrokeOpacity = 0.18f;
-    public const float FallbackTintOpacity = 0.84f;
+    public const float FallbackTintOpacity = 0.76f;
 
-    public static readonly Color LightTint = Color.FromRgba(255, 255, 255, 255);
+    /// <summary>Windows 11 Mica light base, not pure white.</summary>
+    public static readonly Color LightTint = Color.FromRgba(243, 243, 243, 255);
     public static readonly Color DarkTint = Color.FromRgba(28, 28, 30, 255);
     public static readonly Color Stroke = Color.FromRgba(255, 255, 255, 46);
+
+    /// <summary>
+    /// A white wash at <paramref name="opacity"/> covers the blur. A dark wash does not.
+    /// Ease high-luminance tints so both stay glassy. iOS already veils with the material,
+    /// so the extra tint there is thinner.
+    /// </summary>
+    public static float WashOpacity(Color tint, double opacity, bool overSystemMaterial)
+    {
+        var luminance = (0.2126 * tint.Red) + (0.7152 * tint.Green) + (0.0722 * tint.Blue);
+        var ease = overSystemMaterial ? 0.82 : 0.58;
+        var keep = 1d - (luminance * ease);
+        return (float)Math.Clamp(opacity * keep, 0d, 1d);
+    }
 }

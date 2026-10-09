@@ -7,6 +7,7 @@ namespace Reactor.Kit.Glaze;
 
 sealed class GlazePlatformView : UIView
 {
+    readonly UIView _clip;
     readonly UIVisualEffectView _blur;
     readonly UIView _tint;
     readonly UIImageView _noise;
@@ -16,14 +17,20 @@ sealed class GlazePlatformView : UIView
 
     public GlazePlatformView()
     {
-        ClipsToBounds = true;
+        // The material is clipped. This view stays unclipped so a shadow can draw outside the circle.
+        ClipsToBounds = false;
         Opaque = false;
         BackgroundColor = UIColor.Clear;
 
+        _clip = new UIView
+        {
+            ClipsToBounds = true,
+            BackgroundColor = UIColor.Clear,
+        };
         _blur = new UIVisualEffectView
         {
             UserInteractionEnabled = false,
-            ClipsToBounds = true
+            ClipsToBounds = true,
         };
         _tint = new UIView { UserInteractionEnabled = false };
         _noise = new UIImageView
@@ -35,13 +42,14 @@ sealed class GlazePlatformView : UIView
         _stroke = new UIView
         {
             UserInteractionEnabled = false,
-            BackgroundColor = UIColor.Clear
+            BackgroundColor = UIColor.Clear,
         };
 
-        AddSubview(_blur);
-        AddSubview(_tint);
-        AddSubview(_noise);
-        AddSubview(_stroke);
+        AddSubview(_clip);
+        _clip.AddSubview(_blur);
+        _clip.AddSubview(_tint);
+        _clip.AddSubview(_noise);
+        _clip.AddSubview(_stroke);
     }
 
     public GlazeView? VirtualView { get; set; }
@@ -53,7 +61,7 @@ sealed class GlazePlatformView : UIView
             ? null
             : UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemUltraThinMaterial);
         _tint.BackgroundColor = view.TintColor.ToPlatform();
-        _tint.Alpha = (nfloat)view.TintOpacity;
+        _tint.Alpha = GlazeTokens.WashOpacity(view.TintColor, view.TintOpacity, overSystemMaterial: true);
         _noise.Alpha = (nfloat)view.NoiseOpacity;
         _stroke.Layer.BorderColor = view.Stroke.ToPlatform().CGColor;
         _stroke.Layer.BorderWidth = (nfloat)view.StrokeThickness;
@@ -71,7 +79,7 @@ sealed class GlazePlatformView : UIView
             return;
 
         child.RemoveFromSuperview();
-        AddSubview(child);
+        _clip.AddSubview(child);
         SetNeedsLayout();
     }
 
@@ -87,12 +95,17 @@ sealed class GlazePlatformView : UIView
     public override void LayoutSubviews()
     {
         base.LayoutSubviews();
-        _blur.Frame = Bounds;
-        _tint.Frame = Bounds;
-        _noise.Frame = Bounds;
-        _stroke.Frame = Bounds;
+        _clip.Frame = Bounds;
+        _clip.Layer.CornerRadius = Layer.CornerRadius;
+        _blur.Frame = _clip.Bounds;
+        _tint.Frame = _clip.Bounds;
+        _noise.Frame = _clip.Bounds;
+        _stroke.Frame = _clip.Bounds;
         var inset = _stroke.Layer.BorderWidth / 2f;
         _stroke.Layer.CornerRadius = (nfloat)Math.Max(0, Layer.CornerRadius - inset);
+        Layer.ShadowPath = Bounds.IsEmpty
+            ? null
+            : UIBezierPath.FromRoundedRect(Bounds, Layer.CornerRadius).CGPath;
 
         if (VirtualView is ICrossPlatformLayout layout)
             layout.CrossPlatformArrange(Bounds.ToRectangle());

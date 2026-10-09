@@ -54,9 +54,10 @@ sealed class GlazePlatformView : FrameLayout
     public void Apply(GlazeView view)
     {
         _canBlur = OperatingSystem.IsAndroidVersionAtLeast(31);
+        var wash = GlazeTokens.WashOpacity(view.TintColor, view.TintOpacity, overSystemMaterial: false);
         var tintOpacity = _canBlur
-            ? view.TintOpacity
-            : Math.Max(view.TintOpacity, GlazeTokens.FallbackTintOpacity);
+            ? wash
+            : Math.Max(wash, GlazeTokens.FallbackTintOpacity);
 
         _radius = Context?.ToPixels((float)view.BlurRadius) ?? 0f;
         _corner = Context?.ToPixels((float)view.CornerRadius) ?? 0f;

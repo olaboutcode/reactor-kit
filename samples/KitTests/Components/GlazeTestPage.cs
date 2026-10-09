@@ -1,3 +1,5 @@
+using MauiReactor.Shapes;
+
 namespace KitTests.Components;
 
 sealed class GlazeTestPage : Component
@@ -13,6 +15,16 @@ sealed class GlazeTestPage : Component
                 .Columns("*,*")
                 .Rows("*,*"),
                 VStack(
+                    GlazeView(Plus())
+                        .Width(44)
+                        .Height(44)
+                        .CornerRadius(22)
+                        .HCenter()
+                        .Shadow(new MauiReactor.Shadow()
+                            .Brush(Brush.Black)
+                            .Offset(0.3, 0.3)
+                            .Radius(4)
+                            .Opacity(0.28f)),
                     GlazeView(
                         VStack(
                             Label("One child").FontSize(22).TextColor(Colors.White),
@@ -35,4 +47,16 @@ sealed class GlazeTestPage : Component
                 .Spacing(16)
                 .Padding(24)
                 .Center()));
+
+    /// <summary>Heroicons outline plus. The view box is 24 and the stroke is 1.5 with round caps.</summary>
+    static MauiReactor.Shapes.Path Plus()
+        => new MauiReactor.Shapes.Path()
+            .Data("M 12 4.5 V 19.5 M 19.5 12 H 4.5")
+            .Stroke(Colors.White)
+            .StrokeThickness(1.5)
+            .StrokeLineCap(MauiControls.Shapes.PenLineCap.Round)
+            .Width(24)
+            .Height(24)
+            .HCenter()
+            .VCenter();
 }
