@@ -1,0 +1,9 @@
+<Project>
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.Maui.Controls" Version="10.0.110" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="10.0.12" />
+    <PackageVersion Include="Reactor.Maui" Version="4.0.18" />
+    <PackageVersion Include="Reactor.Maui.HotReload" Version="4.0.18" />
+    <PackageVersion Include="Meziantou.Analyzer" Version="3.0.296" />
+  </ItemGroup>
+</Project>

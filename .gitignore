@@ -55,3 +55,18 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# Visual Studio
+.vs/
+*.user
+*.rsuser
+
+# macOS
+.DS_Store
+
+# MAUI / Xcode
+.maui/
+*.xcuserstate
+*.xccheckout
+*.xcscmblueprint
+DerivedData/
