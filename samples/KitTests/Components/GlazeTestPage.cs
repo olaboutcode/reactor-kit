@@ -78,20 +78,7 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
                         .Offset(0.3, 0.3)
                         .Radius(4)
                         .Opacity(0.28f)),
-                GlazeView(
-                    Label("Liquid")
-                        .FontSize(17)
-                        .TextColor(Ink)
-                        .VCenter())
-                    .Height(44)
-                    .Padding(22, 0)
-                    .CornerRadius(12)
-                    .HCenter()
-                    .Shadow(new MauiReactor.Shadow()
-                        .Brush(Brush.Black)
-                        .Offset(0.3, 0.3)
-                        .Radius(4)
-                        .Opacity(0.28f)),
+                MochaButton(),
                 GlazeView(
                     VStack(
                         Label("One child")
@@ -118,8 +105,27 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
                 .CornerRadius(22)
                 .TintColor(Color.FromArgb("#1C1C1E")))
             .Spacing(16)
-            .Padding(24)
+            .Padding(8)
             .Center();
+
+    static GlazeView MochaButton()
+        => GlazeView(
+            Grid(
+                Button().Height(44),
+                Label("Moca Button!")
+                    .TextColor(Ink)
+                    .FontSize(16)
+                    .Center()
+            )
+        )
+        .CornerRadius(12)
+        .Shadow(
+            new MauiReactor.Shadow()
+            .Brush(Brush.Black)
+            .Offset(0.3, 0.3)
+            .Radius(4)
+            .Opacity(0.28f)
+        );
 
     /// <summary>Heroicons outline plus. The view box is 24 and the stroke is 1.5 with round caps.</summary>
     static MauiReactor.Shapes.Path Plus()
