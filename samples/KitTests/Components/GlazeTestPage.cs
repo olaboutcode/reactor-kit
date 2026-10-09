@@ -29,7 +29,7 @@ sealed class GlazeTestPage : Component
                         .Padding(4)
                         .Spacing(16)
                     )
-                    .Padding(20)
+                    .Padding(16)
                     .CornerRadius(22)
                     .TintColor(Color.FromArgb("#1C1C1E")))
                 .Spacing(16)

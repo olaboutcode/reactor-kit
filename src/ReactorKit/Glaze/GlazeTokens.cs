@@ -7,10 +7,10 @@ namespace Reactor.Kit.Glaze;
 public static class GlazeTokens
 {
     public const float BlurRadius = 24f;
-    public const float TintOpacity = 0.72f;
+    public const float TintOpacity = 0.64f;
     public const float NoiseOpacity = 0.04f;
     public const float StrokeOpacity = 0.18f;
-    public const float FallbackTintOpacity = 0.88f;
+    public const float FallbackTintOpacity = 0.84f;
 
     public static readonly Color LightTint = Color.FromRgba(255, 255, 255, 255);
     public static readonly Color DarkTint = Color.FromRgba(28, 28, 30, 255);
