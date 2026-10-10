@@ -15,8 +15,11 @@ public static partial class Extensions
         builder.ConfigureMauiHandlers(handlers =>
         {
             Glaze.GlazeHandlers.Register(handlers);
+
             if (settings.EnableBorderlessEntry)
                 Handlers.BorderlessEntryHandler.Register();
+            if (settings.EnableBorderlessEditor)
+                Handlers.BorderlessEditorHandler.Register();
         });
         return builder;
     }

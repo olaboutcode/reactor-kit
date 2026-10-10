@@ -21,6 +21,7 @@ A library of custom controls for [MauiReactor](https://github.com/adospace/react
     - [Platform](#platform)
 - [Handlers](#handlers)
   - [BorderlessEntry](#borderlessentry)
+  - [BorderlessEditor](#borderlesseditor)
 - [Samples](#samples)
 - [Building](#building)
 - [License](#license)
@@ -167,6 +168,22 @@ builder
 | Platform | What is removed |
 |---|---|
 | iOS 15+, Mac Catalyst 17+ | The `UITextField` border. |
+| Android | The AppCompat underline. |
+| Windows 10.0.17763+ | The text-box border, including the focused thickness. |
+
+### BorderlessEditor
+
+Strips the platform chrome from every `Editor`. It stays off until you opt in.
+
+```csharp
+builder
+    .UseMauiReactorApp<App>()
+    .UseReactorKit(settings => settings.EnableBorderlessEditor = true);
+```
+
+| Platform | What is removed |
+|---|---|
+| iOS 15+, Mac Catalyst 17+ | The `UITextView` layer border. |
 | Android | The AppCompat underline. |
 | Windows 10.0.17763+ | The text-box border, including the focused thickness. |
 
