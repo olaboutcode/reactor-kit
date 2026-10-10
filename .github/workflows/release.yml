@@ -1,0 +1,84 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  publish:
+    name: Pack and push NuGet
+    runs-on: macos-latest
+    permissions:
+      id-token: write
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install MAUI
+        run: dotnet workload install maui
+
+      - name: Pack
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          dotnet pack src/ReactorKit/ReactorKit.csproj \
+            -c Release \
+            -o artifacts \
+            -p:Version="$VERSION" \
+            -p:PackageVersion="$VERSION" \
+            -p:ValidateXcodeVersion=false
+
+      - name: NuGet login (OIDC)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: olaboutcode
+
+      - name: Push nuget.org
+        run: >
+          dotnet nuget push artifacts/*.nupkg
+          --api-key ${{ steps.login.outputs.NUGET_API_KEY }}
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
+
+      - name: Push GitHub Packages
+        run: >
+          dotnet nuget push artifacts/*.nupkg
+          --api-key ${{ github.token }}
+          --source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+          --skip-duplicate
+
+      - name: GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          PRE=()
+          if [[ "$VERSION" == *-* ]]; then
+            PRE=(--prerelease)
+          fi
+          gh release create "$GITHUB_REF_NAME" \
+            "${PRE[@]}" \
+            --title "$VERSION" \
+            --verify-tag \
+            --notes "NuGet: https://www.nuget.org/packages/Reactor.Kit/${VERSION}"

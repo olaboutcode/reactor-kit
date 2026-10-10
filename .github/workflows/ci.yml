@@ -1,0 +1,148 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  net10:
+    name: Build net10.0
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install MAUI workload
+        run: dotnet workload restore src/ReactorKit/ReactorKit.csproj
+
+      - name: Build library
+        # Pin TargetFrameworks so restore does not ask for the iOS workload.
+        run: >
+          dotnet build src/ReactorKit/ReactorKit.csproj
+          -c Release
+          -f net10.0
+          -p:TargetFrameworks=net10.0
+
+      - name: Build KitTests
+        run: >
+          dotnet build samples/KitTests/KitTests.csproj
+          -c Release
+          -f net10.0
+          -p:TargetFrameworks=net10.0
+
+  android:
+    name: Build Android
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install MAUI Android
+        run: dotnet workload install maui-android
+
+      - name: Build library
+        run: >
+          dotnet build src/ReactorKit/ReactorKit.csproj
+          -c Release
+          -f net10.0-android
+          -p:TargetFrameworks=net10.0-android
+
+      - name: Build KitTests
+        run: >
+          dotnet build samples/KitTests/KitTests.csproj
+          -c Release
+          -f net10.0-android
+          -p:TargetFrameworks=net10.0-android
+
+  apple:
+    name: Build iOS and Mac Catalyst
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install MAUI Apple
+        run: dotnet workload install maui-ios maui-maccatalyst
+
+      - name: Build library (iOS)
+        run: >
+          dotnet build src/ReactorKit/ReactorKit.csproj
+          -c Release
+          -f net10.0-ios
+          -p:TargetFrameworks=net10.0-ios
+          -p:ValidateXcodeVersion=false
+
+      - name: Build library (Mac Catalyst)
+        run: >
+          dotnet build src/ReactorKit/ReactorKit.csproj
+          -c Release
+          -f net10.0-maccatalyst
+          -p:TargetFrameworks=net10.0-maccatalyst
+          -p:ValidateXcodeVersion=false
+
+      - name: Build KitTests (iOS)
+        run: >
+          dotnet build samples/KitTests/KitTests.csproj
+          -c Release
+          -f net10.0-ios
+          -p:TargetFrameworks=net10.0-ios
+          -p:ValidateXcodeVersion=false
+          -p:CodesignKey=-
+          -p:CodesignProvision=
+
+      - name: Build KitTests (Mac Catalyst)
+        run: >
+          dotnet build samples/KitTests/KitTests.csproj
+          -c Release
+          -f net10.0-maccatalyst
+          -p:TargetFrameworks=net10.0-maccatalyst
+          -p:ValidateXcodeVersion=false
+          -p:CodesignKey=-
+          -p:CodesignProvision=
+
+  windows:
+    name: Build Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install MAUI Windows
+        run: dotnet workload install maui-windows
+
+      - name: Build library
+        run: dotnet build src/ReactorKit/ReactorKit.csproj -c Release -f net10.0-windows10.0.19041.0 -p:TargetFrameworks=net10.0-windows10.0.19041.0
+
+      - name: Build KitTests
+        run: dotnet build samples/KitTests/KitTests.csproj -c Release -f net10.0-windows10.0.19041.0 -p:TargetFrameworks=net10.0-windows10.0.19041.0
