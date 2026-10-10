@@ -20,14 +20,13 @@ public static class MauiProgram
 #if DEBUG
             .UseMauiReactorHotReload()
 #endif
-            .UseReactorKit()
+            .UseReactorKit(settings => settings.EnableBorderlessEntry = true)
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             });
 
-        BorderlessEntryHandler.Register();
         return builder.Build();
     }
 }

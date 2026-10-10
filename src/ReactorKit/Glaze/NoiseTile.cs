@@ -1,7 +1,7 @@
 namespace Reactor.Kit.Glaze;
 
 /// <summary>Fine, low-contrast dust. Stretched or tiled, it should not read as speckles.</summary>
-static class NoiseTile
+internal static class NoiseTile
 {
     public const int Size = 128;
 

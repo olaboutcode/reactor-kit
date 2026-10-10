@@ -1,8 +1,8 @@
 using Microsoft.Maui.Handlers;
 
-namespace KitTests;
+namespace Reactor.Kit.Handlers;
 
-static class BorderlessEntryHandler
+internal static class BorderlessEntryHandler
 {
     public static void Register()
         => EntryHandler.Mapper.AppendToMapping(nameof(BorderlessEntryHandler), static (handler, _) =>

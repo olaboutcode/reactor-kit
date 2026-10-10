@@ -3,7 +3,7 @@ namespace Reactor.Kit.Glaze;
 /// <summary>
 /// Acrylic container. The child is a normal MAUI view and is never blurred.
 /// </summary>
-public class GlazeView : ContentView
+internal sealed class GlazeView : ContentView
 {
     public static readonly BindableProperty TintColorProperty = BindableProperty.Create(
         nameof(TintColor), typeof(Color), typeof(GlazeView), GlazeTokens.LightTint);
@@ -68,7 +68,7 @@ public class GlazeView : ContentView
         set => SetValue(CornerRadiusProperty, value);
     }
 
-    public GlazeView()
+    internal GlazeView()
     {
         BackgroundColor = Colors.Transparent;
     }

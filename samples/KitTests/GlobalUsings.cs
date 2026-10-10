@@ -5,4 +5,4 @@ global using MauiControls = Microsoft.Maui.Controls;
 
 global using MauiReactor;
 global using Reactor.Kit;
-global using static Reactor.Kit.GlazeComponent;
+global using static Reactor.Kit.Extensions;

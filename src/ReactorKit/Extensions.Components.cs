@@ -2,14 +2,12 @@ using MauiReactor;
 
 namespace Reactor.Kit;
 
-/// <summary>Acrylic container. The child is a normal MAUI view and is never blurred.</summary>
-[Scaffold(typeof(Glaze.GlazeView))]
-public partial class GlazeView
-{
-}
-
-/// <summary>Factory for <see cref="GlazeView"/>.</summary>
-public static class GlazeComponent
+/// <summary>
+/// Registers ReactorKit handlers and the control factories.
+/// </summary>
+#pragma warning disable MA0048 // Ignore file name & type mismatch
+public static partial class Extensions
+#pragma warning restore MA0048
 {
     /// <summary>
     /// One child becomes the content. Several children are laid out in a grid,
@@ -21,8 +19,8 @@ public static class GlazeComponent
         if (children is not { Length: > 0 })
             return glaze;
 
-        // The scaffold constructor takes IEnumerable<VisualNode?>, and a single
-        // VisualNode is itself a non-generic enumerable, so it is not that argument.
+        // A single VisualNode is itself a non-generic enumerable, so it is not
+        // the children collection the content view expects.
         glaze.AddChildren(children.Length == 1
             ? children
             : [new MauiReactor.Grid(children)]);
