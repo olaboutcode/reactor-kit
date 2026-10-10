@@ -44,7 +44,7 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
 
     protected override void OnMounted()
     {
-        ApplyTheme(false);
+        ApplyTheme(dark: false);
         base.OnMounted();
     }
 
@@ -180,7 +180,7 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
         for (var i = 0; i < lines.Length; i++)
         {
             var band = i % 6 == 0;
-            var label = Label($"Line {i + 1}    The glass stays put while this text moves underneath.")
+            var label = Label($"Line {i + 1} The glass stays put while this text moves underneath.")
                 .FontSize(16)
                 .TextColor(band ? Ink : ink)
                 .Padding(10);
