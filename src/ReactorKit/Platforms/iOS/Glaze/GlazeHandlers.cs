@@ -1,5 +1,3 @@
-using Microsoft.Maui.Handlers;
-
 namespace Reactor.Kit.Glaze;
 
 static partial class GlazeHandlers

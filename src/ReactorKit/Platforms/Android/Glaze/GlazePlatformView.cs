@@ -4,7 +4,6 @@ using Android.Graphics.Drawables;
 using Android.OS;
 using Android.Views;
 using Android.Widget;
-using Microsoft.Maui.Handlers;
 using Microsoft.Maui.Platform;
 using Paint = Android.Graphics.Paint;
 using RectF = Android.Graphics.RectF;

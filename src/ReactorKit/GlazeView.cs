@@ -1,13 +1,17 @@
 using MauiReactor;
 using MauiReactor.Animations;
+using MauiContentView = Microsoft.Maui.Controls.ContentView;
 using NativeGlaze = Reactor.Kit.Glaze.GlazeView;
 
 namespace Reactor.Kit;
 
-/// <summary>Acrylic panel. The child is a normal MAUI view and is never blurred.</summary>
+/// <summary>
+/// Moca panel. The child is a normal MAUI view and is never blurred.
+/// </summary>
 public sealed class GlazeView : MauiReactor.ContentView
 {
-    internal GlazeView()
+    internal GlazeView(Action<MauiContentView?>? componentRefAction = null)
+        : base(componentRefAction)
     {
     }
 

@@ -1,4 +1,5 @@
 using MauiReactor;
+using MauiContentView = Microsoft.Maui.Controls.ContentView;
 
 namespace Reactor.Kit;
 
@@ -13,13 +14,20 @@ public static partial class Extensions
     /// Adds every child. ContentView keeps a single Content, so the last child is the one that stays.
     /// </summary>
     public static GlazeView GlazeView(params VisualNode?[] children)
+        => Create(refAction: null, children);
+
+    /// <summary>
+    /// Same children as <see cref="GlazeView(VisualNode?[])"/>.
+    /// The callback receives the mounted element, and null when it unmounts.
+    /// </summary>
+    public static GlazeView GlazeView(Action<MauiContentView?> refAction, params VisualNode?[] children)
+        => Create(refAction, children);
+
+    static GlazeView Create(Action<MauiContentView?>? refAction, VisualNode?[]? children)
     {
-        var glaze = new GlazeView();
+        var glaze = new GlazeView(refAction);
         if (children is not { Length: > 0 })
             return glaze;
-
-        // A single VisualNode is itself a non-generic enumerable, so the array
-        // is the children collection the content view expects.
         glaze.AddChildren(children);
         return glaze;
     }

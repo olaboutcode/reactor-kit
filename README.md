@@ -71,6 +71,15 @@ class App : Component
 
 You can pass several children. The last one is the content.
 
+Pass a callback first to capture the element. It is a `ContentView`. The callback receives null when the panel unmounts.
+
+```csharp
+Microsoft.Maui.Controls.ContentView? _panel;
+
+GlazeView(panel => _panel = panel,
+    Label("Title").Center())
+```
+
 ### Namespaces
 
 The namespace is `Reactor.Kit`. Add these lines to the app's global usings.
