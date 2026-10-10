@@ -165,12 +165,6 @@ builder
     .UseReactorKit(settings => settings.EnableBorderlessEntry = true);
 ```
 
-| Platform | What is removed |
-|---|---|
-| iOS 15+, Mac Catalyst 17+ | The `UITextField` border. |
-| Android | The AppCompat underline. |
-| Windows 10.0.17763+ | The text-box border, including the focused thickness. |
-
 ### BorderlessEditor
 
 Strips the platform chrome from every `Editor`. It stays off until you opt in.
@@ -180,12 +174,6 @@ builder
     .UseMauiReactorApp<App>()
     .UseReactorKit(settings => settings.EnableBorderlessEditor = true);
 ```
-
-| Platform | What is removed |
-|---|---|
-| iOS 15+, Mac Catalyst 17+ | The `UITextView` layer border. |
-| Android | The AppCompat underline. |
-| Windows 10.0.17763+ | The text-box border, including the focused thickness. |
 
 ## Samples
 
