@@ -35,9 +35,8 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
                 .Height(64)
                 .VStart(),
                 Samples(),
-                ThemeButton(),
-                BottomSearchBar()
-                .VEnd()
+                ThemeButton()
+                //,BottomSearchBar().VEnd()
             )
         )
         .BackgroundColor(State.Dark ? Night : Paper);
@@ -130,7 +129,7 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
     static GlazeView MochaButton()
         => GlazeView(
             Grid(
-                Button().Height(44),
+                Button().Height(44).BackgroundColor(Colors.Transparent),
                 Label("Moca Button!")
                     .TextColor(Ink)
                     .FontSize(16)

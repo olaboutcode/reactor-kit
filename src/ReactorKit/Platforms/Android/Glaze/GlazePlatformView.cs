@@ -1,3 +1,4 @@
+using Android.Content.Res;
 using Android.Graphics;
 using Android.Graphics.Drawables;
 using Android.OS;
@@ -17,9 +18,10 @@ namespace Reactor.Kit.Glaze;
 /// </summary>
 sealed class GlazePlatformView : FrameLayout
 {
-    const int Sample = 2;
+    const int Sample = 4;
 
     readonly ImageView _backdrop;
+    readonly View _material;
     readonly View _tint;
     readonly ImageView _noise;
     readonly StrokeView _stroke;
@@ -30,13 +32,17 @@ sealed class GlazePlatformView : FrameLayout
     long _lastCapture;
     bool _capturing;
     bool _canBlur;
+    readonly Paint _shadowMask = new() { AntiAlias = true, Color = Android.Graphics.Color.Black };
     float _radius;
     float _corner;
 
     public GlazePlatformView(Android.Content.Context context) : base(context)
     {
         SetWillNotDraw(false);
+        _shadowMask.SetStyle(Paint.Style.Fill);
         _backdrop = new ImageView(context) { Clickable = false };
+        _backdrop.SetScaleType(ImageView.ScaleType.FitXy);
+        _material = new View(context) { Clickable = false };
         _tint = new View(context) { Clickable = false };
         _noise = new ImageView(context) { Clickable = false };
         var noise = NoiseBitmap();
@@ -50,6 +56,7 @@ sealed class GlazePlatformView : FrameLayout
         _listener = new BackdropListener(this);
 
         AddView(_backdrop, Fill());
+        AddView(_material, Fill());
         AddView(_tint, Fill());
         AddView(_noise, Fill());
         AddView(_stroke, Fill());
@@ -60,7 +67,7 @@ sealed class GlazePlatformView : FrameLayout
     public void Apply(GlazeView view)
     {
         _canBlur = OperatingSystem.IsAndroidVersionAtLeast(31);
-        var wash = GlazeTokens.WashOpacity(view.TintColor, view.TintOpacity, overSystemMaterial: false);
+        var wash = GlazeTokens.WashOpacity(view.TintColor, view.TintOpacity, GlazeTokens.OverSystemMaterial);
         var tintOpacity = _canBlur
             ? wash
             : Math.Max(wash, GlazeTokens.FallbackTintOpacity);
@@ -69,6 +76,7 @@ sealed class GlazePlatformView : FrameLayout
         _corner = Context?.ToPixels((float)view.CornerRadius) ?? 0f;
         var strokeWidth = Context?.ToPixels((float)view.StrokeThickness) ?? 0f;
 
+        ApplyMaterial();
         _tint.SetBackgroundColor(view.TintColor.WithAlpha((float)tintOpacity).ToPlatform());
         _noise.Alpha = (float)view.NoiseOpacity;
         _stroke.Radius = _corner;
@@ -121,6 +129,7 @@ sealed class GlazePlatformView : FrameLayout
             return;
 
         _lastCapture = now;
+        ApplyMaterial();
         var width = Math.Max(1, Width / Sample);
         var height = Math.Max(1, Height / Sample);
         EnsureBitmap(width, height);
@@ -128,7 +137,10 @@ sealed class GlazePlatformView : FrameLayout
             return;
 
         _capturing = true;
-        var visibility = Visibility;
+        // The shadow is drawn by the MAUI wrapper behind this view. Hiding only
+        // this view leaves that shadow in the snapshot, and the blur turns it into a dark fill.
+        var plate = Parent is WrapperView wrapper ? wrapper : (View)this;
+        var visibility = plate.Visibility;
         try
         {
             var canvas = new Canvas(_captured);
@@ -139,13 +151,13 @@ sealed class GlazePlatformView : FrameLayout
             canvas.Save();
             canvas.Scale(1f / Sample, 1f / Sample);
             canvas.Translate(rootLocation[0] - location[0], rootLocation[1] - location[1]);
-            Visibility = ViewStates.Invisible;
+            plate.Visibility = ViewStates.Invisible;
             root.Draw(canvas);
             canvas.Restore();
         }
         finally
         {
-            Visibility = visibility;
+            plate.Visibility = visibility;
             _capturing = false;
         }
 
@@ -189,6 +201,7 @@ sealed class GlazePlatformView : FrameLayout
         var width = right - left;
         var height = bottom - top;
         _backdrop.Layout(0, 0, width, height);
+        _material.Layout(0, 0, width, height);
         _tint.Layout(0, 0, width, height);
         _noise.Layout(0, 0, width, height);
         _stroke.Layout(0, 0, width, height);
@@ -218,8 +231,47 @@ sealed class GlazePlatformView : FrameLayout
             return;
         }
 
-        var radius = _radius / Sample;
-        _backdrop.SetRenderEffect(RenderEffect.CreateBlurEffect(radius, radius, Shader.TileMode.Clamp!));
+        _backdrop.SetRenderEffect(RenderEffect.CreateBlurEffect(_radius, _radius, Shader.TileMode.Clamp!));
+    }
+
+    static int MaterialAlpha(float opacity)
+        => (int)MathF.Round(opacity * 255f);
+
+    void ApplyMaterial()
+    {
+        if (!_canBlur)
+        {
+            _material.SetBackgroundColor(Android.Graphics.Color.Transparent);
+            return;
+        }
+
+        var night = Context?.Resources?.Configuration is { } configuration
+            && (configuration.UiMode & UiMode.NightMask) == UiMode.NightYes;
+        _material.SetBackgroundColor(night
+            ? Android.Graphics.Color.Argb(MaterialAlpha(GlazeTokens.NightMaterialOpacity), 28, 28, 30)
+            : Android.Graphics.Color.Argb(MaterialAlpha(GlazeTokens.LightMaterialOpacity), 243, 243, 243));
+    }
+
+    // MAUI blurs a software-canvas copy of this view for the shadow.
+    // That copy is a solid rounded silhouette, matching the iOS shadow path.
+    // The glass stays on the hardware pass.
+    public override void Draw(Canvas canvas)
+    {
+        if (!canvas.IsHardwareAccelerated && VirtualView?.Shadow is not null)
+        {
+            DrawShadowMask(canvas);
+            return;
+        }
+
+        base.Draw(canvas);
+    }
+
+    void DrawShadowMask(Canvas canvas)
+    {
+        if (_corner > 0)
+            canvas.DrawRoundRect(new RectF(0, 0, Width, Height), _corner, _corner, _shadowMask);
+        else
+            canvas.DrawRect(0, 0, Width, Height, _shadowMask);
     }
 
     static LayoutParams Fill()

@@ -10,7 +10,7 @@ GlazeView(Button("Test Button").Center())
     .CornerRadius(22)
 ```
 
-The shared recipe is an 8dp blur, a very fine dusting of noise, and an 18% white hairline. The light tint is a thin wash so content behind the panel stays visible. A dark tint stays heavier at the same setting. iOS and Mac Catalyst use the system ultra-thin material. Android 11 and earlier keep the tint, noise, and stroke, and raise the tint so the panel is not a hole.
+Tint, noise, and the 18% white hairline are the same on every OS. The light tint is a thin wash, and a dark tint stays heavier at the same setting. Blur is platform-aware. iOS and Mac Catalyst use the system ultra-thin material and treat the radius as an on/off. Android 12 and later frost a downsampled backdrop with a 32dp blur, then a material fill, then that same thin wash, so the panel has a mica body instead of liquid glass. The shadow follows the corner, the same way the iOS shadow path does. Android 11 and earlier keep the tint, noise, and stroke, and raise the tint so the panel is not a hole.
 
 Controls live in `src/ReactorKit`. The package id is `Reactor.Kit`, and the namespace is `Reactor.Kit`. `samples/KitTests` is a MauiReactor app for trying them.
 

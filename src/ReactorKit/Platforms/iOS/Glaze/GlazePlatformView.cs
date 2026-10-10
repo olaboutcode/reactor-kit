@@ -61,7 +61,7 @@ sealed class GlazePlatformView : UIView
             ? null
             : UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemUltraThinMaterial);
         _tint.BackgroundColor = view.TintColor.ToPlatform();
-        _tint.Alpha = GlazeTokens.WashOpacity(view.TintColor, view.TintOpacity, overSystemMaterial: true);
+        _tint.Alpha = GlazeTokens.WashOpacity(view.TintColor, view.TintOpacity, GlazeTokens.OverSystemMaterial);
         _noise.Alpha = (nfloat)view.NoiseOpacity;
         _stroke.Layer.BorderColor = view.Stroke.ToPlatform().CGColor;
         _stroke.Layer.BorderWidth = (nfloat)view.StrokeThickness;

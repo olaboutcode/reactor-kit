@@ -51,7 +51,7 @@ sealed class GlazePlatformView : Grid
 
     public void Apply(GlazeView view)
     {
-        var wash = GlazeTokens.WashOpacity(view.TintColor, view.TintOpacity, overSystemMaterial: false);
+        var wash = GlazeTokens.WashOpacity(view.TintColor, view.TintOpacity, GlazeTokens.OverSystemMaterial);
         var tint = ToWindowsColor(view.TintColor);
         _acrylic.TintColor = tint;
         _acrylic.TintOpacity = wash;
