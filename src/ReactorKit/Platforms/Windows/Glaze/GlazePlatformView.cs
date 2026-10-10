@@ -51,10 +51,12 @@ sealed class GlazePlatformView : Grid
 
     public void Apply(GlazeView view)
     {
+        var wash = GlazeTokens.WashOpacity(view.TintColor, view.TintOpacity, GlazeTokens.OverSystemMaterial);
         var tint = ToWindowsColor(view.TintColor);
         _acrylic.TintColor = tint;
-        _acrylic.TintOpacity = view.TintOpacity;
-        _acrylic.FallbackColor = tint;
+        _acrylic.TintOpacity = wash;
+        _acrylic.TintLuminosityOpacity = 0.05;
+        _acrylic.FallbackColor = ToWindowsColor(view.TintColor.WithAlpha(wash));
         _noise.Opacity = view.NoiseOpacity;
         _cornerRadius = view.CornerRadius;
         _panel.CornerRadius = new WCornerRadius(view.CornerRadius);
