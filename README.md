@@ -89,14 +89,7 @@ global using Reactor.Kit;
 global using static Reactor.Kit.Extensions;
 ```
 
-Add both lines to the app's global usings. `samples/KitTests` already has them.
-
-| Call | Role |
-|---|---|
-| `GlazeView(...)` | Factory. One child is the content. Several children go in a grid. The panel it returns is `GlazeView`. |
-| `UseReactorKit()` | Registers the control handlers on the MAUI app builder. |
-
-`TintColor`, `CornerRadius`, `Padding`, `Shadow`, and the other fluent methods are called on the panel the factory returns. The snippets below assume those usings, plus `MauiReactor`.
+Add both lines to the app's global usings.
 
 ### Host
 
