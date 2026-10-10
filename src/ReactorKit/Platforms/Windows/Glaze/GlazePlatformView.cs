@@ -6,7 +6,10 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Shapes;
-using Windows.UI;
+using Grid = Microsoft.UI.Xaml.Controls.Grid;
+using Border = Microsoft.UI.Xaml.Controls.Border;
+using Image = Microsoft.UI.Xaml.Controls.Image;
+using Color = Windows.UI.Color;
 using WCornerRadius = Microsoft.UI.Xaml.CornerRadius;
 
 namespace Reactor.Kit.Glaze;
