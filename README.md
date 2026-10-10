@@ -82,14 +82,12 @@ GlazeView(
 
 ### Namespaces
 
-The namespace is `Reactor.Kit`. You call `GlazeView(...)` and `UseReactorKit()`.
+The namespace is `Reactor.Kit`. Add these lines to the app's global usings.
 
 ```csharp
 global using Reactor.Kit;
 global using static Reactor.Kit.Extensions;
 ```
-
-Add both lines to the app's global usings.
 
 ### Host
 
@@ -100,8 +98,6 @@ builder
     .UseMauiReactorApp<App>()
     .UseReactorKit();
 ```
-
-Without that call the panel has no platform handler.
 
 ## Components
 
