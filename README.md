@@ -118,10 +118,6 @@ List of available components.
 
 `GlazeView` blurs what is behind the panel. The child is a normal MAUI view and is never blurred.
 
-Tint, noise, and the hairline use the same numbers on every OS. The light tint is a thin wash. A dark tint stays heavier at the same setting. Blur is platform-aware, because an 8dp gaussian is not the same backlight as the system ultra-thin material.
-
-A MAUI `Shadow` follows the rounded corner. On Android that shadow is left out of the backdrop blur, so a small button does not pick up its own shadow as a dark fill.
-
 #### Properties
 
 | Member | Default | Role |
