@@ -69,16 +69,7 @@ class App : Component
 }
 ```
 
-One child becomes the content. Several children are laid out in a grid, because a content view keeps a single child.
-
-```csharp
-GlazeView(
-    Label("Title"),
-    Label("Two children, one grid.")
-)
-.Padding(16)
-.CornerRadius(22)
-```
+You can pass several children. The last one is the content.
 
 ### Namespaces
 

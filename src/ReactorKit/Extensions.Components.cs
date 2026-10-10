@@ -10,8 +10,7 @@ public static partial class Extensions
 #pragma warning restore MA0048
 {
     /// <summary>
-    /// One child becomes the content. Several children are laid out in a grid,
-    /// because a content view keeps a single child.
+    /// Adds every child. ContentView keeps a single Content, so the last child is the one that stays.
     /// </summary>
     public static GlazeView GlazeView(params VisualNode?[] children)
     {
@@ -19,11 +18,9 @@ public static partial class Extensions
         if (children is not { Length: > 0 })
             return glaze;
 
-        // A single VisualNode is itself a non-generic enumerable, so it is not
-        // the children collection the content view expects.
-        glaze.AddChildren(children.Length == 1
-            ? children
-            : [new MauiReactor.Grid(children)]);
+        // A single VisualNode is itself a non-generic enumerable, so the array
+        // is the children collection the content view expects.
+        glaze.AddChildren(children);
         return glaze;
     }
 }
