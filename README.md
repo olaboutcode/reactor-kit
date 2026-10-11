@@ -1,15 +1,12 @@
 # Reactor.Kit
 
-A library of custom controls for [MauiReactor](https://github.com/adospace/reactorui-maui). Each control is a MauiReactor component. The child stays a normal MAUI view.
-
-`GlazeView` is the first control. It is an acrylic panel.
+A library of custom controls for [MauiReactor](https://github.com/adospace/reactorui-maui). Each control is a MauiReactor component.
 
 > [!WARNING]
 > The library is still experimental. Use it at your own risk. Expect breaking changes as the API settles.
 
 ## Table of contents
 
-- [Overview](#overview)
 - [Getting started](#getting-started)
   - [Install](#install)
   - [Example](#example)
@@ -25,16 +22,6 @@ A library of custom controls for [MauiReactor](https://github.com/adospace/react
 - [Samples](#samples)
 - [Building](#building)
 - [License](#license)
-
-## Overview
-
-Controls live in `src/ReactorKit`. The package id is `Reactor.Kit`, and the namespace is `Reactor.Kit`. The library targets .NET 10 and .NET MAUI.
-
-| Control | What it is |
-|---|---|
-| `GlazeView` | An acrylic panel. The child is not blurred. |
-
-More controls will land beside `GlazeView`. The page for a control is its own section. The host registration is shared.
 
 ## Getting started
 
