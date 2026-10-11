@@ -5,5 +5,8 @@
     <PackageVersion Include="Reactor.Maui" Version="4.0.18" />
     <PackageVersion Include="Reactor.Maui.HotReload" Version="4.0.18" />
     <PackageVersion Include="Meziantou.Analyzer" Version="3.0.296" />
+    <PackageVersion Include="SkiaSharp.Views.Maui.Controls" Version="4.153.1" />
+    <PackageVersion Include="SkiaSharp.HarfBuzz" Version="4.153.1" />
+    <PackageVersion Include="Markdig" Version="1.4.0" />
   </ItemGroup>
 </Project>

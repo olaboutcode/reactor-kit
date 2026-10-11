@@ -40,3 +40,13 @@ dotnet_diagnostic.CA1711.severity = none
 # The node inherits the non-generic child list.
 [src/ReactorKit/GlazeView.cs]
 dotnet_diagnostic.CA1010.severity = none
+
+[src/ReactorKit/RichTextView.cs]
+dotnet_diagnostic.CA1010.severity = none
+
+[src/ReactorKit/MarkdownView.cs]
+dotnet_diagnostic.CA1010.severity = none
+
+# The hit is the tap payload. The EventArgs suffix would hide that.
+[src/ReactorKit/TextTokenHit.cs]
+dotnet_diagnostic.CA1710.severity = none

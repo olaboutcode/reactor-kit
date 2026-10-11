@@ -1,3 +1,5 @@
+using SkiaSharp.Views.Maui.Controls.Hosting;
+
 namespace Reactor.Kit;
 
 /// <summary>
@@ -12,6 +14,7 @@ public static partial class Extensions
         var settings = new ReactorKitSettings();
         configure?.Invoke(settings);
 
+        builder.UseSkiaSharp();
         builder.ConfigureMauiHandlers(handlers =>
         {
             Glaze.GlazeHandlers.Register(handlers);
