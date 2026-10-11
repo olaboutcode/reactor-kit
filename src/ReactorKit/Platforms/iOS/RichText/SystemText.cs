@@ -5,7 +5,7 @@ using Foundation;
 using SkiaSharp;
 using UIKit;
 
-namespace Reactor.Kit.RichText;
+namespace Reactor.Kit.Internals.RichText;
 
 internal static partial class SystemText
 {

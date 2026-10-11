@@ -12,7 +12,7 @@ using Image = Microsoft.UI.Xaml.Controls.Image;
 using Color = Windows.UI.Color;
 using WCornerRadius = Microsoft.UI.Xaml.CornerRadius;
 
-namespace Reactor.Kit.Glaze;
+namespace Reactor.Kit.Internals.Glaze;
 
 sealed class GlazePlatformView : Grid
 {

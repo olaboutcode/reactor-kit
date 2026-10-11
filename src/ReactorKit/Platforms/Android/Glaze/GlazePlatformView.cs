@@ -9,7 +9,7 @@ using Paint = Android.Graphics.Paint;
 using RectF = Android.Graphics.RectF;
 using View = Android.Views.View;
 
-namespace Reactor.Kit.Glaze;
+namespace Reactor.Kit.Internals.Glaze;
 
 /// <summary>
 /// Blur, tint, noise, and stroke sit behind the MAUI child.

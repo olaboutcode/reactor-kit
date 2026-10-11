@@ -1,4 +1,4 @@
-namespace Reactor.Kit.Glaze;
+namespace Reactor.Kit.Internals.Glaze;
 
 /// <summary>
 /// Acrylic recipe. Tint, noise, and stroke are the same on every OS.

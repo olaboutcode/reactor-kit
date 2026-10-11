@@ -1,4 +1,4 @@
-namespace Reactor.Kit.Markdown;
+namespace Reactor.Kit.Internals.Markdown;
 
 /// <summary>Inline marks inside a markdown span. Image files are not opened.</summary>
 internal static class MarkdownInlines

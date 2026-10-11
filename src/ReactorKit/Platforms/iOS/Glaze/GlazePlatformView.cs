@@ -2,7 +2,7 @@ using CoreGraphics;
 using Microsoft.Maui.Platform;
 using UIKit;
 
-namespace Reactor.Kit.Glaze;
+namespace Reactor.Kit.Internals.Glaze;
 
 sealed class GlazePlatformView : UIView
 {

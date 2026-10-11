@@ -1,6 +1,6 @@
 using SkiaSharp;
 
-namespace Reactor.Kit.RichText;
+namespace Reactor.Kit.Internals.RichText;
 
 /// <summary>One shaped piece of a word. The blob and any system image are disposed with the run. The font is not.</summary>
 internal sealed class GlyphRun : IDisposable

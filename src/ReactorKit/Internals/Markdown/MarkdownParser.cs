@@ -11,10 +11,10 @@ using Markdig.Extensions.TaskLists;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
 using MdTable = Markdig.Extensions.Tables.Table;
-using Span = Reactor.Kit.Markdown.MarkdownInlines.Span;
-using Style = Reactor.Kit.Markdown.MarkdownInlines.Style;
+using Span = Reactor.Kit.Internals.Markdown.MarkdownInlines.Span;
+using Style = Reactor.Kit.Internals.Markdown.MarkdownInlines.Style;
 
-namespace Reactor.Kit.Markdown;
+namespace Reactor.Kit.Internals.Markdown;
 
 /// <summary>
 /// Turns markdown into blocks. CommonMark and the usual GitHub extensions are recognized.

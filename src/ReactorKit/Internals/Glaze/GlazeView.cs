@@ -1,4 +1,4 @@
-namespace Reactor.Kit.Glaze;
+namespace Reactor.Kit.Internals.Glaze;
 
 /// <summary>
 /// Acrylic container. The child is a normal MAUI view and is never blurred.

@@ -1,4 +1,4 @@
-namespace Reactor.Kit.Glaze;
+namespace Reactor.Kit.Internals.Glaze;
 
 static partial class GlazeHandlers
 {

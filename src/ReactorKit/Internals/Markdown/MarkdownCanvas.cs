@@ -2,7 +2,7 @@ using SkiaSharp;
 using SkiaSharp.Views.Maui;
 using SkiaSharp.Views.Maui.Controls;
 
-namespace Reactor.Kit.Markdown;
+namespace Reactor.Kit.Internals.Markdown;
 
 /// <summary>Draws markdown, including pipe tables and flowchart diagrams.</summary>
 internal sealed class MarkdownCanvas : SKCanvasView, IDisposable

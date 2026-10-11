@@ -40,11 +40,24 @@ public static partial class Extensions
         => new(componentRefAction: null);
 
     /// <summary>
+    /// Same view as <see cref="RichTextView()"/>, with the text set.
+    /// </summary>
+    public static RichTextView RichTextView(string text)
+        => new RichTextView(componentRefAction: null).Text(text);
+
+    /// <summary>
     /// Same view as <see cref="RichTextView()"/>.
     /// The callback receives the mounted canvas, and null when it unmounts.
     /// </summary>
     public static RichTextView RichTextView(Action<SKCanvasView?> refAction)
         => new(refAction);
+
+    /// <summary>
+    /// Same view as <see cref="RichTextView()"/>.
+    /// The callback receives the mounted canvas, and null when it unmounts. The text is set.
+    /// </summary>
+    public static RichTextView RichTextView(Action<SKCanvasView?> refAction, string text)
+        => new RichTextView(refAction).Text(text);
 
     /// <summary>
     /// Skia markdown, including pipe tables and flowchart diagrams.
@@ -53,9 +66,22 @@ public static partial class Extensions
         => new(componentRefAction: null);
 
     /// <summary>
+    /// Same view as <see cref="MarkdownView()"/>, with the document set.
+    /// </summary>
+    public static MarkdownView MarkdownView(string markdown)
+        => new MarkdownView(componentRefAction: null).Markdown(markdown);
+
+    /// <summary>
     /// Same view as <see cref="MarkdownView()"/>.
     /// The callback receives the mounted canvas, and null when it unmounts.
     /// </summary>
     public static MarkdownView MarkdownView(Action<SKCanvasView?> refAction)
         => new(refAction);
+
+    /// <summary>
+    /// Same view as <see cref="MarkdownView()"/>.
+    /// The callback receives the mounted canvas, and null when it unmounts. The document is set.
+    /// </summary>
+    public static MarkdownView MarkdownView(Action<SKCanvasView?> refAction, string markdown)
+        => new MarkdownView(refAction).Markdown(markdown);
 }

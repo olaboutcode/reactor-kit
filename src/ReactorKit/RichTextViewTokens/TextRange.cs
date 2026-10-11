@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace Reactor.Kit;
+namespace Reactor.Kit.RichTextViewTokens;
 
 /// <summary>
 /// A character range.

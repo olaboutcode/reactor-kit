@@ -1,7 +1,7 @@
 using SkiaSharp;
-using Reactor.Kit.RichText;
+using Reactor.Kit.Internals.RichText;
 
-namespace Reactor.Kit.Markdown;
+namespace Reactor.Kit.Internals.Markdown;
 
 /// <summary>Lays out parsed markdown into shaped text, tables, and diagrams.</summary>
 internal sealed class MarkdownLayout : IDisposable

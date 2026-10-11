@@ -1,4 +1,4 @@
-namespace Reactor.Kit.Glaze;
+namespace Reactor.Kit.Internals.Glaze;
 
 /// <summary>
 /// Fine, low-contrast dust. Stretched or tiled, it should not read as speckles.

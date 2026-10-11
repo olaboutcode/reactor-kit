@@ -1,6 +1,6 @@
 using SkiaSharp;
 
-namespace Reactor.Kit.RichText;
+namespace Reactor.Kit.Internals.RichText;
 
 /// <summary>Draws characters the Skia fonts on this device cannot paint.</summary>
 internal static partial class SystemText

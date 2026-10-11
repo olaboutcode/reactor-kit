@@ -3,7 +3,7 @@ using System.Text;
 using SkiaSharp;
 using SkiaSharp.HarfBuzz;
 
-namespace Reactor.Kit.RichText;
+namespace Reactor.Kit.Internals.RichText;
 
 /// <summary>
 /// Breaks a word into shaped runs so missing glyphs use a system font.

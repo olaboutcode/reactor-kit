@@ -3,7 +3,7 @@ using Android.Graphics;
 using Android.Text;
 using SkiaSharp;
 
-namespace Reactor.Kit.RichText;
+namespace Reactor.Kit.Internals.RichText;
 
 internal static partial class SystemText
 {

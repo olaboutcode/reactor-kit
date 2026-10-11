@@ -1,7 +1,7 @@
 using MauiReactor;
 using MauiReactor.Animations;
 using MauiContentView = Microsoft.Maui.Controls.ContentView;
-using NativeGlaze = Reactor.Kit.Glaze.GlazeView;
+using NativeGlaze = Reactor.Kit.Internals.Glaze.GlazeView;
 
 namespace Reactor.Kit;
 

@@ -1,7 +1,7 @@
 using SkiaSharp;
-using Reactor.Kit.RichText;
+using Reactor.Kit.Internals.RichText;
 
-namespace Reactor.Kit.Markdown;
+namespace Reactor.Kit.Internals.Markdown;
 
 /// <summary>Wrapped, shaped runs for one markdown span sequence.</summary>
 internal sealed class FlowText : IDisposable

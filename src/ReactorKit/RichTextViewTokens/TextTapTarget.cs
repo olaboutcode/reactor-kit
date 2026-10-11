@@ -1,4 +1,4 @@
-namespace Reactor.Kit;
+namespace Reactor.Kit.RichTextViewTokens;
 
 /// <summary>What a tap selects.</summary>
 public enum TextTapTarget

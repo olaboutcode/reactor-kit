@@ -1,7 +1,7 @@
 using Microsoft.Maui.Handlers;
 using Microsoft.Maui.Platform;
 
-namespace Reactor.Kit.Glaze;
+namespace Reactor.Kit.Internals.Glaze;
 
 sealed class GlazeViewHandler : ViewHandler<GlazeView, GlazePlatformView>
 {
