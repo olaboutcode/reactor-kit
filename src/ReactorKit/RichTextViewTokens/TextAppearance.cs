@@ -10,7 +10,9 @@ public sealed record TextAppearance
 
     public float? LineSpacing { get; init; }
 
-    /// <summary>Extra space before the first line, and before the line that follows a blank line.</summary>
+    /// <summary>
+    /// Extra space before the first line, and before the line that follows a blank line.
+    /// </summary>
     public float FirstLineIndent { get; init; }
 
     /// <summary>
