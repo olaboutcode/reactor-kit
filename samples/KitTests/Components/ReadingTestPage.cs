@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Runtime.InteropServices;
 using System.Text;
 
 namespace KitTests.Components;
@@ -147,14 +146,11 @@ sealed class ReadingTestPage : Component
         return new Passage(text.ToString(), numbers, red);
     }
 
-    void Close()
-        => _ = Navigation?.PopModalAsync();
+    void Close() => _ = Navigation?.PopModalAsync();
 
     sealed record Passage(string Text, List<Mark> Numbers, List<Mark> Red);
 
-    [StructLayout(LayoutKind.Auto)]
-    readonly record struct Mark(int Start, int Length);
+    sealed record Mark(int Start, int Length);
 
-    [StructLayout(LayoutKind.Auto)]
-    readonly record struct Verse(int Number, string Text, int RedStart = 0, int RedLength = 0);
+    sealed record Verse(int Number, string Text, int RedStart = 0, int RedLength = 0);
 }
