@@ -15,7 +15,7 @@ A library of custom controls for [MauiReactor](https://github.com/adospace/react
 - [Components](#components)
   - [Glaze](#glaze)
     - [Properties](#properties)
-    - [Platform](#platform)
+    - [Supported platforms](#supported-platforms)
 - [Handlers](#handlers)
   - [BorderlessEntry](#borderlessentry)
   - [BorderlessEditor](#borderlesseditor)
@@ -114,14 +114,12 @@ GlazeView(Label("Title").Center())
     .StrokeThickness(1)
 ```
 
-#### Platform
+#### Supported platforms
 
-| Platform | Backlight |
-|---|---|
-| iOS 15+, Mac Catalyst 17+ | `SystemUltraThinMaterial`. `BlurRadius` is only an on/off. The material paints its own milk, then the shared wash. |
-| Android 12+ (API 31) | A downsampled snapshot, blurred by `BlurRadius` (32dp unless you set it), then a material fill, then the same wash. The light fill is 0.44 of `#F3F3F3`. The night fill is 0.55 of `#1C1C1E`, which is 1.25× the light fill. Apple does not publish the ultra-thin fill, so those two numbers are matched by eye. |
-| Android 11 and earlier | No blur. Tint, noise, and the hairline remain. The tint is raised, with a floor of 0.76, so the panel is not a hole. |
-| Windows 10.0.17763+ | An acrylic brush on the backdrop. The shared wash is the tint. Luminosity stays at 0.05 so the brush does not add a second veil. |
+- iOS 15+
+- Mac Catalyst 17+
+- Android 21+
+- Windows 10.0.17763+
 
 ## Handlers
 
