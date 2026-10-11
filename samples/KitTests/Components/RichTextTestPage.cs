@@ -7,7 +7,7 @@ sealed class RichTextTestPage : Component<RichTextTestPage.PageState>
         public Dictionary<int, string> Sentences { get; } = [];
 
         public string Highlighted =>
-            string.Join(" ", Sentences.OrderBy(pair => pair.Key).Select(pair => pair.Value));
+            string.Join(' ', Sentences.OrderBy(pair => pair.Key).Select(pair => pair.Value));
     }
 
     const string Verse =
@@ -33,7 +33,7 @@ sealed class RichTextTestPage : Component<RichTextTestPage.PageState>
                     .TextColor(Ink),
                 RichTextView()
                     .Text(Verse)
-                    .FontSize(22)
+                    .FontSize(16)
                     .LineSpacing(6)
                     .TextColor(Ink)
                     .HighlightColor(Color.FromRgba(245, 196, 40, 120))

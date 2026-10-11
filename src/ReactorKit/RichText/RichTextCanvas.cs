@@ -43,6 +43,9 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
 
     const float HitSlop = 4f;
 
+    /// <summary>Highlight box is at least this multiple of the font size. 16 lands on 18.</summary>
+    const float LineBoxScale = 1.125f;
+
     readonly Dictionary<int, object?> _tags = [];
     Word[] _words = [];
     Sentence[] _sentences = [];
@@ -253,9 +256,11 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
         EnsureFont();
         var font = _font!;
         var metrics = font.Metrics;
-        var lineHeight = Math.Max(1, metrics.Descent - metrics.Ascent + (float)Math.Max(0, LineSpacing));
+        var em = Math.Max(1f, metrics.Descent - metrics.Ascent);
+        var box = Math.Max(em, font.Size * LineBoxScale);
+        var spacing = (float)Math.Max(0, LineSpacing);
         var pad = 2f;
-        var placed = Place(Split(Text ?? string.Empty), font, metrics, lineHeight, font.MeasureText(" "), pad, Math.Max(1, width - (pad * 2)));
+        var placed = Place(Split(Text ?? string.Empty), font, metrics, box, spacing, font.MeasureText(" "), pad, Math.Max(1, width - (pad * 2)));
 
         _words = placed.Words;
         _sentences = placed.Sentences;
@@ -269,7 +274,7 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
         ApplyDeclarativeHighlights(repaint: false);
     }
 
-    static PlacedText Place(List<RawWord> raw, SKFont font, SKFontMetrics metrics, float lineHeight, float space, float pad, float max)
+    static PlacedText Place(List<RawWord> raw, SKFont font, SKFontMetrics metrics, float box, float spacing, float space, float pad, float max)
     {
         var words = new Word[raw.Count];
         var x = pad;
@@ -277,6 +282,8 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
         var contentWidth = pad;
         var sentenceStart = 0;
         var sentences = new List<Sentence>();
+        var em = metrics.Descent - metrics.Ascent;
+        var baselineOffset = ((box - em) / 2f) - metrics.Ascent;
 
         for (var i = 0; i < raw.Count; i++)
         {
@@ -286,14 +293,14 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
             if (breakBefore || (x > pad && x + space + measured > pad + max))
             {
                 x = pad;
-                lineTop += lineHeight;
+                lineTop += box + spacing;
             }
             else if (x > pad)
             {
                 x += space;
             }
 
-            words[i] = new Word(piece.Text, piece.Start, piece.End, piece.SentenceIndex, x, lineTop, measured, lineHeight, lineTop - metrics.Ascent);
+            words[i] = new Word(piece.Text, piece.Start, piece.End, piece.SentenceIndex, x, lineTop, measured, box, lineTop + baselineOffset);
             x += measured;
             contentWidth = Math.Max(contentWidth, x + pad);
             if (ClosesSentence(raw, i))
@@ -304,7 +311,7 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
             }
         }
 
-        var contentHeight = words.Length == 0 ? pad * 2 : lineTop + lineHeight + pad;
+        var contentHeight = words.Length == 0 ? pad * 2 : lineTop + box + pad;
         if (words.Length == 0)
             contentWidth = pad * 2;
         return new PlacedText(words, [.. sentences], contentWidth, contentHeight);
