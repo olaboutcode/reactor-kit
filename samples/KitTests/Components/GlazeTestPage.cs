@@ -36,7 +36,8 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
                 .VStart(),
                 Samples(),
                 ThemeButton(),
-                TextButton()
+                TextButton(),
+                MarkdownButton()
                 //,BottomSearchBar().VEnd()
             )
         )
@@ -75,6 +76,21 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
 
     void OpenText()
         => _ = Navigation?.PushModalAsync<RichTextTestPage>();
+
+    MauiReactor.Button MarkdownButton()
+        => Button("Markdown", OpenMarkdown)
+            .TextColor(Paper)
+            .BackgroundColor(Ink)
+            .FontSize(15)
+            .CornerRadius(16)
+            .Height(36)
+            .Padding(14, 0)
+            .HEnd()
+            .VStart()
+            .Margin(16, 106);
+
+    void OpenMarkdown()
+        => _ = Navigation?.PushModalAsync<MarkdownTestPage>();
 
     void Toggle()
         => SetState(s =>

@@ -19,6 +19,9 @@ A library of custom controls for [MauiReactor](https://github.com/adospace/react
   - [Rich text](#rich-text)
     - [Properties](#properties-1)
     - [Supported platforms](#supported-platforms-1)
+  - [Markdown](#markdown)
+    - [Properties](#properties-2)
+    - [Supported platforms](#supported-platforms-2)
 - [Handlers](#handlers)
   - [BorderlessEntry](#borderlessentry)
   - [BorderlessEditor](#borderlesseditor)
@@ -165,6 +168,39 @@ A new list with the same indexes keeps tap toggles. Set `ToggleHighlightOnTap(fa
 - Android 21+
 - Windows 10.0.17763+
 
+### Markdown
+
+`MarkdownView` draws a markdown document with SkiaSharp. The source is a string, or a UTF-8 file path. It draws CommonMark plus the usual GitHub extensions: headings, quotes, nested lists, task lists, definition lists, fenced and indented code, pipe and grid tables, footnotes, alerts, strikethrough, subscript, superscript, highlight, autolinks, and emoji shortcodes. Math is drawn as its source. A fenced block tagged `diagram`, `mermaid`, `flowchart`, or `graph` is drawn as a flowchart when it uses the node syntax below. Any other diagram stays as code.
+
+A picture written as `![alt](url)` is not loaded. The alt text is shown instead. HTML is shown as text.
+
+The diagram is a flowchart. A line can set the direction: `TB`, `TD`, `BT`, `LR`, or `RL`. `flowchart LR` and `graph TD` set it too. Nodes are `id[label]`, `id(label)`, or `id{label}`. Edges are `A --> B`, `A --- B`, and `A -->|yes| B`.
+
+#### Properties
+
+| Member | Default | Role |
+|---|---|---|
+| `Markdown` | empty | The document. |
+| `File` | empty | UTF-8 path. When set, this replaces `Markdown`. |
+| `FontSize` | `16` | Body size in device-independent pixels. |
+| `TextColor` | black | Text, rules, table grid, and diagram strokes. |
+
+```csharp
+MarkdownView()
+    .File("notes.md")
+    .FontSize(16)
+    .TextColor(Color.FromArgb("#1C1C1E"))
+```
+
+`samples/KitTests/Resources/Raw/notes.md` is a short document with a table and a diagram. The sample page embeds that same text. `File` reads a path on disk. A Maui asset name is not a file path.
+
+#### Supported platforms
+
+- iOS 15+
+- Mac Catalyst 17+
+- Android 21+
+- Windows 10.0.17763+
+
 ## Handlers
 
 List of available handlers.
@@ -191,7 +227,7 @@ builder
 
 ## Samples
 
-`samples/KitTests` is a MauiReactor app for the controls. The glaze page scrolls text behind a top bar, a round button, a button, cards, and entries, and it can switch the page between light and dark. Text opens `RichTextTestPage`.
+`samples/KitTests` is a MauiReactor app for the controls. The glaze page scrolls text behind a top bar, a round button, a button, cards, and entries, and it can switch the page between light and dark. Text opens `RichTextTestPage`. Markdown opens `MarkdownTestPage`.
 
 ## Building
 

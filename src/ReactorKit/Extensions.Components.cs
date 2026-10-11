@@ -45,4 +45,17 @@ public static partial class Extensions
     /// </summary>
     public static RichTextView RichTextView(Action<SKCanvasView?> refAction)
         => new(refAction);
+
+    /// <summary>
+    /// Skia markdown, including pipe tables and flowchart diagrams.
+    /// </summary>
+    public static MarkdownView MarkdownView()
+        => new(componentRefAction: null);
+
+    /// <summary>
+    /// Same view as <see cref="MarkdownView()"/>.
+    /// The callback receives the mounted canvas, and null when it unmounts.
+    /// </summary>
+    public static MarkdownView MarkdownView(Action<SKCanvasView?> refAction)
+        => new(refAction);
 }
