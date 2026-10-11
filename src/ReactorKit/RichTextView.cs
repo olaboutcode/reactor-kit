@@ -1,6 +1,7 @@
 using MauiReactor;
+using Reactor.Kit.RichTextViewTokens;
 using SKCanvasView = SkiaSharp.Views.Maui.Controls.SKCanvasView;
-using NativeRichText = Reactor.Kit.RichText.RichTextCanvas;
+using NativeRichText = Reactor.Kit.Internals.RichText.RichTextCanvas;
 
 namespace Reactor.Kit;
 

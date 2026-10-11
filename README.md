@@ -75,10 +75,11 @@ GlazeView(panel => _panel = panel,
 
 ### Namespaces
 
-The namespace is `Reactor.Kit`. Add these lines to the app's global usings.
+The namespace is `Reactor.Kit`. Rich text metrics and hits are in `Reactor.Kit.RichTextViewTokens`. Add these lines to the app's global usings.
 
 ```csharp
 global using Reactor.Kit;
+global using Reactor.Kit.RichTextViewTokens;
 global using static Reactor.Kit.Extensions;
 ```
 

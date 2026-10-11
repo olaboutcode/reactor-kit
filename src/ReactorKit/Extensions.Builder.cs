@@ -17,7 +17,7 @@ public static partial class Extensions
         builder.UseSkiaSharp();
         builder.ConfigureMauiHandlers(handlers =>
         {
-            Glaze.GlazeHandlers.Register(handlers);
+            Internals.Glaze.GlazeHandlers.Register(handlers);
 
             if (settings.EnableBorderlessEntry)
                 Handlers.BorderlessEntryHandler.Register();

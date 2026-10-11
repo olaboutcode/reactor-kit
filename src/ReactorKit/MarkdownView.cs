@@ -1,6 +1,6 @@
 using MauiReactor;
 using SKCanvasView = SkiaSharp.Views.Maui.Controls.SKCanvasView;
-using NativeMarkdown = Reactor.Kit.Markdown.MarkdownCanvas;
+using NativeMarkdown = Reactor.Kit.Internals.Markdown.MarkdownCanvas;
 
 namespace Reactor.Kit;
 
