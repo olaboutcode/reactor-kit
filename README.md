@@ -16,6 +16,9 @@ A library of custom controls for [MauiReactor](https://github.com/adospace/react
   - [Glaze](#glaze)
     - [Properties](#properties)
     - [Supported platforms](#supported-platforms)
+  - [Rich text](#rich-text)
+    - [Properties](#properties-1)
+    - [Supported platforms](#supported-platforms-1)
 - [Handlers](#handlers)
   - [BorderlessEntry](#borderlessentry)
   - [BorderlessEditor](#borderlesseditor)
@@ -121,6 +124,45 @@ GlazeView(Label("Title").Center())
 - Android 21+
 - Windows 10.0.17763+
 
+### Rich text
+
+`RichTextView` draws paragraph text with SkiaSharp. A tap hits a word or a sentence. Highlights are rectangles behind the text.
+
+#### Properties
+
+| Member | Default | Role |
+|---|---|---|
+| `Text` | empty | The paragraph. |
+| `FontSize` | `17` | Size in device-independent pixels. |
+| `LineSpacing` | `4` | Extra pixels between lines. |
+| `TextColor` | black | Glyph color. |
+| `HighlightColor` | amber at about 47% | Color of the rectangles behind highlighted words. |
+| `ToggleHighlightOnTap` | `true` | A tap toggles that word or sentence. The tap callback still runs. |
+| `TapTarget` | `Word` | `Sentence` reports and toggles the whole sentence. |
+| `HighlightedWords` | none | Word indexes to paint. |
+| `HighlightedSentences` | none | Sentence indexes to paint. |
+| `HighlightedRanges` | none | Character ranges. A word is highlighted when it overlaps a range. |
+| `OnTokenTapped` | none | Receives the tapped word or sentence. |
+
+```csharp
+RichTextView()
+    .Text("In the beginning God created the heaven and the earth. And the earth was without form.")
+    .FontSize(20)
+    .TextColor(Color.FromArgb("#1C1C1E"))
+    .HighlightColor(Color.FromRgba(245, 196, 40, 120))
+    .HighlightedSentences([0])
+    .OnTokenTapped(hit => System.Diagnostics.Debug.WriteLine(hit.Text))
+```
+
+A new list with the same indexes keeps tap toggles. Set `ToggleHighlightOnTap(false)` and pass `HighlightedWords` when the page owns the highlights.
+
+#### Supported platforms
+
+- iOS 15+
+- Mac Catalyst 17+
+- Android 21+
+- Windows 10.0.17763+
+
 ## Handlers
 
 List of available handlers.
@@ -147,7 +189,7 @@ builder
 
 ## Samples
 
-`samples/KitTests` is a MauiReactor app for the controls. The glaze page scrolls text behind a top bar, a round button, a button, cards, and entries, and it can switch the page between light and dark.
+`samples/KitTests` is a MauiReactor app for the controls. The glaze page scrolls text behind a top bar, a round button, a button, cards, and entries, and it can switch the page between light and dark. Text opens `RichTextTestPage`.
 
 ## Building
 

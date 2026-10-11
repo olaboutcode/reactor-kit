@@ -38,6 +38,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Maui.Controls" />
     <PackageReference Include="Reactor.Maui" />
+    <PackageReference Include="SkiaSharp.Views.Maui.Controls" />
   </ItemGroup>
 
   <!-- Platforms/iOS is UIKit code shared with Mac Catalyst. The SDK otherwise compiles that folder for iOS only. -->
