@@ -70,7 +70,10 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
         Touch += OnTouch;
     }
 
-    /// <summary>Raised after a tap on a word. The hit is the word, or its sentence when <see cref="TapTarget"/> is <see cref="TextTapTarget.Sentence"/>.</summary>
+    /// <summary>
+    /// Raised after a tap on a word.
+    /// The hit is the word, or its sentence when <see cref="TapTarget"/> is <see cref="TextTapTarget.Sentence"/>
+    /// .</summary>
     public event EventHandler<TextTokenHit>? TokenTapped;
 
     public string Text
@@ -487,6 +490,7 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
     {
         var sentence = _sentences.FirstOrDefault(item => wordIndex >= item.FirstWord && wordIndex < item.FirstWord + item.WordCount);
         var sentenceIndex = sentence.WordCount == 0 ? _words[wordIndex].SentenceIndex : sentence.Index;
+        
         if (ToggleHighlightOnTap)
         {
             if (TapTarget == TextTapTarget.Sentence && (uint)sentenceIndex < (uint)_sentences.Length)
@@ -516,13 +520,33 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
         var bounds = new Rect(word.X, word.LineTop, word.Width, word.LineHeight);
         if (TapTarget == TextTapTarget.Word || (uint)sentenceIndex >= (uint)_sentences.Length)
         {
-            return new TextTokenHit(word.Text, word.Start, word.End, wordIndex, sentenceIndex, TextTokenKind.Word, tag, bounds);
+            return new TextTokenHit(
+                word.Text,
+                word.Start,
+                word.End,
+                wordIndex,
+                sentenceIndex,
+                TextTokenKind.Word,
+                tag,
+                bounds);
         }
 
         var sentence = _sentences[sentenceIndex];
         var text = Text ?? string.Empty;
-        var slice = text.Substring(sentence.Start, Math.Max(0, sentence.End - sentence.Start));
-        return new TextTokenHit(slice, sentence.Start, sentence.End, wordIndex, sentenceIndex, TextTokenKind.Sentence, tag, bounds);
+
+        var slice = text.Substring(
+            sentence.Start,
+            Math.Max(0, sentence.End - sentence.Start));
+
+        return new TextTokenHit(
+            slice,
+            sentence.Start,
+            sentence.End,
+            wordIndex,
+            sentenceIndex,
+            TextTokenKind.Sentence,
+            tag,
+            bounds);
     }
 
     int HitWord(SKPoint point)
@@ -617,7 +641,14 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
             while (i < text.Length && !char.IsWhiteSpace(text[i]))
                 i++;
             var slice = text.AsSpan(start, i - start);
-            words.Add(new RawWord(slice.ToString(), start, i, sentence, EndsSentence(slice), false));
+            words.Add(new RawWord(
+                slice.ToString(), 
+                start, 
+                i, 
+                sentence, 
+                EndsSentence(slice),
+                BreakAfter: false));
+
             if (EndsSentence(slice))
                 sentence++;
         }
@@ -646,10 +677,26 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
             (byte)Math.Clamp(color.Alpha * 255d, 0, 255));
 
     [StructLayout(LayoutKind.Auto)]
-    readonly record struct RawWord(string Text, int Start, int End, int SentenceIndex, bool EndsSentence, bool BreakAfter);
+    readonly record struct RawWord(
+        string Text,
+        int Start,
+        int End,
+        int SentenceIndex,
+        bool EndsSentence,
+        bool BreakAfter);
 
     [StructLayout(LayoutKind.Auto)]
-    readonly record struct Word(string Text, int Start, int End, int SentenceIndex, float X, float LineTop, float Width, float LineHeight, float Baseline, GlyphRun[] Runs)
+    readonly record struct Word(
+        string Text,
+        int Start,
+        int End,
+        int SentenceIndex,
+        float X,
+        float LineTop,
+        float Width,
+        float LineHeight,
+        float Baseline,
+        GlyphRun[] Runs)
     {
         public float Right => X + Width;
 
@@ -657,8 +704,17 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
     }
 
     [StructLayout(LayoutKind.Auto)]
-    readonly record struct Sentence(int Index, int Start, int End, int FirstWord, int WordCount);
+    readonly record struct Sentence(
+        int Index,
+        int Start,
+        int End,
+        int FirstWord,
+        int WordCount);
 
     [StructLayout(LayoutKind.Auto)]
-    readonly record struct PlacedText(Word[] Words, Sentence[] Sentences, float ContentWidth, float ContentHeight);
+    readonly record struct PlacedText(
+        Word[] Words,
+        Sentence[] Sentences,
+        float ContentWidth,
+        float ContentHeight);
 }

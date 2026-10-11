@@ -5,10 +5,16 @@ using SkiaSharp.HarfBuzz;
 
 namespace Reactor.Kit.RichText;
 
-/// <summary>Breaks a word into shaped runs so missing glyphs use a system font.</summary>
+/// <summary>
+/// Breaks a word into shaped runs so missing glyphs use a system font.
+/// </summary>
 internal sealed class TextShaper : IDisposable
 {
-    static readonly string[] EmojiFamilies = ["Apple Color Emoji", "Noto Color Emoji", "Segoe UI Emoji"];
+    static readonly string[] EmojiFamilies = [
+        "Apple Color Emoji",
+        "Noto Color Emoji",
+        "Segoe UI Emoji",
+    ];
 
     static readonly string[] EmojiFiles =
     [
@@ -94,9 +100,22 @@ internal sealed class TextShaper : IDisposable
     {
         var font = _bodyFont!;
         if (SystemText.Measure is not null
-            && SystemText.Measure(text, font.Size, out var width, out var ascent, out var descent))
+            && SystemText.Measure(
+                text,
+                font.Size,
+                out var width,
+                out var ascent,
+                out var descent
+            ))
         {
-            return new GlyphRun(blob: null, text, font, Math.Max(0, width), system: true, ascent, descent);
+            return new GlyphRun(
+                blob: null,
+                text,
+                font,
+                Math.Max(0, width),
+                system: true,
+                ascent,
+                descent);
         }
 
         return Unshaped(text, font);
@@ -297,8 +316,11 @@ internal sealed class TextShaper : IDisposable
 
     void ReleaseProbe(SKTypeface face)
     {
-        if (!ReferenceEquals(face, _body) && !string.Equals(face.FamilyName, _body.FamilyName, StringComparison.Ordinal))
+        if (!ReferenceEquals(face, _body)
+            && !string.Equals(face.FamilyName, _body.FamilyName, StringComparison.Ordinal))
+        {
             face.Dispose();
+        }
     }
 
     bool Contains(SKTypeface face, int codePoint)
