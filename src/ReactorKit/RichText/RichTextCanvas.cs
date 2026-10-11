@@ -47,6 +47,7 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
     const float LineBoxScale = 1.125f;
 
     readonly Dictionary<int, object?> _tags = [];
+    readonly TextShaper _shaper = new();
     Word[] _words = [];
     Sentence[] _sentences = [];
     bool[] _highlighted = [];
@@ -253,14 +254,16 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
 
     void LayoutText(float width)
     {
+        ReleaseWords();
         EnsureFont();
         var font = _font!;
+        _shaper.Use(font.Size);
         var metrics = font.Metrics;
         var em = Math.Max(1f, metrics.Descent - metrics.Ascent);
         var box = Math.Max(em, font.Size * LineBoxScale);
         var spacing = (float)Math.Max(0, LineSpacing);
         var pad = 2f;
-        var placed = Place(Split(Text ?? string.Empty), font, metrics, box, spacing, font.MeasureText(" "), pad, Math.Max(1, width - (pad * 2)));
+        var placed = Place(Split(Text ?? string.Empty), _shaper, metrics, box, spacing, font.MeasureText(" "), pad, Math.Max(1, width - (pad * 2)));
 
         _words = placed.Words;
         _sentences = placed.Sentences;
@@ -274,7 +277,7 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
         ApplyDeclarativeHighlights(repaint: false);
     }
 
-    static PlacedText Place(List<RawWord> raw, SKFont font, SKFontMetrics metrics, float box, float spacing, float space, float pad, float max)
+    static PlacedText Place(List<RawWord> raw, TextShaper shaper, SKFontMetrics metrics, float box, float spacing, float space, float pad, float max)
     {
         var words = new Word[raw.Count];
         var x = pad;
@@ -288,7 +291,10 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
         for (var i = 0; i < raw.Count; i++)
         {
             var piece = raw[i];
-            var measured = font.MeasureText(piece.Text);
+            var runs = shaper.Shape(piece.Text);
+            var measured = 0f;
+            for (var r = 0; r < runs.Length; r++)
+                measured += runs[r].Width;
             var breakBefore = i > 0 && raw[i - 1].BreakAfter;
             if (breakBefore || (x > pad && x + space + measured > pad + max))
             {
@@ -300,7 +306,7 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
                 x += space;
             }
 
-            words[i] = new Word(piece.Text, piece.Start, piece.End, piece.SentenceIndex, x, lineTop, measured, box, lineTop + baselineOffset);
+            words[i] = new Word(piece.Text, piece.Start, piece.End, piece.SentenceIndex, x, lineTop, measured, box, lineTop + baselineOffset, runs);
             x += measured;
             contentWidth = Math.Max(contentWidth, x + pad);
             if (ClosesSentence(raw, i))
@@ -400,12 +406,18 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
         _textPaint.Color = ToSk(TextColor);
 
         DrawHighlights(canvas);
-        var font = _font!;
         var paint = _textPaint;
         for (var i = 0; i < _words.Length; i++)
         {
             var word = _words[i];
-            canvas.DrawText(word.Text, word.X, word.Baseline, SKTextAlign.Left, font, paint);
+            var x = word.X;
+            var runs = word.Runs;
+            for (var r = 0; r < runs.Length; r++)
+            {
+                var run = runs[r];
+                run.Draw(canvas, x, word.Baseline, paint);
+                x += run.Width;
+            }
         }
     }
 
@@ -542,12 +554,25 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
 
     void DisposeSkia()
     {
+        ReleaseWords();
+        _words = [];
+        _shaper.Dispose();
         _font?.Dispose();
         _textPaint?.Dispose();
         _highlightPaint?.Dispose();
         _font = null;
         _textPaint = null;
         _highlightPaint = null;
+    }
+
+    void ReleaseWords()
+    {
+        for (var i = 0; i < _words.Length; i++)
+        {
+            var runs = _words[i].Runs;
+            for (var r = 0; r < runs.Length; r++)
+                runs[r].Dispose();
+        }
     }
 
     void PruneTags()
@@ -607,7 +632,7 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
             var c = word[i];
             if (c is '"' or '\'' or ')' or ']' or '”' or '’')
                 continue;
-            return c is '.' or '!' or '?';
+            return c is '.' or '!' or '?' or '。' or '！' or '？' or '؟';
         }
 
         return false;
@@ -624,7 +649,7 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
     readonly record struct RawWord(string Text, int Start, int End, int SentenceIndex, bool EndsSentence, bool BreakAfter);
 
     [StructLayout(LayoutKind.Auto)]
-    readonly record struct Word(string Text, int Start, int End, int SentenceIndex, float X, float LineTop, float Width, float LineHeight, float Baseline)
+    readonly record struct Word(string Text, int Start, int End, int SentenceIndex, float X, float LineTop, float Width, float LineHeight, float Baseline, GlyphRun[] Runs)
     {
         public float Right => X + Width;
 

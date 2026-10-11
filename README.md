@@ -126,7 +126,7 @@ GlazeView(Label("Title").Center())
 
 ### Rich text
 
-`RichTextView` draws paragraph text with SkiaSharp. A tap hits a word or a sentence. Highlights are rectangles behind the text.
+`RichTextView` draws paragraph text with SkiaSharp. A tap hits a word or a sentence. Highlights are rectangles behind the text. Characters the body font does not contain, including emoji and other writing systems, are taken from the system fonts. Each word is shaped, so connected scripts stay connected.
 
 #### Properties
 

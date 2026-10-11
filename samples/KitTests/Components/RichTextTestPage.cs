@@ -12,7 +12,7 @@ sealed class RichTextTestPage : Component<RichTextTestPage.PageState>
 
     const string Verse =
         "In the beginning God created the heaven and the earth. " +
-        "And the earth was without form, and void.";
+        "And the earth was without form, and void. 🙏🏽 神 مرحبا";
 
     static readonly Color Ink = Color.FromArgb("#1C1C1E");
     static readonly Color Paper = Color.FromArgb("#F7F5F2");
