@@ -21,6 +21,12 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
     public static readonly BindableProperty LineSpacingProperty = BindableProperty.Create(
         nameof(LineSpacing), typeof(double), typeof(RichTextCanvas), 4d, propertyChanged: OnLayoutPropertyChanged);
 
+    public static readonly BindableProperty AppearanceProperty = BindableProperty.Create(
+        nameof(Appearance), typeof(TextAppearance), typeof(RichTextCanvas), null, propertyChanged: OnLayoutPropertyChanged);
+
+    public static readonly BindableProperty AppearanceFactoryProperty = BindableProperty.Create(
+        nameof(AppearanceFactory), typeof(Func<string, TextAppearance>), typeof(RichTextCanvas), null, propertyChanged: OnLayoutPropertyChanged);
+
     public static readonly BindableProperty TextColorProperty = BindableProperty.Create(
         nameof(TextColor), typeof(Color), typeof(RichTextCanvas), Colors.Black, propertyChanged: OnPaintPropertyChanged);
 
@@ -51,6 +57,7 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
     const float LineBoxScale = 1.125f;
 
     readonly Dictionary<int, object?> _tags = [];
+    readonly Dictionary<int, TextShaper> _sizes = [];
     readonly TextShaper _shaper = new();
     Word[] _words = [];
     Sentence[] _sentences = [];
@@ -59,6 +66,7 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
     SKPaint? _textPaint;
     SKPaint? _highlightPaint;
     float _laidWidth = -1;
+    float _laidSize = 17;
     float _contentWidth;
     float _contentHeight;
     bool _layoutDirty = true;
@@ -107,6 +115,20 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
     {
         get => (double)GetValue(LineSpacingProperty);
         set => SetValue(LineSpacingProperty, value);
+    }
+
+    /// <summary>Page metrics. The factory is used instead when it is set.</summary>
+    public TextAppearance? Appearance
+    {
+        get => (TextAppearance?)GetValue(AppearanceProperty);
+        set => SetValue(AppearanceProperty, value);
+    }
+
+    /// <summary>Builds the page metrics from the text before each layout.</summary>
+    public Func<string, TextAppearance>? AppearanceFactory
+    {
+        get => (Func<string, TextAppearance>?)GetValue(AppearanceFactoryProperty);
+        set => SetValue(AppearanceFactoryProperty, value);
     }
 
     public Color TextColor
@@ -276,15 +298,25 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
     void LayoutText(float width)
     {
         ReleaseWords();
-        EnsureFont();
+        var text = Text ?? string.Empty;
+        var appearance = AppearanceFactory?.Invoke(text) ?? Appearance;
+        var size = (float)Math.Max(1, appearance?.FontSize ?? FontSize);
+        var spacing = (float)Math.Max(0, appearance?.LineSpacing ?? LineSpacing);
+        var preserve = appearance?.PreserveLineBreaks ?? true;
+        var indent = Math.Max(0, appearance?.FirstLineIndent ?? 0);
+        _laidSize = size;
+        EnsureFont(size);
+        _shaper.Use(size);
         var font = _font!;
-        _shaper.Use(font.Size);
         var metrics = font.Metrics;
         var em = Math.Max(1f, metrics.Descent - metrics.Ascent);
-        var box = Math.Max(em, font.Size * LineBoxScale);
-        var spacing = (float)Math.Max(0, LineSpacing);
+        var box = Math.Max(em, size * LineBoxScale);
         var pad = 2f;
-        var placed = Place(Split(Text ?? string.Empty), _shaper, metrics, box, spacing, font.MeasureText(" "), pad, Math.Max(1, width - (pad * 2)));
+        var placed = Place(
+            Split(text, preserve),
+            appearance?.RunAt,
+            size,
+            new LineMetrics(em, metrics.Ascent, box, spacing, font.MeasureText(" "), indent, pad, Math.Max(1, width - (pad * 2))));
 
         _words = placed.Words;
         _sentences = placed.Sentences;
@@ -296,52 +328,63 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
         EndPress();
         PruneTags();
         ApplyDeclarativeHighlights(repaint: false);
+        var content = Math.Max(1d, _contentHeight);
+        if (Math.Abs(HeightRequest - content) > 0.5)
+            HeightRequest = content;
     }
 
-    static PlacedText Place(List<RawWord> raw, TextShaper shaper, SKFontMetrics metrics, float box, float spacing, float space, float pad, float max)
+    PlacedText Place(List<RawWord> raw, Func<int, int, RunMetrics>? runAt, float pageSize, LineMetrics line)
     {
-        var words = new Word[raw.Count];
-        var x = pad;
-        var lineTop = pad;
-        var contentWidth = pad;
-        var sentenceStart = 0;
+        var placer = new Placer(raw.Count, line);
         var sentences = new List<Sentence>();
-        var em = metrics.Descent - metrics.Ascent;
-        var baselineOffset = ((box - em) / 2f) - metrics.Ascent;
-
+        var sentenceStart = 0;
         for (var i = 0; i < raw.Count; i++)
         {
             var piece = raw[i];
-            var runs = shaper.Shape(piece.Text);
-            var measured = 0f;
-            for (var r = 0; r < runs.Length; r++)
-                measured += runs[r].Width;
-            var breakBefore = i > 0 && raw[i - 1].BreakAfter;
-            if (breakBefore || (x > pad && x + space + measured > pad + max))
-            {
-                x = pad;
-                lineTop += box + spacing;
-            }
-            else if (x > pad)
-            {
-                x += space;
-            }
-
-            words[i] = new Word(piece.Text, piece.Start, piece.End, piece.SentenceIndex, x, lineTop, measured, box, lineTop + baselineOffset, runs);
-            x += measured;
-            contentWidth = Math.Max(contentWidth, x + pad);
-            if (ClosesSentence(raw, i))
-            {
-                var first = words[sentenceStart];
-                sentences.Add(new Sentence(piece.SentenceIndex, first.Start, words[i].End, sentenceStart, i - sentenceStart + 1));
-                sentenceStart = i + 1;
-            }
+            var length = piece.End - piece.Start;
+            var metrics = runAt?.Invoke(piece.Start, length) ?? default;
+            var shaped = ShapeWord(piece.Text, pageSize, metrics);
+            var broken = i > 0 && raw[i - 1].BreakAfter;
+            var paragraph = i > 0 && raw[i - 1].ParagraphAfter;
+            placer.Add(i, piece, shaped, broken, paragraph);
+            if (!ClosesSentence(raw, i))
+                continue;
+            var first = placer.Words[sentenceStart];
+            sentences.Add(new Sentence(piece.SentenceIndex, first.Start, placer.Words[i].End, sentenceStart, i - sentenceStart + 1));
+            sentenceStart = i + 1;
         }
 
-        var contentHeight = words.Length == 0 ? pad * 2 : lineTop + box + pad;
-        if (words.Length == 0)
-            contentWidth = pad * 2;
-        return new PlacedText(words, [.. sentences], contentWidth, contentHeight);
+        placer.Close(raw.Count);
+        return new PlacedText(placer.Words, [.. sentences], placer.ContentWidth, placer.ContentHeight);
+    }
+
+    ShapedWord ShapeWord(string text, float pageSize, RunMetrics metrics)
+    {
+        var scale = metrics.Scale ?? 1f;
+        if (scale <= 0)
+            scale = 1f;
+        var size = Math.Max(1f, pageSize * scale);
+        var runs = ShaperFor(size).Shape(text);
+        var width = 0f;
+        for (var i = 0; i < runs.Length; i++)
+            width += runs[i].Width;
+        var em = runs.Length == 0 ? size : Math.Max(1f, runs[0].Font.Metrics.Descent - runs[0].Font.Metrics.Ascent);
+        var box = Math.Max(em, size * LineBoxScale);
+        SKColor? color = metrics.Color is { } ink ? ToSk(ink) : null;
+        return new ShapedWord(runs, width, box, metrics.BaselineShift * pageSize, color, metrics.Italic, metrics.Bold);
+    }
+
+    TextShaper ShaperFor(float size)
+    {
+        if (_font is not null && Math.Abs(_font.Size - size) < 0.05f)
+            return _shaper;
+        var key = (int)Math.Round(size * 100f);
+        if (_sizes.TryGetValue(key, out var found))
+            return found;
+        var created = new TextShaper();
+        created.Use(size);
+        _sizes[key] = created;
+        return created;
     }
 
     static bool ClosesSentence(List<RawWord> raw, int index)
@@ -420,25 +463,42 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
         if (_words.Length == 0)
             return;
 
-        EnsureFont();
+        EnsureFont(_laidSize);
         _highlightPaint ??= new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill };
         _textPaint ??= new SKPaint { IsAntialias = true };
         _highlightPaint.Color = ToSk(HighlightColor);
-        _textPaint.Color = ToSk(TextColor);
 
         DrawHighlights(canvas);
-        var paint = _textPaint;
         for (var i = 0; i < _words.Length; i++)
+            DrawWord(canvas, _words[i], _textPaint);
+    }
+
+    void DrawWord(SKCanvas canvas, Word word, SKPaint paint)
+    {
+        paint.Color = word.Color ?? ToSk(TextColor);
+        if (!word.Italic)
         {
-            var word = _words[i];
-            var x = word.X;
-            var runs = word.Runs;
-            for (var r = 0; r < runs.Length; r++)
-            {
-                var run = runs[r];
-                run.Draw(canvas, x, word.Baseline, paint);
-                x += run.Width;
-            }
+            DrawRuns(canvas, word, word.X, word.Baseline, paint);
+            return;
+        }
+
+        canvas.Save();
+        canvas.Translate(word.X, word.Baseline);
+        canvas.Skew(-0.22f, 0);
+        DrawRuns(canvas, word, 0, 0, paint);
+        canvas.Restore();
+    }
+
+    static void DrawRuns(SKCanvas canvas, Word word, float x, float baseline, SKPaint paint)
+    {
+        var runs = word.Runs;
+        for (var i = 0; i < runs.Length; i++)
+        {
+            var run = runs[i];
+            run.Draw(canvas, x, baseline, paint);
+            if (word.Bold && run.Blob is not null)
+                run.Draw(canvas, x + 0.6f, baseline, paint);
+            x += run.Width;
         }
     }
 
@@ -645,9 +705,8 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
             && point.Y >= word.LineTop - HitSlop && point.Y <= word.LineBottom + HitSlop;
     }
 
-    void EnsureFont()
+    void EnsureFont(float size)
     {
-        var size = (float)Math.Max(1, FontSize);
         if (_font is not null && Math.Abs(_font.Size - size) < 0.01f)
             return;
         _font?.Dispose();
@@ -658,6 +717,9 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
     {
         ReleaseWords();
         _words = [];
+        foreach (var shaper in _sizes.Values)
+            shaper.Dispose();
+        _sizes.Clear();
         _shaper.Dispose();
         _font?.Dispose();
         _textPaint?.Dispose();
@@ -694,7 +756,7 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
             _tags.Remove(stale[i]);
     }
 
-    static List<RawWord> Split(string text)
+    static List<RawWord> Split(string text, bool preserveLineBreaks)
     {
         var words = new List<RawWord>();
         var sentence = 0;
@@ -703,15 +765,17 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
         {
             if (char.IsWhiteSpace(text[i]))
             {
-                var breaks = false;
-                while (i < text.Length && char.IsWhiteSpace(text[i]))
+                var newlines = CountNewlines(text, ref i);
+                if (words.Count > 0)
                 {
-                    breaks |= text[i] == '\n' || text[i] == '\r';
-                    i++;
+                    var paragraph = newlines >= 2;
+                    words[^1] = words[^1] with
+                    {
+                        BreakAfter = paragraph || (preserveLineBreaks && newlines > 0),
+                        ParagraphAfter = paragraph,
+                    };
                 }
 
-                if (words.Count > 0)
-                    words[^1] = words[^1] with { BreakAfter = breaks };
                 continue;
             }
 
@@ -720,18 +784,37 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
                 i++;
             var slice = text.AsSpan(start, i - start);
             words.Add(new RawWord(
-                slice.ToString(), 
-                start, 
-                i, 
-                sentence, 
+                slice.ToString(),
+                start,
+                i,
+                sentence,
                 EndsSentence(slice),
-                BreakAfter: false));
+                BreakAfter: false,
+                ParagraphAfter: false));
 
             if (EndsSentence(slice))
                 sentence++;
         }
 
         return words;
+    }
+
+    static int CountNewlines(string text, ref int index)
+    {
+        var newlines = 0;
+        while (index < text.Length && char.IsWhiteSpace(text[index]))
+        {
+            if (text[index] is '\n' or '\r')
+            {
+                newlines++;
+                if (text[index] == '\r' && index + 1 < text.Length && text[index + 1] == '\n')
+                    index++;
+            }
+
+            index++;
+        }
+
+        return newlines;
     }
 
     static bool EndsSentence(ReadOnlySpan<char> word)
@@ -761,7 +844,8 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
         int End,
         int SentenceIndex,
         bool EndsSentence,
-        bool BreakAfter);
+        bool BreakAfter,
+        bool ParagraphAfter);
 
     [StructLayout(LayoutKind.Auto)]
     readonly record struct Word(
@@ -774,11 +858,134 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
         float Width,
         float LineHeight,
         float Baseline,
-        GlyphRun[] Runs)
+        GlyphRun[] Runs,
+        SKColor? Color,
+        bool Italic,
+        bool Bold,
+        float Raise)
     {
         public float Right => X + Width;
 
         public float LineBottom => LineTop + LineHeight;
+    }
+
+    [StructLayout(LayoutKind.Auto)]
+    readonly record struct ShapedWord(
+        GlyphRun[] Runs,
+        float Width,
+        float Box,
+        float Raise,
+        SKColor? Color,
+        bool Italic,
+        bool Bold);
+
+    [StructLayout(LayoutKind.Auto)]
+    readonly record struct LineMetrics(
+        float Em,
+        float Ascent,
+        float Box,
+        float Spacing,
+        float Space,
+        float Indent,
+        float Pad,
+        float Max);
+
+    sealed class Placer
+    {
+        readonly float _pageEm;
+        readonly float _ascent;
+        readonly float _pageBox;
+        readonly float _spacing;
+        readonly float _space;
+        readonly float _indent;
+        readonly float _pad;
+        readonly float _max;
+        readonly Word[] _words;
+        float _x;
+        float _lineTop;
+        float _lineBox;
+        float _contentWidth;
+        int _lineStart;
+        bool _hasWord;
+
+        public Placer(int count, LineMetrics line)
+        {
+            _pageEm = line.Em;
+            _ascent = line.Ascent;
+            _pageBox = line.Box;
+            _spacing = line.Spacing;
+            _space = line.Space;
+            _indent = line.Indent;
+            _pad = line.Pad;
+            _max = line.Max;
+            _words = new Word[count];
+            _x = line.Pad + line.Indent;
+            _lineTop = line.Pad;
+            _lineBox = line.Box;
+            _contentWidth = line.Pad;
+        }
+
+        public Word[] Words => _words;
+
+        public float ContentWidth => _words.Length == 0 ? _pad * 2 : _contentWidth;
+
+        public float ContentHeight => _words.Length == 0 ? _pad * 2 : _lineTop + _lineBox + _pad;
+
+        public void Add(int index, RawWord piece, ShapedWord shaped, bool breakBefore, bool paragraph)
+        {
+            if (breakBefore || (_hasWord && _x + _space + shaped.Width > _pad + _max))
+            {
+                Close(index);
+                _lineTop += _lineBox + _spacing;
+                if (paragraph)
+                    _lineTop += _lineBox + _spacing;
+                _x = _pad + (paragraph ? _indent : 0);
+                _lineStart = index;
+                _lineBox = _pageBox;
+                _hasWord = false;
+            }
+            else if (_hasWord)
+            {
+                _x += _space;
+            }
+
+            _words[index] = new Word(
+                piece.Text,
+                piece.Start,
+                piece.End,
+                piece.SentenceIndex,
+                _x,
+                0,
+                shaped.Width,
+                0,
+                0,
+                shaped.Runs,
+                shaped.Color,
+                shaped.Italic,
+                shaped.Bold,
+                shaped.Raise);
+            _lineBox = Math.Max(_lineBox, shaped.Box);
+            _x += shaped.Width;
+            _contentWidth = Math.Max(_contentWidth, _x + _pad);
+            _hasWord = true;
+        }
+
+        public void Close(int end)
+        {
+            if (end <= _lineStart)
+                return;
+            var offset = ((_lineBox - _pageEm) / 2f) - _ascent;
+            for (var i = _lineStart; i < end; i++)
+            {
+                var word = _words[i];
+                _words[i] = word with
+                {
+                    LineTop = _lineTop,
+                    LineHeight = _lineBox,
+                    Baseline = _lineTop + offset - word.Raise,
+                };
+            }
+        }
     }
 
     [StructLayout(LayoutKind.Auto)]

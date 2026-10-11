@@ -42,6 +42,20 @@ public sealed class RichTextView : View<SKCanvasView>
     public RichTextView LineSpacing(Func<double> spacing, IComponentWithState? state = null)
         => this.Set(NativeRichText.LineSpacingProperty, new PropertyValue<double>(spacing, state));
 
+    /// <summary>
+    /// Uses these metrics for the whole document.
+    /// An unset size or spacing keeps the view font size and line spacing.
+    /// </summary>
+    public RichTextView Appearance(TextAppearance appearance)
+        => this.Set(NativeRichText.AppearanceProperty, appearance);
+
+    /// <summary>
+    /// Builds the metrics from the current text before each layout.
+    /// This is used instead of <see cref="Appearance(TextAppearance)"/> when both are set.
+    /// </summary>
+    public RichTextView Appearance(Func<string, TextAppearance> appearance)
+        => this.Set(NativeRichText.AppearanceFactoryProperty, appearance);
+
     public RichTextView TextColor(Color color)
         => this.Set(NativeRichText.TextColorProperty, color);
 

@@ -138,6 +138,7 @@ GlazeView(Label("Title").Center())
 | `Text` | empty | The paragraph. |
 | `FontSize` | `17` | Size in device-independent pixels. |
 | `LineSpacing` | `4` | Extra pixels between lines. |
+| `Appearance` | none | Page metrics, or a callback that builds them from the text. `RunAt` styles one word. An unset size or spacing keeps `FontSize` and `LineSpacing`. |
 | `TextColor` | black | Glyph color. |
 | `HighlightColor` | amber at about 47% | Color of the rectangles behind highlighted words. |
 | `ToggleHighlightOnTap` | `true` | A tap toggles that word or sentence. The tap callback still runs. |
@@ -160,6 +161,27 @@ RichTextView()
 ```
 
 A new list with the same indexes keeps tap toggles. Set `ToggleHighlightOnTap(false)` and pass `HighlightedWords` when the page owns the highlights.
+
+`Appearance` describes the page. `RunAt` describes one word and receives the character index where that word starts. The default result leaves the word on the page style. A fixed value and a callback are the same metrics.
+
+```csharp
+RichTextView(chapter).Appearance(new TextAppearance
+{
+    LineSpacing = 6,
+    FirstLineIndent = 24,
+    PreserveLineBreaks = false,
+});
+
+RichTextView(chapter).Appearance(text => new TextAppearance
+{
+    PreserveLineBreaks = true,
+    RunAt = (start, length) => new RunMetrics
+    {
+        Scale = 0.65f,
+        BaselineShift = 0.35f,
+    },
+});
+```
 
 #### Supported platforms
 
@@ -227,7 +249,7 @@ builder
 
 ## Samples
 
-`samples/KitTests` is a MauiReactor app for the controls. The glaze page scrolls text behind a top bar, a round button, a button, cards, and entries, and it can switch the page between light and dark. Text opens `RichTextTestPage`. Markdown opens `MarkdownTestPage`.
+`samples/KitTests` is a MauiReactor app for the controls. The glaze page scrolls text behind a top bar, a round button, a button, cards, and entries, and it can switch the page between light and dark. Text opens `RichTextTestPage`. Markdown opens `MarkdownTestPage`. Reading opens `ReadingTestPage`.
 
 ## Building
 
