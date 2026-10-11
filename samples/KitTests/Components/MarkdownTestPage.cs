@@ -27,6 +27,13 @@ sealed class MarkdownTestPage : Component
         Graph --> Page
         ```
 
+        ## Code
+
+        ```csharp
+        var notes = MarkdownView(markdown);
+        notes.FontSize(16);
+        ```
+
         ## More tokens
 
         Setext
