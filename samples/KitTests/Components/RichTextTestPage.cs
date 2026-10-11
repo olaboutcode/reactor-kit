@@ -4,7 +4,10 @@ sealed class RichTextTestPage : Component<RichTextTestPage.PageState>
 {
     internal sealed class PageState
     {
-        public string LastTap { get; set; } = "Tap a word";
+        public Dictionary<int, string> Sentences { get; } = [];
+
+        public string Highlighted =>
+            string.Join(" ", Sentences.OrderBy(pair => pair.Key).Select(pair => pair.Value));
     }
 
     const string Verse =
@@ -13,7 +16,6 @@ sealed class RichTextTestPage : Component<RichTextTestPage.PageState>
 
     static readonly Color Ink = Color.FromArgb("#1C1C1E");
     static readonly Color Paper = Color.FromArgb("#F7F5F2");
-    static readonly int[] OpeningSentence = [0];
 
     public override VisualNode Render()
         => ContentPage("Rich text",
@@ -26,7 +28,7 @@ sealed class RichTextTestPage : Component<RichTextTestPage.PageState>
                     .Height(36)
                     .Padding(14, 0)
                     .HStart(),
-                Label(State.LastTap)
+                Label(State.Sentences.Count == 0 ? "Tap a sentence" : State.Highlighted)
                     .FontSize(15)
                     .TextColor(Ink),
                 RichTextView()
@@ -35,8 +37,14 @@ sealed class RichTextTestPage : Component<RichTextTestPage.PageState>
                     .LineSpacing(6)
                     .TextColor(Ink)
                     .HighlightColor(Color.FromRgba(245, 196, 40, 120))
-                    .HighlightedSentences(OpeningSentence)
-                    .OnTokenTapped(hit => SetState(s => s.LastTap = hit.Text))
+                    .TapTarget(TextTapTarget.Sentence)
+                    .ToggleHighlightOnTap(enabled: true)
+                    .HighlightedSentences(() => [.. State.Sentences.Keys.Order()])
+                    .OnTokenTapped(hit => SetState(s =>
+                    {
+                        if (!s.Sentences.TryAdd(hit.SentenceIndex, hit.Text))
+                            s.Sentences.Remove(hit.SentenceIndex);
+                    }))
             )
             .Padding(20)
             .Spacing(16)
