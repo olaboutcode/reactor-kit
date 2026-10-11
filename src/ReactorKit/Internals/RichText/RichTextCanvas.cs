@@ -91,13 +91,13 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
     /// Raised after a tap on a word.
     /// The hit is the word, or its sentence when <see cref="TapTarget"/> is <see cref="TextTapTarget.Sentence"/>
     /// .</summary>
-    public event EventHandler<TextTokenHit>? TokenTapped;
+    public event EventHandler<TextTokenHitEventArgs>? TokenTapped;
 
     /// <summary>
     /// Raised when highlighted text is held.
     /// The hit matches <see cref="TapTarget"/>. That gesture does not also raise <see cref="TokenTapped"/>.
     /// </summary>
-    public event EventHandler<TextTokenHit>? TokenLongPressed;
+    public event EventHandler<TextTokenHitEventArgs>? TokenLongPressed;
 
     public string Text
     {
@@ -652,14 +652,14 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
             _highlighted[sentence.FirstWord + i] = !on;
     }
 
-    TextTokenHit CreateHit(int wordIndex, int sentenceIndex)
+    TextTokenHitEventArgs CreateHit(int wordIndex, int sentenceIndex)
     {
         var word = _words[wordIndex];
         _tags.TryGetValue(wordIndex, out var tag);
         var bounds = new Rect(word.X, word.LineTop, word.Width, word.LineHeight);
         if (TapTarget == TextTapTarget.Word || (uint)sentenceIndex >= (uint)_sentences.Length)
         {
-            return new TextTokenHit(
+            return new TextTokenHitEventArgs(
                 word.Text,
                 word.Start,
                 word.End,
@@ -677,7 +677,7 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
             sentence.Start,
             Math.Max(0, sentence.End - sentence.Start));
 
-        return new TextTokenHit(
+        return new TextTokenHitEventArgs(
             slice,
             sentence.Start,
             sentence.End,

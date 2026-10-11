@@ -11,8 +11,8 @@ namespace Reactor.Kit;
 /// </summary>
 public sealed class RichTextView : View<SKCanvasView>
 {
-    Action<TextTokenHit>? _onTokenTapped;
-    Action<TextTokenHit>? _onTokenLongPressed;
+    Action<TextTokenHitEventArgs>? _onTokenTapped;
+    Action<TextTokenHitEventArgs>? _onTokenLongPressed;
 
     internal RichTextView(Action<SKCanvasView?>? componentRefAction = null)
         : base(componentRefAction)
@@ -93,7 +93,7 @@ public sealed class RichTextView : View<SKCanvasView>
     public RichTextView HighlightedRanges(Func<IReadOnlyList<TextRange>> ranges, IComponentWithState? state = null)
         => this.Set(NativeRichText.HighlightedRangesProperty, new PropertyValue<IReadOnlyList<TextRange>>(ranges, state));
 
-    public RichTextView OnTokenTapped(Action<TextTokenHit> callback)
+    public RichTextView OnTokenTapped(Action<TextTokenHitEventArgs> callback)
     {
         _onTokenTapped = callback;
         return this;
@@ -103,7 +103,7 @@ public sealed class RichTextView : View<SKCanvasView>
     /// Called when highlighted text is held. The hit matches <see cref="TapTarget"/>.
     /// That gesture does not also call <see cref="OnTokenTapped"/>.
     /// </summary>
-    public RichTextView OnTokenLongPressed(Action<TextTokenHit> callback)
+    public RichTextView OnTokenLongPressed(Action<TextTokenHitEventArgs> callback)
     {
         _onTokenLongPressed = callback;
         return this;
@@ -136,9 +136,9 @@ public sealed class RichTextView : View<SKCanvasView>
         base.OnDetachNativeEvents();
     }
 
-    void OnNativeTokenTapped(object? sender, TextTokenHit hit)
+    void OnNativeTokenTapped(object? sender, TextTokenHitEventArgs hit)
         => _onTokenTapped?.Invoke(hit);
 
-    void OnNativeTokenLongPressed(object? sender, TextTokenHit hit)
+    void OnNativeTokenLongPressed(object? sender, TextTokenHitEventArgs hit)
         => _onTokenLongPressed?.Invoke(hit);
 }

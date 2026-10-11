@@ -1,9 +1,9 @@
 namespace Reactor.Kit.RichTextViewTokens;
 
 /// <summary>The word or sentence under a tap or a long-press.</summary>
-public sealed class TextTokenHit : EventArgs
+public sealed class TextTokenHitEventArgs : EventArgs
 {
-    internal TextTokenHit(
+    internal TextTokenHitEventArgs(
         string text,
         int start,
         int end,
