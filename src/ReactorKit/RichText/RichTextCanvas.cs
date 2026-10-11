@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Microsoft.Maui.Dispatching;
 using SkiaSharp;
 using SkiaSharp.Views.Maui;
 using SkiaSharp.Views.Maui.Controls;
@@ -43,6 +44,9 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
 
     const float HitSlop = 4f;
 
+    /// <summary>Hold this long on highlighted text to raise <see cref="TokenLongPressed"/>.</summary>
+    static readonly TimeSpan LongPressDuration = TimeSpan.FromMilliseconds(500);
+
     /// <summary>Highlight box is at least this multiple of the font size. 16 lands on 18.</summary>
     const float LineBoxScale = 1.125f;
 
@@ -60,6 +64,10 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
     bool _layoutDirty = true;
     bool _disposed;
     int _pressedWord = -1;
+    SKPoint _pressPoint;
+    bool _longPressFired;
+    int _longPressWord = -1;
+    IDispatcherTimer? _longPressTimer;
 
     public RichTextCanvas()
     {
@@ -75,6 +83,12 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
     /// The hit is the word, or its sentence when <see cref="TapTarget"/> is <see cref="TextTapTarget.Sentence"/>
     /// .</summary>
     public event EventHandler<TextTokenHit>? TokenTapped;
+
+    /// <summary>
+    /// Raised when highlighted text is held.
+    /// The hit matches <see cref="TapTarget"/>. That gesture does not also raise <see cref="TokenTapped"/>.
+    /// </summary>
+    public event EventHandler<TextTokenHit>? TokenLongPressed;
 
     public string Text
     {
@@ -182,6 +196,7 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
         _disposed = true;
         PaintSurface -= OnPaintSurface;
         Touch -= OnTouch;
+        EndPress();
         DisposeSkia();
     }
 
@@ -189,7 +204,10 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
     {
         base.OnHandlerChanged();
         if (Handler is null)
+        {
+            EndPress();
             DisposeSkia();
+        }
     }
 
     protected override Size MeasureOverride(double widthConstraint, double heightConstraint)
@@ -275,7 +293,7 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
         _contentWidth = placed.ContentWidth;
         _contentHeight = placed.ContentHeight;
         _layoutDirty = false;
-        _pressedWord = -1;
+        EndPress();
         PruneTags();
         ApplyDeclarativeHighlights(repaint: false);
     }
@@ -457,20 +475,26 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
         if (e.ActionType == SKTouchAction.Pressed)
         {
             _pressedWord = HitWord(e.Location);
+            _pressPoint = e.Location;
+            _longPressFired = false;
             // iOS ignores the rest of the touch unless the press is handled.
             e.Handled = _pressedWord >= 0;
+            ArmLongPress(_pressedWord);
             return;
         }
 
         if (e.ActionType == SKTouchAction.Moved)
         {
+            _pressPoint = e.Location;
+            if (_pressedWord >= 0 && !Hits(_pressedWord, e.Location))
+                CancelLongPress();
             e.Handled = _pressedWord >= 0;
             return;
         }
 
         if (e.ActionType is SKTouchAction.Cancelled or SKTouchAction.Exited)
         {
-            _pressedWord = -1;
+            EndPress();
             return;
         }
 
@@ -478,19 +502,67 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
             return;
 
         var pressed = _pressedWord;
-        _pressedWord = -1;
-        if (pressed < 0 || !Hits(pressed, e.Location))
+        var longPressed = _longPressFired;
+        EndPress();
+        if (longPressed || pressed < 0 || !Hits(pressed, e.Location))
+        {
+            e.Handled = longPressed;
             return;
+        }
 
         e.Handled = true;
         Activate(pressed);
     }
 
+    void ArmLongPress(int wordIndex)
+    {
+        CancelLongPress();
+        if (wordIndex < 0 || TokenLongPressed is null || Dispatcher is not { } dispatcher)
+            return;
+
+        _longPressWord = wordIndex;
+        var timer = dispatcher.CreateTimer();
+        timer.Interval = LongPressDuration;
+        timer.IsRepeating = false;
+        timer.Tick += OnLongPressTick;
+        _longPressTimer = timer;
+        timer.Start();
+    }
+
+    void OnLongPressTick(object? sender, EventArgs e)
+    {
+        var word = _longPressWord;
+        CancelLongPress();
+        if (word < 0 || word != _pressedWord || (uint)word >= (uint)_highlighted.Length)
+            return;
+        if (!Hits(word, _pressPoint) || !_highlighted[word])
+            return;
+
+        _longPressFired = true;
+        TokenLongPressed?.Invoke(this, CreateHit(word, SentenceIndex(word)));
+    }
+
+    void CancelLongPress()
+    {
+        if (_longPressTimer is null)
+            return;
+        _longPressTimer.Tick -= OnLongPressTick;
+        _longPressTimer.Stop();
+        _longPressTimer = null;
+        _longPressWord = -1;
+    }
+
+    void EndPress()
+    {
+        _pressedWord = -1;
+        _longPressFired = false;
+        CancelLongPress();
+    }
+
     void Activate(int wordIndex)
     {
-        var sentence = _sentences.FirstOrDefault(item => wordIndex >= item.FirstWord && wordIndex < item.FirstWord + item.WordCount);
-        var sentenceIndex = sentence.WordCount == 0 ? _words[wordIndex].SentenceIndex : sentence.Index;
-        
+        var sentenceIndex = SentenceIndex(wordIndex);
+
         if (ToggleHighlightOnTap)
         {
             if (TapTarget == TextTapTarget.Sentence && (uint)sentenceIndex < (uint)_sentences.Length)
@@ -501,6 +573,12 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
         }
 
         TokenTapped?.Invoke(this, CreateHit(wordIndex, sentenceIndex));
+    }
+
+    int SentenceIndex(int wordIndex)
+    {
+        var sentence = _sentences.FirstOrDefault(item => wordIndex >= item.FirstWord && wordIndex < item.FirstWord + item.WordCount);
+        return sentence.WordCount == 0 ? _words[wordIndex].SentenceIndex : sentence.Index;
     }
 
     void ToggleSentence(int sentenceIndex)

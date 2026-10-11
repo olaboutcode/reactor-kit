@@ -1,6 +1,6 @@
 namespace Reactor.Kit;
 
-/// <summary>The word or sentence under a tap.</summary>
+/// <summary>The word or sentence under a tap or a long-press.</summary>
 public sealed class TextTokenHit : EventArgs
 {
     internal TextTokenHit(

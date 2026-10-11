@@ -8,6 +8,8 @@ sealed class RichTextTestPage : Component<RichTextTestPage.PageState>
 
         public string Highlighted =>
             string.Join(' ', Sentences.OrderBy(pair => pair.Key).Select(pair => pair.Value));
+
+        public string LongPressed { get; set; } = "";
     }
 
     const string Verse =
@@ -31,6 +33,9 @@ sealed class RichTextTestPage : Component<RichTextTestPage.PageState>
                 Label(State.Sentences.Count == 0 ? "Tap a sentence" : State.Highlighted)
                     .FontSize(15)
                     .TextColor(Ink),
+                Label(State.LongPressed.Length == 0 ? "Long-press a highlighted sentence" : State.LongPressed)
+                    .FontSize(15)
+                    .TextColor(Ink),
                 RichTextView()
                     .Text(Verse)
                     .FontSize(16)
@@ -45,6 +50,7 @@ sealed class RichTextTestPage : Component<RichTextTestPage.PageState>
                         if (!s.Sentences.TryAdd(hit.SentenceIndex, hit.Text))
                             s.Sentences.Remove(hit.SentenceIndex);
                     }))
+                    .OnTokenLongPressed(hit => SetState(s => s.LongPressed = hit.Text))
             )
             .Padding(20)
             .Spacing(16)

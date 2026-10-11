@@ -126,7 +126,7 @@ GlazeView(Label("Title").Center())
 
 ### Rich text
 
-`RichTextView` draws paragraph text with SkiaSharp. A tap hits a word or a sentence. Highlights are rectangles behind the text. Characters the body font does not contain, including emoji and other writing systems, are taken from the system fonts. Each word is shaped, so connected scripts stay connected.
+`RichTextView` draws paragraph text with SkiaSharp. A tap hits a word or a sentence. A long-press on text that is already highlighted raises its own callback and leaves the highlight in place. Highlights are rectangles behind the text. Characters the body font does not contain, including emoji and other writing systems, are taken from the system fonts. Each word is shaped, so connected scripts stay connected.
 
 #### Properties
 
@@ -143,6 +143,7 @@ GlazeView(Label("Title").Center())
 | `HighlightedSentences` | none | Sentence indexes to paint. |
 | `HighlightedRanges` | none | Character ranges. A word is highlighted when it overlaps a range. |
 | `OnTokenTapped` | none | Receives the tapped word or sentence. |
+| `OnTokenLongPressed` | none | Receives highlighted text after a half-second hold. The tap does not also run. |
 
 ```csharp
 RichTextView()
@@ -152,6 +153,7 @@ RichTextView()
     .HighlightColor(Color.FromRgba(245, 196, 40, 120))
     .HighlightedSentences([0])
     .OnTokenTapped(hit => System.Diagnostics.Debug.WriteLine(hit.Text))
+    .OnTokenLongPressed(hit => System.Diagnostics.Debug.WriteLine(hit.Text))
 ```
 
 A new list with the same indexes keeps tap toggles. Set `ToggleHighlightOnTap(false)` and pass `HighlightedWords` when the page owns the highlights.

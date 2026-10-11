@@ -6,10 +6,12 @@ namespace Reactor.Kit;
 
 /// <summary>
 /// Skia text. Tap a word or sentence, and paint highlights behind the text.
+/// A long-press on highlighted text raises its own callback.
 /// </summary>
 public sealed class RichTextView : View<SKCanvasView>
 {
     Action<TextTokenHit>? _onTokenTapped;
+    Action<TextTokenHit>? _onTokenLongPressed;
 
     internal RichTextView(Action<SKCanvasView?>? componentRefAction = null)
         : base(componentRefAction)
@@ -82,6 +84,16 @@ public sealed class RichTextView : View<SKCanvasView>
         return this;
     }
 
+    /// <summary>
+    /// Called when highlighted text is held. The hit matches <see cref="TapTarget"/>.
+    /// That gesture does not also call <see cref="OnTokenTapped"/>.
+    /// </summary>
+    public RichTextView OnTokenLongPressed(Action<TextTokenHit> callback)
+    {
+        _onTokenLongPressed = callback;
+        return this;
+    }
+
     protected override void OnAttachNativeEvents()
     {
         if (NativeControl is NativeRichText canvas)
@@ -89,6 +101,10 @@ public sealed class RichTextView : View<SKCanvasView>
             canvas.TokenTapped -= OnNativeTokenTapped;
             if (_onTokenTapped is not null)
                 canvas.TokenTapped += OnNativeTokenTapped;
+
+            canvas.TokenLongPressed -= OnNativeTokenLongPressed;
+            if (_onTokenLongPressed is not null)
+                canvas.TokenLongPressed += OnNativeTokenLongPressed;
         }
 
         base.OnAttachNativeEvents();
@@ -97,10 +113,17 @@ public sealed class RichTextView : View<SKCanvasView>
     protected override void OnDetachNativeEvents()
     {
         if (NativeControl is NativeRichText canvas)
+        {
             canvas.TokenTapped -= OnNativeTokenTapped;
+            canvas.TokenLongPressed -= OnNativeTokenLongPressed;
+        }
+
         base.OnDetachNativeEvents();
     }
 
     void OnNativeTokenTapped(object? sender, TextTokenHit hit)
         => _onTokenTapped?.Invoke(hit);
+
+    void OnNativeTokenLongPressed(object? sender, TextTokenHit hit)
+        => _onTokenLongPressed?.Invoke(hit);
 }
