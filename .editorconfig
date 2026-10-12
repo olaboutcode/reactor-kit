@@ -46,3 +46,6 @@ dotnet_diagnostic.CA1010.severity = none
 
 [src/ReactorKit/MarkdownView.cs]
 dotnet_diagnostic.CA1010.severity = none
+
+[src/ReactorKit/ObjectView.cs]
+dotnet_diagnostic.CA1010.severity = none

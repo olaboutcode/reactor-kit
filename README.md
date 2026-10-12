@@ -22,6 +22,9 @@ A library of custom controls for [MauiReactor](https://github.com/adospace/react
   - [Markdown](#markdown)
     - [Properties](#properties-2)
     - [Supported platforms](#supported-platforms-2)
+  - [Object](#object)
+    - [Properties](#properties-3)
+    - [Supported platforms](#supported-platforms-3)
 - [Handlers](#handlers)
   - [BorderlessEntry](#borderlessentry)
   - [BorderlessEditor](#borderlesseditor)
@@ -75,10 +78,11 @@ GlazeView(panel => _panel = panel,
 
 ### Namespaces
 
-The namespace is `Reactor.Kit`. Rich text metrics and hits are in `Reactor.Kit.RichTextViewTokens`. Add these lines to the app's global usings.
+The namespace is `Reactor.Kit`. Rich text metrics and hits are in `Reactor.Kit.RichTextViewTokens`. Mesh and camera types are in `Reactor.Kit.ObjectViewTokens`. Add these lines to the app's global usings.
 
 ```csharp
 global using Reactor.Kit;
+global using Reactor.Kit.ObjectViewTokens;
 global using Reactor.Kit.RichTextViewTokens;
 global using static Reactor.Kit.Extensions;
 ```
@@ -224,6 +228,39 @@ MarkdownView()
 - Android 21+
 - Windows 10.0.17763+
 
+### Object
+
+`ObjectView` draws one rigid triangle mesh. Drag to orbit, pinch to zoom, and drag with two fingers to pan. `Color` is a tint multiplied over the mesh colors. A `.glb` path is a file on disk. A Maui asset name is not a path.
+
+#### Properties
+
+| Member | Default | Role |
+|---|---|---|
+| `Mesh` | empty | Triangle mesh. Copied when set. |
+| `Source` | empty | Filesystem path to a `.glb`. Ignored when `Mesh` is set. |
+| `Yaw` | `30` | Camera yaw around world up, in degrees. |
+| `Pitch` | `20` | Camera pitch, in degrees. |
+| `Distance` | unset | Camera distance. Unset frames the mesh. |
+| `Target` | unset | Look-at point. Unset uses the bounds center. |
+| `Rotation` | `0, 0, 0` | Root yaw, pitch, and roll, in degrees. |
+| `Scale` | `1` | Uniform scale about the mesh origin. |
+| `Color` | `#FFFFFF` | sRGB tint multiplied over the mesh. |
+| `Background` | transparent | Clear color. Does not tint the mesh. |
+| `Gestures` | `true` | Orbit, pinch zoom, and two-finger pan. |
+| `AutoRotate` | `false` | Advances yaw while the view is on screen. |
+
+```csharp
+ObjectView()
+    .Mesh(Mesh.Sphere(1f, slices: 48, stacks: 32))
+    .Color(Color.FromArgb("#C8C2B8"))
+```
+
+#### Supported platforms
+
+- iOS 15+
+- Mac Catalyst 17+
+- Android 21+
+
 ## Handlers
 
 List of available handlers.
@@ -250,7 +287,7 @@ builder
 
 ## Samples
 
-`samples/KitTests` is a MauiReactor app for the controls. The glaze page scrolls text behind a top bar, a round button, a button, cards, and entries, and it can switch the page between light and dark. Text opens `RichTextTestPage`. Markdown opens `MarkdownTestPage`. Reading opens `ReadingTestPage`.
+`samples/KitTests` is a MauiReactor app for the controls. The glaze page scrolls text behind a top bar, a round button, a button, cards, and entries, and it can switch the page between light and dark. Text opens `RichTextTestPage`. Markdown opens `MarkdownTestPage`. Reading opens `ReadingTestPage`. Object opens `ObjectTestPage`.
 
 ## Building
 

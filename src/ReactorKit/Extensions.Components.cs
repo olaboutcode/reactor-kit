@@ -84,4 +84,17 @@ public static partial class Extensions
     /// </summary>
     public static MarkdownView MarkdownView(Action<SKCanvasView?> refAction, string markdown)
         => new MarkdownView(refAction).Markdown(markdown);
+
+    /// <summary>
+    /// One rigid mesh. Drag to orbit it.
+    /// </summary>
+    public static ObjectView ObjectView()
+        => new(componentRefAction: null);
+
+    /// <summary>
+    /// Same view as <see cref="ObjectView()"/>.
+    /// The callback receives the mounted view, and null when it unmounts.
+    /// </summary>
+    public static ObjectView ObjectView(Action<Microsoft.Maui.Controls.View?> refAction)
+        => new(refAction);
 }

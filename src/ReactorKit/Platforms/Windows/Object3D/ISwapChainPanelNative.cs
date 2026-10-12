@@ -1,0 +1,12 @@
+using System.Runtime.InteropServices;
+
+namespace Reactor.Kit.Internals.Object3D;
+
+[ComImport]
+[Guid("63aad0b8-7c24-40ff-85a8-640d944cc325")]
+[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+interface ISwapChainPanelNative
+{
+    [PreserveSig]
+    int SetSwapChain(IntPtr swapChain);
+}
