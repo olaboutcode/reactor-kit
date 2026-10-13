@@ -42,7 +42,7 @@ Reactor.Kit is meant to work in a MauiReactor app.
 dotnet add package Reactor.Kit --prerelease
 ```
 
-The package id is `Reactor.Kit`. The version in this repo is `0.1.0-alpha.2`. The package is not on NuGet yet. Until it is, reference `src/ReactorKit/ReactorKit.csproj`, or run `samples/KitTests`.
+The package id is `Reactor.Kit`. The version in this repo is `0.1.0-alpha.3`. The package is not on NuGet yet. Until it is, reference `src/ReactorKit/ReactorKit.csproj`, or run `samples/KitTests`.
 
 ### Example
 
@@ -260,7 +260,7 @@ dotnet build ReactorKit.slnx
 
 Package versions are centralized in `Directory.Packages.props`.
 
-CI builds `net10.0` and `net10.0-android` on Ubuntu and `net10.0-ios` on macOS. A tag such as `v0.1.0-alpha.3` packs on macOS and publishes `Reactor.Kit` to NuGet and GitHub Packages.
+CI builds `net10.0` and `net10.0-android` on Ubuntu and `net10.0-ios` on macOS. A tag such as `v0.1.0-alpha.4` packs on macOS and publishes `Reactor.Kit` to NuGet and GitHub Packages.
 
 ## License
 
