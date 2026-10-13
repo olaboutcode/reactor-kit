@@ -10,35 +10,71 @@ sealed class ModelTestPage : Component<ModelTestPage.PageState>
         public string? Path { get; set; }
 
         public string Note { get; set; } = "Opening the microscope";
+
+        public double ScreenHeight { get; set; }
     }
 
     public override VisualNode Render()
         => ContentPage("Model",
-            VStack(
-                State.Path is null
-                    ? Label(State.Note)
-                        .TextColor(Paper)
-                        .FontSize(15)
-                        .Margin(16)
-                    : ObjectView()
-                        .Source(State.Path)
-                        .Background(Colors.LightBlue)
-                        .HeightRequest(400)
-                        .HFill(),
-                Label("Industrial Microscope by Lukas Walzer, Poly Haven (CC0). Drag to orbit.")
+            Grid("auto,*", "*",
+                Button("Close", Close)
                     .TextColor(Paper)
-                    .FontSize(13)
-                    .Margin(16, 12)
+                    .BackgroundColor(Ink)
+                    .FontSize(15)
+                    .CornerRadius(16)
+                    .Height(36)
+                    .Padding(14, 0)
+                    .HStart(),
+
+                VStack(
+                    State.Path is null
+                        ? Label(State.Note)
+                            .TextColor(Paper)
+                            .FontSize(15)
+                            .Margin(16)
+                        : ObjectView()
+                            .Source(State.Path)
+                            .Background(Colors.LightBlue)
+                            .HeightRequest(State.ScreenHeight * 0.7) 
+                            .HFill(),
+                    Label("Industrial Microscope by Lukas Walzer, Poly Haven (CC0). Drag to orbit.")
+                        .TextColor(Paper)
+                        .FontSize(13)
+                        .Margin(16, 12)
+                )
+                .Spacing(0)
+                .GridRow(1)
             )
-            .Spacing(0)
         )
         .BackgroundColor(Ink);
 
     protected override void OnMounted()
     {
         base.OnMounted();
+
+        DeviceDisplay.Current.MainDisplayInfoChanged += OnDisplayInfoChanged;
+        UpdateDimensions();
+
         _ = Open();
     }
+
+    protected override void OnWillUnmount()
+    {
+        DeviceDisplay.Current.MainDisplayInfoChanged -= OnDisplayInfoChanged;
+        base.OnWillUnmount();
+    }
+
+    void OnDisplayInfoChanged(object? sender, DisplayInfoChangedEventArgs e)
+        => UpdateDimensions();
+
+    void UpdateDimensions()
+    {
+        var displayInfo = DeviceDisplay.Current.MainDisplayInfo;
+        double calculatedHeight = displayInfo.Height / displayInfo.Density;
+        SetState(s => s.ScreenHeight = calculatedHeight);
+    }
+
+    void Close() => _ = Navigation?.PopModalAsync();
 
     // Source wants a filesystem path. A packaged asset does not have one.
     async Task Open()
