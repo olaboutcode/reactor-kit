@@ -5,7 +5,6 @@ using Android.Opengl;
 using Android.OS;
 using Android.Views;
 using Java.Nio;
-using Reactor.Kit;
 using AContext = Android.Content.Context;
 using ObjectMesh = Reactor.Kit.ObjectViewTokens.Mesh;
 

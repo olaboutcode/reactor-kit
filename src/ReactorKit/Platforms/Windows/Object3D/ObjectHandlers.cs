@@ -1,5 +1,3 @@
-using Reactor.Kit;
-
 namespace Reactor.Kit.Internals.Object3D;
 
 static partial class ObjectHandlers

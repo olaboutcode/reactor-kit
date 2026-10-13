@@ -1,15 +1,14 @@
 using System.Runtime.ExceptionServices;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Storage;
-using Reactor.Kit.Internals.Object3D;
 using Reactor.Kit.ObjectViewTokens;
 
-namespace Reactor.Kit;
+namespace Reactor.Kit.Internals.Object3D;
 
 /// <summary>
 /// One lit mesh. The platform handler draws it.
 /// </summary>
-public sealed class Object3DSurface : Microsoft.Maui.Controls.View
+internal sealed class Object3DSurface : ContentView
 {
     public static readonly BindableProperty MeshProperty = BindableProperty.Create(
         nameof(Mesh), typeof(Mesh), typeof(Object3DSurface), null, propertyChanged: OnChanged);

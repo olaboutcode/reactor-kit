@@ -3,7 +3,6 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
-using Reactor.Kit;
 using Reactor.Kit.ObjectViewTokens;
 using Vortice.D3DCompiler;
 using Vortice.Direct3D;

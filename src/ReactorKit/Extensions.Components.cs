@@ -93,8 +93,8 @@ public static partial class Extensions
 
     /// <summary>
     /// Same view as <see cref="Object3DView()"/>.
-    /// The callback receives the mounted view, and null when it unmounts.
+    /// The callback receives the mounted element, and null when it unmounts.
     /// </summary>
-    public static Object3DView Object3DView(Action<Microsoft.Maui.Controls.View?> refAction)
+    public static Object3DView Object3DView(Action<MauiContentView?> refAction)
         => new(refAction);
 }
