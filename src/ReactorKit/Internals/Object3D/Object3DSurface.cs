@@ -1,7 +1,7 @@
 using System.Runtime.ExceptionServices;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Storage;
-using Reactor.Kit.ObjectViewTokens;
+using Reactor.Kit.Object3DViewTokens;
 
 namespace Reactor.Kit.Internals.Object3D;
 

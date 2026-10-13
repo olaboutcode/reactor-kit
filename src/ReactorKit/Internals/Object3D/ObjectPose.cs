@@ -1,5 +1,5 @@
 using System.Numerics;
-using Reactor.Kit.ObjectViewTokens;
+using Reactor.Kit.Object3DViewTokens;
 
 namespace Reactor.Kit.Internals.Object3D;
 

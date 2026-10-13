@@ -1,7 +1,7 @@
 using System.Numerics;
 using Reactor.Kit.Internals.Object3D;
 
-namespace Reactor.Kit.ObjectViewTokens;
+namespace Reactor.Kit.Object3DViewTokens;
 
 /// <summary>
 /// One rigid triangle mesh. The view copies the arrays it is given.

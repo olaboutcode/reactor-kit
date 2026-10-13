@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace Reactor.Kit.ObjectViewTokens;
+namespace Reactor.Kit.Object3DViewTokens;
 
 /// <summary>
 /// Settled camera pose, in degrees and mesh units.

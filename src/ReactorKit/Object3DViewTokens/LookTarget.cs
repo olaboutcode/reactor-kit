@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace Reactor.Kit.ObjectViewTokens;
+namespace Reactor.Kit.Object3DViewTokens;
 
 /// <summary>
 /// Look-at point in mesh units. NaN components mean the bounds center.

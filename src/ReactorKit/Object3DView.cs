@@ -1,6 +1,6 @@
 using MauiReactor;
 using Reactor.Kit.Internals.Object3D;
-using Reactor.Kit.ObjectViewTokens;
+using Reactor.Kit.Object3DViewTokens;
 using MauiContentView = Microsoft.Maui.Controls.ContentView;
 using NativeObject = Reactor.Kit.Internals.Object3D.Object3DSurface;
 
