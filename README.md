@@ -230,14 +230,15 @@ MarkdownView()
 
 ### Object
 
-`ObjectView` draws one rigid triangle mesh. A `.glb` includes every mesh in its default scene. Drag to orbit, pinch to zoom, and drag with two fingers to pan. `Color` is a tint multiplied over the mesh colors, including a `.glb` base-color image. `alphaMode` `MASK` cuts texels away, and `doubleSided` draws both faces. Metallic, roughness, normal maps, and blended transparency are not read. A `.glb` path is a file on disk. A Maui asset name is not a path.
+`ObjectView` draws one rigid triangle mesh. A `.glb` includes every mesh in its default scene. Drag to orbit, pinch to zoom, and drag with two fingers to pan. `Color` is a tint multiplied over the mesh colors, including a `.glb` base-color image. `alphaMode` `MASK` cuts texels away, and `doubleSided` draws both faces. Metallic, roughness, normal maps, and blended transparency are not read. `Source` is a file path. The view reads that file and checks the glTF 2.0 header. A missing file throws the IO exception from the read. A file that is not a `.glb` throws `InvalidDataException`. `PackagedSource` is a Maui asset name and wins over `Source`. `Mesh` wins over both. A missing packaged asset, or one that is not a `.glb`, throws on the UI thread.
 
 #### Properties
 
 | Member | Default | Role |
 |---|---|---|
 | `Mesh` | empty | Triangle mesh. Copied when set. |
-| `Source` | empty | Filesystem path to a `.glb`. Ignored when `Mesh` is set. |
+| `Source` | empty | Filesystem path to a `.glb`. Ignored when `Mesh` or `PackagedSource` is set. A missing file or a non-glb throws. |
+| `PackagedSource` | empty | Maui asset name of a `.glb`. Ignored when `Mesh` is set. A missing asset or a non-glb throws on the UI thread. |
 | `Yaw` | `30` | Camera yaw around world up, in degrees. |
 | `Pitch` | `20` | Camera pitch, in degrees. |
 | `Distance` | unset | Camera distance. Unset frames the mesh. |
@@ -287,7 +288,7 @@ builder
 
 ## Samples
 
-`samples/KitTests` is a MauiReactor app for the controls. The glaze page scrolls text behind a top bar, a round button, a button, cards, and entries, and it can switch the page between light and dark. Text opens `RichTextTestPage`. Markdown opens `MarkdownTestPage`. Reading opens `ReadingTestPage`. Object opens `ObjectTestPage`. Model opens `ModelTestPage`, which copies `Resources/Raw/industrial_microscope.glb` to a file path and passes that path to `Source`.
+`samples/KitTests` is a MauiReactor app for the controls. The glaze page scrolls text behind a top bar, a round button, a button, cards, and entries, and it can switch the page between light and dark. Text opens `RichTextTestPage`. Markdown opens `MarkdownTestPage`. Reading opens `ReadingTestPage`. Object opens `ObjectTestPage`. Model opens `ModelTestPage`, which passes the packaged `industrial_microscope.glb` to `PackagedSource`.
 
 ## Building
 

@@ -10,6 +10,7 @@ sealed class ObjectViewHandler : ViewHandler<ObjectSurface, ObjectPlatformView>
         {
             [nameof(ObjectSurface.Mesh)] = MapPose,
             [nameof(ObjectSurface.Source)] = MapPose,
+            [nameof(ObjectSurface.PackagedSource)] = MapPose,
             [nameof(ObjectSurface.Yaw)] = MapPose,
             [nameof(ObjectSurface.Pitch)] = MapPose,
             [nameof(ObjectSurface.Distance)] = MapPose,

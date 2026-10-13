@@ -30,14 +30,29 @@ public sealed class ObjectView : View<ObjectSurface>
         => this.Set(ObjectSurface.MeshProperty, new PropertyValue<Mesh>(mesh, state));
 
     /// <summary>
-    /// Filesystem path to a .glb. Ignored when <see cref="Mesh(Mesh)"/> is set.
-    /// A Maui asset name is not a path. An unsupported file draws nothing.
+    /// Filesystem path to a .glb. Ignored when <see cref="Mesh(Mesh)"/> or <see cref="PackagedSource(string)"/> is set.
+    /// A Maui asset name is not a path. The file is read when the path is set.
+    /// A missing file throws the IO exception from that read.
+    /// A file that is not a glTF 2.0 .glb throws <see cref="InvalidDataException"/>.
     /// </summary>
     public ObjectView Source(string path)
         => this.Set(ObjectSurface.SourceProperty, path);
 
     public ObjectView Source(Func<string> path, IComponentWithState? state = null)
         => this.Set(ObjectSurface.SourceProperty, new PropertyValue<string>(path, state));
+
+    /// <summary>
+    /// Maui package asset name of a .glb, such as <c>industrial_microscope.glb</c>.
+    /// Ignored when <see cref="Mesh(Mesh)"/> is set. Wins over <see cref="Source(string)"/>.
+    /// The read starts when the name is set. A missing asset throws <see cref="FileNotFoundException"/> on the UI thread.
+    /// A file that is not a glTF 2.0 .glb throws <see cref="InvalidDataException"/> on the UI thread.
+    /// An image file beside the asset is not read. Images inside the .glb are.
+    /// </summary>
+    public ObjectView PackagedSource(string name)
+        => this.Set(ObjectSurface.PackagedSourceProperty, name);
+
+    public ObjectView PackagedSource(Func<string> name, IComponentWithState? state = null)
+        => this.Set(ObjectSurface.PackagedSourceProperty, new PropertyValue<string>(name, state));
 
     public ObjectView Yaw(double degrees)
         => this.Set(ObjectSurface.YawProperty, degrees);

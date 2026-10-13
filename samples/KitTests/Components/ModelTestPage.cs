@@ -7,10 +7,6 @@ sealed class ModelTestPage : Component<ModelTestPage.PageState>
 
     internal sealed class PageState
     {
-        public string? Path { get; set; }
-
-        public string Note { get; set; } = "Opening the microscope";
-
         public double ScreenHeight { get; set; }
     }
 
@@ -27,21 +23,17 @@ sealed class ModelTestPage : Component<ModelTestPage.PageState>
                     .HStart(),
 
                 VStack(
-                    State.Path is null
-                        ? Label(State.Note)
-                            .TextColor(Paper)
-                            .FontSize(15)
-                            .Margin(16)
-                        : ObjectView()
-                            .Source(State.Path)
-                            .Background(Colors.LightBlue)
-                            .HeightRequest(State.ScreenHeight * 0.7) 
-                            .HFill(),
+                    ObjectView()
+                        .PackagedSource("industrial_microscope.glb")
+                        .Background(Ink)
+                        .HeightRequest(State.ScreenHeight * 0.7)
+                        .HFill(),
                     Label("Industrial Microscope by Lukas Walzer, Poly Haven (CC0). Drag to orbit.")
                         .TextColor(Paper)
                         .FontSize(13)
-                        .Margin(16, 12)
+                        .Margin(0,16)
                 )
+                .Padding(16,0)
                 .Spacing(0)
                 .GridRow(1)
             )
@@ -54,8 +46,6 @@ sealed class ModelTestPage : Component<ModelTestPage.PageState>
 
         DeviceDisplay.Current.MainDisplayInfoChanged += OnDisplayInfoChanged;
         UpdateDimensions();
-
-        _ = Open();
     }
 
     protected override void OnWillUnmount()
@@ -75,36 +65,4 @@ sealed class ModelTestPage : Component<ModelTestPage.PageState>
     }
 
     void Close() => _ = Navigation?.PopModalAsync();
-
-    // Source wants a filesystem path. A packaged asset does not have one.
-    async Task Open()
-    {
-        try
-        {
-            var path = System.IO.Path.Combine(FileSystem.CacheDirectory, "industrial_microscope.glb");
-            var source = await FileSystem.OpenAppPackageFileAsync("industrial_microscope.glb").ConfigureAwait(false);
-            try
-            {
-                var target = File.Create(path);
-                try
-                {
-                    await source.CopyToAsync(target).ConfigureAwait(false);
-                }
-                finally
-                {
-                    await target.DisposeAsync().ConfigureAwait(false);
-                }
-            }
-            finally
-            {
-                await source.DisposeAsync().ConfigureAwait(false);
-            }
-
-            MainThread.BeginInvokeOnMainThread(() => SetState(s => s.Path = path));
-        }
-        catch (Exception ex) when (ex is IOException or FileNotFoundException or UnauthorizedAccessException)
-        {
-            MainThread.BeginInvokeOnMainThread(() => SetState(s => s.Note = "The microscope file did not open."));
-        }
-    }
 }

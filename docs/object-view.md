@@ -14,6 +14,10 @@ Setting `Color` on a loaded file tints every part of that file.
 
 ## File colors
 
+`Source` is a filesystem path. The view reads that file when the path is set. A missing file throws the IO exception from the read. A file that is not a glTF 2.0 `.glb`, or a `.glb` with no readable triangle mesh, throws `InvalidDataException`. A bad base-color image still leaves that group white.
+
+`PackagedSource` is a Maui asset name. `Mesh` wins over it, and it wins over `Source`. The view reads the asset after the name is set and throws on the UI thread if the asset is missing or is not a glTF 2.0 `.glb`. Images inside that file are read. An image that is a separate file beside the asset is not.
+
 A `.glb` is drawn as one rigid mesh. Every mesh in the default scene is included, and each node's transform is baked in. A group is the primitives that share a `baseColorFactor`, a `baseColorTexture`, an alpha mode, and `doubleSided`. A factor is already linear. RGB is the group color. A missing factor is white.
 
 The page tint is converted from sRGB to linear. The base-color image is stored as sRGB and sampled in linear. A missing image samples white. JPEG and PNG are read from the `.glb`, from a `data:` URI, or from a file next to the `.glb`. The mesh uses `TEXCOORD_0`.

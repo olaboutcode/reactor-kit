@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
@@ -19,49 +20,46 @@ static class GlbReader
 
     public static Mesh Read(string path)
     {
-        try
-        {
-            var directory = Path.GetDirectoryName(Path.GetFullPath(path));
-            return ReadBytes(File.ReadAllBytes(path), directory);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException
-            or JsonException or InvalidDataException or OverflowException or IndexOutOfRangeException
-            or FormatException or InvalidOperationException or NotSupportedException)
-        {
-            return Mesh.Empty;
-        }
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        var full = Path.GetFullPath(path);
+        return ReadBytes(File.ReadAllBytes(full), Path.GetDirectoryName(full), full);
     }
 
-    static Mesh ReadBytes(byte[] bytes, string? directory)
+    public static Mesh Read(byte[] bytes, string name)
     {
-        if (bytes.Length < 20 || BinaryPrimitives.ReadUInt32LittleEndian(bytes) != Magic)
-            return Mesh.Empty;
-        if (BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(4)) != 2)
-            return Mesh.Empty;
+        ArgumentNullException.ThrowIfNull(bytes);
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        return ReadBytes(bytes, null, name);
+    }
 
-        var jsonLength = (int)BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(12));
+    static Mesh ReadBytes(byte[] bytes, string? directory, string path)
+    {
+        if (bytes.Length < 12 || BinaryPrimitives.ReadUInt32LittleEndian(bytes) != Magic)
+            Invalid(path, "is not a glb.");
+
+        var version = BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(4));
+        if (version != 2)
+            Invalid(path, $"is glTF {version}. ObjectView reads glTF 2.0.");
+
+        if (bytes.Length < 20)
+            Invalid(path, "is truncated. The JSON chunk header is missing.");
+
+        var jsonLength = BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(12));
         var jsonType = BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(16));
-        if (jsonType != JsonChunk || 20 + jsonLength > bytes.Length)
-            return Mesh.Empty;
+        if (jsonType != JsonChunk || jsonLength == 0 || 20L + jsonLength > bytes.Length)
+            Invalid(path, "is not a glb. The JSON chunk is missing or truncated.");
 
-        var binStart = 20 + jsonLength;
-        ReadOnlySpan<byte> bin = [];
-        if (binStart + 8 <= bytes.Length && BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(binStart + 4)) == BinChunk)
-        {
-            var binLength = (int)BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(binStart));
-            var data = binStart + 8;
-            if (data + binLength <= bytes.Length)
-                bin = bytes.AsSpan(data, binLength);
-        }
-
-        using var document = JsonDocument.Parse(bytes.AsMemory(20, jsonLength));
+        var bin = BinaryChunk(bytes, 20 + (int)jsonLength, path);
+        using var document = JsonDocument.Parse(bytes.AsMemory(20, (int)jsonLength));
         var root = document.RootElement;
-        if (!root.TryGetProperty("nodes", out var nodes) || !root.TryGetProperty("meshes", out var meshes))
-            return Mesh.Empty;
+        if (!root.TryGetProperty("nodes", out var nodes) || nodes.ValueKind != JsonValueKind.Array)
+            Invalid(path, "has no nodes or meshes.");
+        if (!root.TryGetProperty("meshes", out var meshes) || meshes.ValueKind != JsonValueKind.Array)
+            Invalid(path, "has no nodes or meshes.");
 
         var sceneNodes = SceneNodes(root);
         if (sceneNodes.ValueKind != JsonValueKind.Array)
-            return Mesh.Empty;
+            Invalid(path, "has no default scene.");
 
         var buckets = new List<Bucket>();
         var images = new GlbImages.Cache();
@@ -81,8 +79,29 @@ static class GlbReader
                 visiting);
         }
 
-        return Combine(buckets, images);
+        return Combine(buckets, images, path);
     }
+
+    static ReadOnlySpan<byte> BinaryChunk(byte[] bytes, int start, string path)
+    {
+        if (start + 8 > bytes.Length)
+            return [];
+
+        var length = BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(start));
+        var type = BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(start + 4));
+        if (type != BinChunk)
+            return [];
+
+        var data = start + 8;
+        if (length > int.MaxValue || (long)data + length > bytes.Length)
+            Invalid(path, "is truncated. The binary chunk is shorter than its header.");
+
+        return bytes.AsSpan(data, (int)length);
+    }
+
+    [DoesNotReturn]
+    static void Invalid(string path, string reason)
+        => throw new InvalidDataException($"'{path}' {reason}");
 
     static JsonElement SceneNodes(JsonElement root)
     {
@@ -348,11 +367,8 @@ static class GlbReader
             && bucket.Surface.Masked == surface.Masked
             && bucket.Surface.DoubleSided == surface.DoubleSided;
 
-    static Mesh Combine(List<Bucket> buckets, GlbImages.Cache images)
+    static Mesh Combine(List<Bucket> buckets, GlbImages.Cache images, string path)
     {
-        if (buckets.Count == 0)
-            return Mesh.Empty;
-
         var vertexCount = 0;
         var indexCount = 0;
         foreach (var bucket in buckets)
@@ -361,8 +377,12 @@ static class GlbReader
             indexCount += bucket.Indices.Count;
         }
 
-        if (vertexCount == 0 || indexCount == 0 || vertexCount > Mesh.MaxVertices || indexCount > Mesh.MaxIndices)
-            return Mesh.Empty;
+        if (vertexCount == 0 || indexCount == 0)
+            Invalid(path, "has no readable triangle mesh in the default scene.");
+        if (vertexCount > Mesh.MaxVertices)
+            Invalid(path, $"has {vertexCount} vertices. ObjectView draws at most {Mesh.MaxVertices}.");
+        if (indexCount > Mesh.MaxIndices)
+            Invalid(path, $"has {indexCount} indices. ObjectView draws at most {Mesh.MaxIndices}.");
 
         var interleaved = new float[vertexCount * Mesh.FloatsPerVertex];
         var indices = new int[indexCount];

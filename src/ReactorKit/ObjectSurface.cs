@@ -1,3 +1,6 @@
+using System.Runtime.ExceptionServices;
+using Microsoft.Maui.ApplicationModel;
+using Microsoft.Maui.Storage;
 using Reactor.Kit.Internals.Object3D;
 using Reactor.Kit.ObjectViewTokens;
 
@@ -13,6 +16,9 @@ public sealed class ObjectSurface : Microsoft.Maui.Controls.View
 
     public static readonly BindableProperty SourceProperty = BindableProperty.Create(
         nameof(Source), typeof(string), typeof(ObjectSurface), null, propertyChanged: OnChanged);
+
+    public static readonly BindableProperty PackagedSourceProperty = BindableProperty.Create(
+        nameof(PackagedSource), typeof(string), typeof(ObjectSurface), null, propertyChanged: OnChanged);
 
     public static readonly BindableProperty YawProperty = BindableProperty.Create(
         nameof(Yaw), typeof(double), typeof(ObjectSurface), 30d, propertyChanged: OnChanged);
@@ -47,6 +53,10 @@ public sealed class ObjectSurface : Microsoft.Maui.Controls.View
     readonly ObjectPose _pose = new();
     Mesh? _sourceMesh;
     string? _sourceLoaded;
+    Mesh? _packageMesh;
+    string? _packageRequested;
+    string? _packageLoaded;
+    int _packageGeneration;
 
     public ObjectSurface()
     {
@@ -65,6 +75,12 @@ public sealed class ObjectSurface : Microsoft.Maui.Controls.View
     {
         get => (string?)GetValue(SourceProperty);
         set => SetValue(SourceProperty, value);
+    }
+
+    public string? PackagedSource
+    {
+        get => (string?)GetValue(PackagedSourceProperty);
+        set => SetValue(PackagedSourceProperty, value);
     }
 
     public double Yaw
@@ -140,6 +156,11 @@ public sealed class ObjectSurface : Microsoft.Maui.Controls.View
         {
             _pose.SetMesh(mesh);
         }
+        else if (!string.IsNullOrWhiteSpace(PackagedSource))
+        {
+            EnsurePackage(PackagedSource);
+            _pose.SetMesh(_packageMesh ?? Mesh.Empty);
+        }
         else if (!string.IsNullOrEmpty(Source))
         {
             if (_sourceMesh is null || !string.Equals(Source, _sourceLoaded, StringComparison.Ordinal))
@@ -165,6 +186,70 @@ public sealed class ObjectSurface : Microsoft.Maui.Controls.View
         _pose.SetClear(ClearColor.Red, ClearColor.Green, ClearColor.Blue, ClearColor.Alpha);
         _pose.SetGestures(Gestures);
         _pose.SetAutoRotate(AutoRotate);
+    }
+
+    void EnsurePackage(string name)
+    {
+        if (string.Equals(name, _packageLoaded, StringComparison.Ordinal) && _packageMesh is not null)
+            return;
+
+        if (string.Equals(name, _packageRequested, StringComparison.Ordinal))
+            return;
+
+        _packageRequested = name;
+        _packageLoaded = null;
+        _packageMesh = null;
+        var generation = ++_packageGeneration;
+        _ = ReadPackage(name, generation);
+    }
+
+    async Task ReadPackage(string name, int generation)
+    {
+        try
+        {
+            var bytes = await ReadAsset(name).ConfigureAwait(false);
+            var mesh = GlbReader.Read(bytes, name);
+            MainThread.BeginInvokeOnMainThread(() => ApplyPackage(name, generation, mesh, null));
+        }
+        catch (Exception ex)
+        {
+            MainThread.BeginInvokeOnMainThread(() => ApplyPackage(name, generation, null, ex));
+        }
+    }
+
+    static async Task<byte[]> ReadAsset(string name)
+    {
+        var stream = await FileSystem.OpenAppPackageFileAsync(name).ConfigureAwait(false);
+        try
+        {
+            using var buffer = new MemoryStream();
+            await stream.CopyToAsync(buffer).ConfigureAwait(false);
+            return buffer.ToArray();
+        }
+        finally
+        {
+            await stream.DisposeAsync().ConfigureAwait(false);
+        }
+    }
+
+    void ApplyPackage(string name, int generation, Mesh? mesh, Exception? error)
+    {
+        if (generation != _packageGeneration || !string.Equals(PackagedSource, name, StringComparison.Ordinal))
+            return;
+
+        if (error is not null)
+        {
+            _packageRequested = null;
+            if (Mesh is null)
+                ExceptionDispatchInfo.Capture(error).Throw();
+
+            return;
+        }
+
+        _packageMesh = mesh;
+        _packageLoaded = name;
+        if (Mesh is null)
+            Push();
     }
 
     static void OnChanged(BindableObject bindable, object oldValue, object newValue)
