@@ -42,8 +42,6 @@ Reactor.Kit is meant to work in a MauiReactor app.
 dotnet add package Reactor.Kit --prerelease
 ```
 
-The package id is `Reactor.Kit`. The version in this repo is `0.1.0-alpha.3`. The package is not on NuGet yet. Until it is, reference `src/ReactorKit/ReactorKit.csproj`, or run `samples/KitTests`.
-
 ### Example
 
 Call `UseReactorKit()` at startup, then build the panel with `GlazeView`.
