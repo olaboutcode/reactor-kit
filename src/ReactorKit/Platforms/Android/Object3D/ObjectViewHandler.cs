@@ -20,6 +20,8 @@ sealed class ObjectViewHandler : ViewHandler<Object3DSurface, ObjectPlatformView
             [nameof(Object3DSurface.ClearColor)] = MapPose,
             [nameof(Object3DSurface.Gestures)] = MapPose,
             [nameof(Object3DSurface.AutoRotate)] = MapPose,
+            // TextureView throws from setBackgroundDrawable. The clear color is drawn by GL.
+            [nameof(Microsoft.Maui.IView.Background)] = static (_, _) => { },
         };
 
     public ObjectViewHandler()
