@@ -230,7 +230,7 @@ MarkdownView()
 
 ### Object
 
-`ObjectView` draws one rigid triangle mesh. Drag to orbit, pinch to zoom, and drag with two fingers to pan. `Color` is a tint multiplied over the mesh colors, including a `.glb` base-color image. Metallic, roughness, and normal maps are not read. A `.glb` path is a file on disk. A Maui asset name is not a path.
+`ObjectView` draws one rigid triangle mesh. A `.glb` includes every mesh in its default scene. Drag to orbit, pinch to zoom, and drag with two fingers to pan. `Color` is a tint multiplied over the mesh colors, including a `.glb` base-color image. `alphaMode` `MASK` cuts texels away, and `doubleSided` draws both faces. Metallic, roughness, normal maps, and blended transparency are not read. A `.glb` path is a file on disk. A Maui asset name is not a path.
 
 #### Properties
 

@@ -23,6 +23,7 @@ sealed class ObjectPlatformView : SwapChainPanel
             float4x4 modelView;
             float4 tint;
             float4 groupColor;
+            float4 surface;
         };
 
         Texture2D albedoTex : register(t0);
@@ -42,6 +43,14 @@ sealed class ObjectPlatformView : SwapChainPanel
             float2 uv : TEXCOORD0;
         };
 
+        struct PixelIn
+        {
+            float4 position : SV_Position;
+            float3 normal : NORMAL;
+            float2 uv : TEXCOORD0;
+            bool front : SV_IsFrontFace;
+        };
+
         VertexOut object_vertex(VertexIn input)
         {
             VertexOut output;
@@ -51,15 +60,20 @@ sealed class ObjectPlatformView : SwapChainPanel
             return output;
         }
 
-        float4 object_fragment(VertexOut input) : SV_Target
+        float4 object_fragment(PixelIn input) : SV_Target
         {
+            float4 texel = albedoTex.Sample(albedoSampler, input.uv);
+            float alpha = texel.a * groupColor.a;
+            if (surface.y > 0.5 && alpha < surface.x)
+                discard;
             float3 normal = normalize(input.normal);
+            if (surface.z > 0.5 && !input.front)
+                normal = -normal;
             float3 lightDir = normalize(float3(0.4, 0.8, 0.6));
             float ndotl = saturate(dot(normal, lightDir));
             float3 halfVector = normalize(lightDir + float3(0.0, 0.0, 1.0));
             float specular = pow(saturate(dot(normal, halfVector)), 32.0) * 0.25;
-            float3 texel = albedoTex.Sample(albedoSampler, input.uv).rgb;
-            float3 albedo = texel * tint.rgb * groupColor.rgb;
+            float3 albedo = texel.rgb * tint.rgb * groupColor.rgb;
             return float4(albedo * (0.25 + 0.75 * ndotl) + specular, 1.0);
         }
         """;
@@ -79,6 +93,7 @@ sealed class ObjectPlatformView : SwapChainPanel
     ID3D11PixelShader? _pixelShader;
     ID3D11InputLayout? _layout;
     ID3D11RasterizerState? _raster;
+    ID3D11RasterizerState? _rasterNone;
     ID3D11DepthStencilState? _depthState;
     ID3D11Buffer? _vertices;
     ID3D11Buffer? _indices;
@@ -348,7 +363,7 @@ sealed class ObjectPlatformView : SwapChainPanel
     void DrawMesh(ObjectDraw draw)
     {
         if (_context is null || _layout is null || _vertexShader is null || _pixelShader is null
-            || _raster is null || _depthState is null || _constants is null || _sampler is null)
+            || _raster is null || _rasterNone is null || _depthState is null || _constants is null || _sampler is null)
             return;
 
         EnsureBuffers(draw);
@@ -363,7 +378,6 @@ sealed class ObjectPlatformView : SwapChainPanel
         _context.PSSetShader(_pixelShader);
         _context.VSSetConstantBuffers(0, [_constants]);
         _context.PSSetConstantBuffers(0, [_constants]);
-        _context.RSSetState(_raster);
         _context.OMSetDepthStencilState(_depthState);
         _context.PSSetSamplers(0, [_sampler]);
         foreach (var group in draw.Mesh.Groups)
@@ -375,8 +389,9 @@ sealed class ObjectPlatformView : SwapChainPanel
             if (view is null)
                 continue;
 
+            _context.RSSetState(group.DoubleSided ? _rasterNone : _raster);
             _context.PSSetShaderResources(0, [view]);
-            _context.UpdateSubresource(ShadeUniforms.Pack(draw, group.Color), _constants, 0);
+            _context.UpdateSubresource(ShadeUniforms.Pack(draw, group), _constants, 0);
             _context.DrawIndexed((uint)group.IndexCount, (uint)group.IndexOffset, 0);
         }
     }
@@ -409,14 +424,11 @@ sealed class ObjectPlatformView : SwapChainPanel
                 new InputElementDescription("NORMAL", 0, Format.R32G32B32_Float, 12, 0),
                 new InputElementDescription("TEXCOORD", 0, Format.R32G32_Float, 24, 0),
             ], vertexCode.Span);
-            _raster = _device.CreateRasterizerState(new RasterizerDescription(CullMode.Back, FillMode.Solid)
-            {
-                FrontCounterClockwise = true,
-                MultisampleEnable = true,
-            });
+            _raster = RasterState(CullMode.Back);
+            _rasterNone = RasterState(CullMode.None);
             _depthState = _device.CreateDepthStencilState(
                 new DepthStencilDescription(true, DepthWriteMask.All, ComparisonFunction.LessEqual));
-            _constants = _device.CreateBuffer(160, BindFlags.ConstantBuffer, ResourceUsage.Default, CpuAccessFlags.None);
+            _constants = _device.CreateBuffer(176, BindFlags.ConstantBuffer, ResourceUsage.Default, CpuAccessFlags.None);
             _sampler = _device.CreateSamplerState(new SamplerDescription(
                 Filter.MinMagLinearMipPoint,
                 TextureAddressMode.Wrap,
@@ -432,6 +444,7 @@ sealed class ObjectPlatformView : SwapChainPanel
             _pixelShader?.Dispose();
             _layout?.Dispose();
             _raster?.Dispose();
+            _rasterNone?.Dispose();
             _depthState?.Dispose();
             _constants?.Dispose();
             _sampler?.Dispose();
@@ -439,6 +452,7 @@ sealed class ObjectPlatformView : SwapChainPanel
             _pixelShader = null;
             _layout = null;
             _raster = null;
+            _rasterNone = null;
             _depthState = null;
             _constants = null;
             _sampler = null;
@@ -447,6 +461,13 @@ sealed class ObjectPlatformView : SwapChainPanel
 
         return _layout is not null && _constants is not null;
     }
+
+    ID3D11RasterizerState RasterState(CullMode cull)
+        => _device!.CreateRasterizerState(new RasterizerDescription(cull, FillMode.Solid)
+        {
+            FrontCounterClockwise = true,
+            MultisampleEnable = true,
+        });
 
     void EnsureBuffers(ObjectDraw draw)
     {
@@ -540,6 +561,7 @@ sealed class ObjectPlatformView : SwapChainPanel
         _whiteTexture?.Dispose();
         _layout?.Dispose();
         _raster?.Dispose();
+        _rasterNone?.Dispose();
         _depthState?.Dispose();
         _vertexShader?.Dispose();
         _pixelShader?.Dispose();
@@ -554,6 +576,7 @@ sealed class ObjectPlatformView : SwapChainPanel
         _whiteTexture = null;
         _layout = null;
         _raster = null;
+        _rasterNone = null;
         _depthState = null;
         _vertexShader = null;
         _pixelShader = null;

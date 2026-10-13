@@ -33,6 +33,7 @@ sealed class ObjectPlatformView : MTKView, IMTKViewDelegate
             float4x4 modelView;
             float4 tint;
             float4 groupColor;
+            float4 surface;
         };
 
         vertex VertexOut object_vertex(VertexIn in [[stage_in]], constant Uniforms& uniforms [[buffer(1)]]) {
@@ -47,14 +48,20 @@ sealed class ObjectPlatformView : MTKView, IMTKViewDelegate
             VertexOut in [[stage_in]],
             constant Uniforms& uniforms [[buffer(1)]],
             texture2d<float> albedoTex [[texture(0)]],
-            sampler albedoSampler [[sampler(0)]]) {
+            sampler albedoSampler [[sampler(0)]],
+            bool front [[front_facing]]) {
+            float4 texel = albedoTex.sample(albedoSampler, in.uv);
+            float alpha = texel.a * uniforms.groupColor.a;
+            if (uniforms.surface.y > 0.5 && alpha < uniforms.surface.x)
+                discard_fragment();
             float3 normal = normalize(in.normal);
+            if (uniforms.surface.z > 0.5 && !front)
+                normal = -normal;
             float3 lightDir = normalize(float3(0.4, 0.8, 0.6));
             float ndotl = saturate(dot(normal, lightDir));
             float3 halfVector = normalize(lightDir + float3(0.0, 0.0, 1.0));
             float specular = pow(saturate(dot(normal, halfVector)), 32.0) * 0.25;
-            float3 texel = albedoTex.sample(albedoSampler, in.uv).rgb;
-            float3 albedo = texel * uniforms.tint.rgb * uniforms.groupColor.rgb;
+            float3 albedo = texel.rgb * uniforms.tint.rgb * uniforms.groupColor.rgb;
             return float4(albedo * (0.25 + 0.75 * ndotl) + specular, 1.0);
         }
         """;
@@ -386,7 +393,6 @@ sealed class ObjectPlatformView : MTKView, IMTKViewDelegate
         using var encoder = buffer.CreateRenderCommandEncoder(pass)!;
         encoder.SetRenderPipelineState(pipeline);
         encoder.SetDepthStencilState(depth);
-        encoder.SetCullMode(MTLCullMode.Back);
         encoder.SetFrontFacingWinding(MTLWinding.CounterClockwise);
         encoder.SetVertexBuffer(vertices, 0, 0);
         encoder.SetFragmentSamplerState(sampler, 0);
@@ -396,8 +402,9 @@ sealed class ObjectPlatformView : MTKView, IMTKViewDelegate
             if (texture is null)
                 continue;
 
+            encoder.SetCullMode(group.DoubleSided ? MTLCullMode.None : MTLCullMode.Back);
             encoder.SetFragmentTexture(texture, 0);
-            SetShadeBytes(encoder, ShadeUniforms.Pack(draw, group.Color));
+            SetShadeBytes(encoder, ShadeUniforms.Pack(draw, group));
             encoder.DrawIndexedPrimitives(
                 MTLPrimitiveType.Triangle,
                 (nuint)group.IndexCount,

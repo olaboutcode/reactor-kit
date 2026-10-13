@@ -40,17 +40,23 @@ sealed class ObjectPlatformView : TextureView, TextureView.ISurfaceTextureListen
         in vec3 vNormal;
         in vec2 vUv;
         uniform vec3 uTint;
-        uniform vec3 uGroup;
+        uniform vec4 uGroup;
+        uniform vec4 uMaterial;
         uniform sampler2D uAlbedo;
         out vec4 oColor;
         void main() {
+            vec4 texel = texture(uAlbedo, vUv);
+            float alpha = texel.a * uGroup.a;
+            if (uMaterial.y > 0.5 && alpha < uMaterial.x)
+                discard;
             vec3 normal = normalize(vNormal);
+            if (uMaterial.z > 0.5 && !gl_FrontFacing)
+                normal = -normal;
             vec3 lightDir = normalize(vec3(0.4, 0.8, 0.6));
             float ndotl = clamp(dot(normal, lightDir), 0.0, 1.0);
             vec3 halfVector = normalize(lightDir + vec3(0.0, 0.0, 1.0));
             float specular = pow(clamp(dot(normal, halfVector), 0.0, 1.0), 32.0) * 0.25;
-            vec3 texel = texture(uAlbedo, vUv).rgb;
-            vec3 albedo = texel * uTint * uGroup;
+            vec3 albedo = texel.rgb * uTint * uGroup.rgb;
             oColor = vec4(albedo * (0.25 + 0.75 * ndotl) + specular, 1.0);
         }
         """;
@@ -67,6 +73,7 @@ sealed class ObjectPlatformView : TextureView, TextureView.ISurfaceTextureListen
     int _modelView;
     int _tint;
     int _group;
+    int _material;
     int _vertices;
     int _indices;
     int _albedo;
@@ -270,7 +277,21 @@ sealed class ObjectPlatformView : TextureView, TextureView.ISurfaceTextureListen
         foreach (var group in draw.Mesh.Groups)
         {
             GLES30.GlBindTexture(GLES30.GlTexture2d, TextureFor(group.Texture));
-            GLES30.GlUniform3f(_group, group.Color.X, group.Color.Y, group.Color.Z);
+            GLES30.GlUniform4f(_group, group.Color.X, group.Color.Y, group.Color.Z, group.Alpha);
+            GLES30.GlUniform4f(
+                _material,
+                group.AlphaCutoff,
+                group.Masked ? 1f : 0f,
+                group.DoubleSided ? 1f : 0f,
+                0f);
+            if (group.DoubleSided)
+            {
+                GLES30.GlDisable(GLES30.GlCullFaceConst);
+            }
+            else
+            {
+                GLES30.GlEnable(GLES30.GlCullFaceConst);
+            }
             GLES30.GlDrawElements(GLES30.GlTriangles, group.IndexCount, GLES30.GlUnsignedInt, group.IndexOffset * 4);
         }
     }
@@ -384,6 +405,7 @@ sealed class ObjectPlatformView : TextureView, TextureView.ISurfaceTextureListen
         _modelView = GLES30.GlGetUniformLocation(_program, "uModelView");
         _tint = GLES30.GlGetUniformLocation(_program, "uTint");
         _group = GLES30.GlGetUniformLocation(_program, "uGroup");
+        _material = GLES30.GlGetUniformLocation(_program, "uMaterial");
         _albedo = GLES30.GlGetUniformLocation(_program, "uAlbedo");
         GLES30.GlEnable(GLES30.GlDepthTest);
         GLES30.GlDepthFunc(GLES30.GlLequal);

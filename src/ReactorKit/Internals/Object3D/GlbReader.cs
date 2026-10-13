@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using Reactor.Kit.ObjectViewTokens;
 
@@ -64,10 +65,20 @@ static class GlbReader
 
         var buckets = new List<Bucket>();
         var images = new GlbImages.Cache();
+        var visiting = new HashSet<int>();
         for (var i = 0; i < sceneNodes.GetArrayLength(); i++)
         {
-            if (TakeFirst(root, nodes, meshes, bin, directory, sceneNodes[i].GetInt32(), Matrix4x4.Identity, buckets, images))
-                break;
+            Visit(
+                root,
+                nodes,
+                meshes,
+                bin,
+                directory,
+                sceneNodes[i].GetInt32(),
+                Matrix4x4.Identity,
+                buckets,
+                images,
+                visiting);
         }
 
         return Combine(buckets, images);
@@ -81,7 +92,7 @@ static class GlbReader
         return scenes[scene].TryGetProperty("nodes", out var nodes) ? nodes : default;
     }
 
-    static bool TakeFirst(
+    static void Visit(
         JsonElement root,
         JsonElement nodes,
         JsonElement meshes,
@@ -90,29 +101,41 @@ static class GlbReader
         int nodeIndex,
         Matrix4x4 parent,
         List<Bucket> buckets,
-        GlbImages.Cache images)
+        GlbImages.Cache images,
+        HashSet<int> visiting)
     {
-        if (nodeIndex < 0 || nodeIndex >= nodes.GetArrayLength())
-            return false;
+        if ((uint)nodeIndex >= (uint)nodes.GetArrayLength() || !visiting.Add(nodeIndex))
+            return;
 
-        var node = nodes[nodeIndex];
-        var world = Local(node) * parent;
-        if (node.TryGetProperty("mesh", out var meshProperty))
+        try
         {
-            ReadMesh(root, meshes, bin, directory, meshProperty.GetInt32(), world, buckets, images);
-            return true;
+            var node = nodes[nodeIndex];
+            var world = Local(node) * parent;
+            if (node.TryGetProperty("mesh", out var meshProperty))
+                ReadMesh(root, meshes, bin, directory, meshProperty.GetInt32(), world, buckets, images);
+
+            if (!node.TryGetProperty("children", out var children) || children.ValueKind != JsonValueKind.Array)
+                return;
+
+            for (var i = 0; i < children.GetArrayLength(); i++)
+            {
+                Visit(
+                    root,
+                    nodes,
+                    meshes,
+                    bin,
+                    directory,
+                    children[i].GetInt32(),
+                    world,
+                    buckets,
+                    images,
+                    visiting);
+            }
         }
-
-        if (!node.TryGetProperty("children", out var children))
-            return false;
-
-        for (var i = 0; i < children.GetArrayLength(); i++)
+        finally
         {
-            if (TakeFirst(root, nodes, meshes, bin, directory, children[i].GetInt32(), world, buckets, images))
-                return true;
+            visiting.Remove(nodeIndex);
         }
-
-        return false;
     }
 
     static void ReadMesh(
@@ -198,9 +221,9 @@ static class GlbReader
             texCoords = readTexCoords;
         }
 
-        var color = MaterialColor(root, primitive);
+        var surface = MaterialSurface(root, primitive);
         var texture = GlbImages.Slot(images, root, primitive, bin, directory);
-        var bucket = BucketFor(buckets, color, texture);
+        var bucket = BucketFor(buckets, surface, texture);
         if (normals is null)
             AppendFlat(bucket, positions, texCoords, indices);
         else
@@ -295,23 +318,35 @@ static class GlbReader
         return true;
     }
 
-    static Bucket BucketFor(List<Bucket> buckets, Vector3 color, int texture)
+    static Bucket BucketFor(List<Bucket> buckets, Surface surface, int texture)
     {
         var key = HashCode.Combine(
-            BitConverter.SingleToInt32Bits(color.X),
-            BitConverter.SingleToInt32Bits(color.Y),
-            BitConverter.SingleToInt32Bits(color.Z),
-            texture);
+            BitConverter.SingleToInt32Bits(surface.Color.X),
+            BitConverter.SingleToInt32Bits(surface.Color.Y),
+            BitConverter.SingleToInt32Bits(surface.Color.Z),
+            texture,
+            BitConverter.SingleToInt32Bits(surface.Alpha),
+            BitConverter.SingleToInt32Bits(surface.Cutoff),
+            surface.Masked,
+            surface.DoubleSided);
         foreach (var bucket in buckets)
         {
-            if (bucket.Key == key)
+            if (bucket.Key == key && Same(bucket, surface, texture))
                 return bucket;
         }
 
-        var created = new Bucket(key, color, texture);
+        var created = new Bucket(key, surface, texture);
         buckets.Add(created);
         return created;
     }
+
+    static bool Same(Bucket bucket, Surface surface, int texture)
+        => bucket.Texture == texture
+            && bucket.Surface.Color == surface.Color
+            && bucket.Surface.Alpha == surface.Alpha
+            && bucket.Surface.Cutoff == surface.Cutoff
+            && bucket.Surface.Masked == surface.Masked
+            && bucket.Surface.DoubleSided == surface.DoubleSided;
 
     static Mesh Combine(List<Bucket> buckets, GlbImages.Cache images)
     {
@@ -342,31 +377,54 @@ static class GlbReader
             var indexStart = index;
             foreach (var value in bucket.Indices)
                 indices[index++] = baseVertex + value;
-            groups[i] = new MeshGroup(indexStart, bucket.Indices.Count, bucket.Color, bucket.Texture);
+            groups[i] = new MeshGroup(
+                indexStart,
+                bucket.Indices.Count,
+                bucket.Surface.Color,
+                bucket.Texture,
+                bucket.Surface.Alpha,
+                bucket.Surface.Cutoff,
+                bucket.Surface.Masked,
+                bucket.Surface.DoubleSided);
             vertex += bucket.Vertices.Count;
         }
 
         return Mesh.FromParts(interleaved, indices, groups, images.Images.ToArray());
     }
 
-    static Vector3 MaterialColor(JsonElement root, JsonElement primitive)
+    static Surface MaterialSurface(JsonElement root, JsonElement primitive)
     {
         if (!primitive.TryGetProperty("material", out var materialIndex))
-            return Vector3.One;
+            return Surface.Plain;
         if (!root.TryGetProperty("materials", out var materials))
-            return Vector3.One;
+            return Surface.Plain;
 
         var index = materialIndex.GetInt32();
-        if (index < 0 || index >= materials.GetArrayLength())
-            return Vector3.One;
+        if ((uint)index >= (uint)materials.GetArrayLength())
+            return Surface.Plain;
 
         var material = materials[index];
-        if (!material.TryGetProperty("pbrMetallicRoughness", out var pbr))
-            return Vector3.One;
-        if (!pbr.TryGetProperty("baseColorFactor", out var factor) || factor.GetArrayLength() < 3)
-            return Vector3.One;
+        var color = Vector3.One;
+        var alpha = 1f;
+        if (material.TryGetProperty("pbrMetallicRoughness", out var pbr)
+            && pbr.TryGetProperty("baseColorFactor", out var factor)
+            && factor.ValueKind == JsonValueKind.Array
+            && factor.GetArrayLength() >= 3)
+        {
+            color = new Vector3(factor[0].GetSingle(), factor[1].GetSingle(), factor[2].GetSingle());
+            if (factor.GetArrayLength() >= 4)
+                alpha = factor[3].GetSingle();
+        }
 
-        return new Vector3(factor[0].GetSingle(), factor[1].GetSingle(), factor[2].GetSingle());
+        var cutoff = 0.5f;
+        if (material.TryGetProperty("alphaCutoff", out var cutoffValue))
+            cutoff = cutoffValue.GetSingle();
+
+        var masked = material.TryGetProperty("alphaMode", out var mode)
+            && string.Equals(mode.GetString(), "MASK", StringComparison.Ordinal);
+        var doubleSided = material.TryGetProperty("doubleSided", out var sided)
+            && sided.ValueKind == JsonValueKind.True;
+        return new Surface(color, alpha, cutoff, masked, doubleSided);
     }
 
     static Matrix4x4 Local(JsonElement node)
@@ -571,11 +629,17 @@ static class GlbReader
         return indices;
     }
 
-    sealed class Bucket(int key, Vector3 color, int texture)
+    [StructLayout(LayoutKind.Auto)]
+    readonly record struct Surface(Vector3 Color, float Alpha, float Cutoff, bool Masked, bool DoubleSided)
+    {
+        public static Surface Plain { get; } = new(Vector3.One, 1f, 0.5f, false, false);
+    }
+
+    sealed class Bucket(int key, Surface surface, int texture)
     {
         public int Key { get; } = key;
 
-        public Vector3 Color { get; } = color;
+        public Surface Surface { get; } = surface;
 
         public int Texture { get; } = texture;
 
