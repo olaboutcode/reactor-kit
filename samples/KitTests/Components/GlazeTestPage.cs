@@ -210,7 +210,7 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
         => GlazeView(
             Grid(
                 Button().Height(44).BackgroundColor(Colors.Transparent),
-                Label("Moca Button!")
+                Label("Mica Button!")
                     .TextColor(Ink)
                     .FontSize(16)
                     .Center()

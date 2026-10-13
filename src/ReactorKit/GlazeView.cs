@@ -6,7 +6,7 @@ using NativeGlaze = Reactor.Kit.Internals.Glaze.GlazeView;
 namespace Reactor.Kit;
 
 /// <summary>
-/// Moca panel. The child is a normal MAUI view and is never blurred.
+/// Mica panel. The child is a normal MAUI view and is never blurred.
 /// </summary>
 public sealed class GlazeView : MauiReactor.ContentView
 {
