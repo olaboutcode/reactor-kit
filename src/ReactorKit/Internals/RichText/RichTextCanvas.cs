@@ -40,6 +40,9 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
     public static readonly BindableProperty TapTargetProperty = BindableProperty.Create(
         nameof(TapTarget), typeof(TextTapTarget), typeof(RichTextCanvas), TextTapTarget.Word);
 
+    public static readonly BindableProperty TapRangesProperty = BindableProperty.Create(
+        nameof(TapRanges), typeof(IReadOnlyList<TextRange>), typeof(RichTextCanvas), null);
+
     public static readonly BindableProperty HighlightedWordsProperty = BindableProperty.Create(
         nameof(HighlightedWords), typeof(IReadOnlyList<int>), typeof(RichTextCanvas), null, propertyChanged: OnHighlightsChanged);
 
@@ -89,13 +92,14 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
 
     /// <summary>
     /// Raised after a tap on a word.
-    /// The hit is the word, or its sentence when <see cref="TapTarget"/> is <see cref="TextTapTarget.Sentence"/>
-    /// .</summary>
+    /// The hit is the shortest <see cref="TapRanges"/> entry that overlaps that word.
+    /// Otherwise it is the word, or its sentence when <see cref="TapTarget"/> is <see cref="TextTapTarget.Sentence"/>.
+    /// </summary>
     public event EventHandler<TextTokenHitEventArgs>? TokenTapped;
 
     /// <summary>
     /// Raised when highlighted text is held.
-    /// The hit matches <see cref="TapTarget"/>. That gesture does not also raise <see cref="TokenTapped"/>.
+    /// The hit matches a tap. That gesture does not also raise <see cref="TokenTapped"/>.
     /// </summary>
     public event EventHandler<TextTokenHitEventArgs>? TokenLongPressed;
 
@@ -144,7 +148,7 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
         set => SetValue(HighlightColorProperty, value);
     }
 
-    /// <summary>When true, a tap toggles the highlight of the word or sentence. The tap event still runs.</summary>
+    /// <summary>When true, a tap toggles the highlight of the word, sentence, or custom range. The tap event still runs.</summary>
     public bool ToggleHighlightOnTap
     {
         get => (bool)GetValue(ToggleHighlightOnTapProperty);
@@ -155,6 +159,16 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
     {
         get => (TextTapTarget)GetValue(TapTargetProperty);
         set => SetValue(TapTargetProperty, value);
+    }
+
+    /// <summary>
+    /// Character ranges a tap selects. The shortest range that overlaps the word wins.
+    /// A word inside no range uses <see cref="TapTarget"/>.
+    /// </summary>
+    public IReadOnlyList<TextRange>? TapRanges
+    {
+        get => (IReadOnlyList<TextRange>?)GetValue(TapRangesProperty);
+        set => SetValue(TapRangesProperty, value);
     }
 
     public IReadOnlyList<int>? HighlightedWords
@@ -626,7 +640,9 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
 
         if (ToggleHighlightOnTap)
         {
-            if (TapTarget == TextTapTarget.Sentence && (uint)sentenceIndex < (uint)_sentences.Length)
+            if (TryTapRange(wordIndex, out var range))
+                ToggleRange(range);
+            else if (TapTarget == TextTapTarget.Sentence && (uint)sentenceIndex < (uint)_sentences.Length)
                 ToggleSentence(sentenceIndex);
             else
                 _highlighted[wordIndex] = !_highlighted[wordIndex];
@@ -652,11 +668,86 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
             _highlighted[sentence.FirstWord + i] = !on;
     }
 
+    void ToggleRange(TextRange range)
+    {
+        var end = (long)range.Start + range.Length;
+        var on = false;
+        for (var i = 0; i < _words.Length; i++)
+        {
+            var word = _words[i];
+            if (word.End > range.Start && word.Start < end)
+            {
+                on |= _highlighted[i];
+            }
+        }
+
+        for (var i = 0; i < _words.Length; i++)
+        {
+            var word = _words[i];
+            if (word.End > range.Start && word.Start < end)
+            {
+                _highlighted[i] = !on;
+            }
+        }
+    }
+
+    bool TryTapRange(int wordIndex, out TextRange range)
+    {
+        range = default;
+        var ranges = TapRanges;
+        if (ranges is null || ranges.Count == 0 || (uint)wordIndex >= (uint)_words.Length)
+            return false;
+
+        var word = _words[wordIndex];
+        var best = int.MaxValue;
+        var found = false;
+        for (var i = 0; i < ranges.Count; i++)
+        {
+            var item = ranges[i];
+            if (item.Length <= 0)
+            {
+                continue;
+            }
+
+            var end = (long)item.Start + item.Length;
+            if (word.End <= item.Start || word.Start >= end)
+            {
+                continue;
+            }
+
+            if (item.Length >= best)
+            {
+                continue;
+            }
+            best = item.Length;
+            range = item;
+            found = true;
+        }
+
+        return found;
+    }
+
     TextTokenHitEventArgs CreateHit(int wordIndex, int sentenceIndex)
     {
         var word = _words[wordIndex];
         _tags.TryGetValue(wordIndex, out var tag);
         var bounds = new Rect(word.X, word.LineTop, word.Width, word.LineHeight);
+        if (TryTapRange(wordIndex, out var range))
+        {
+            var paragraph = Text ?? string.Empty;
+            var start = Math.Clamp(range.Start, 0, paragraph.Length);
+            var end = (int)Math.Clamp((long)range.Start + range.Length, start, paragraph.Length);
+            return new TextTokenHitEventArgs(
+                paragraph.Substring(start, end - start),
+                start,
+                end,
+                wordIndex,
+                sentenceIndex,
+                TextTokenKind.Range,
+                tag,
+                bounds);
+        }
+
         if (TapTarget == TextTapTarget.Word || (uint)sentenceIndex >= (uint)_sentences.Length)
         {
             return new TextTokenHitEventArgs(

@@ -75,6 +75,12 @@ public sealed class RichTextView : View<SKCanvasView>
     public RichTextView TapTarget(TextTapTarget target)
         => this.Set(NativeRichText.TapTargetProperty, target);
 
+    public RichTextView TapRanges(IReadOnlyList<TextRange> ranges)
+        => this.Set(NativeRichText.TapRangesProperty, ranges);
+
+    public RichTextView TapRanges(Func<IReadOnlyList<TextRange>> ranges, IComponentWithState? state = null)
+        => this.Set(NativeRichText.TapRangesProperty, new PropertyValue<IReadOnlyList<TextRange>>(ranges, state));
+
     public RichTextView HighlightedWords(IReadOnlyList<int> wordIndexes)
         => this.Set(NativeRichText.HighlightedWordsProperty, wordIndexes);
 
@@ -100,7 +106,7 @@ public sealed class RichTextView : View<SKCanvasView>
     }
 
     /// <summary>
-    /// Called when highlighted text is held. The hit matches <see cref="TapTarget"/>.
+    /// Called when highlighted text is held. The hit matches a custom range when the word overlaps one, and otherwise matches <see cref="TapTarget"/>.
     /// That gesture does not also call <see cref="OnTokenTapped"/>.
     /// </summary>
     public RichTextView OnTokenLongPressed(Action<TextTokenHitEventArgs> callback)

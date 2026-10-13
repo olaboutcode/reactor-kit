@@ -1,27 +1,46 @@
+using System.Globalization;
+using KitTests.Scripture;
+
 namespace KitTests.Components;
 
+/// <summary>
+/// John 3, King James Version, laid out from a chapter document.
+/// </summary>
 sealed class RichTextTestPage : Component<RichTextTestPage.PageState>
 {
-    internal sealed class PageState
-    {
-        public Dictionary<int, string> Sentences { get; } = [];
-
-        public string Highlighted =>
-            string.Join(' ', Sentences.OrderBy(pair => pair.Key).Select(pair => pair.Value));
-
-        public string LongPressed { get; set; } = "";
-    }
-
-    const string Verse =
-        "In the beginning God created the heaven and the earth. " +
-        "And the earth was without form, and void. 🙏🏽 神 مرحبا";
-
     static readonly Color Ink = Color.FromArgb("#1C1C1E");
     static readonly Color Paper = Color.FromArgb("#F7F5F2");
+    static readonly Color Muted = Color.FromArgb("#8E8E93");
+    static readonly Color Red = Color.FromArgb("#B42318");
+    static readonly Color Gold = Color.FromRgba(245, 196, 40, 120);
+
+    static readonly ScripturePage John = ScriptureLayout.Load();
+
+    internal sealed class PageState
+    {
+        public Mode Tap { get; set; } = Mode.Verse;
+
+        public HashSet<int> Words { get; } = [];
+
+        public HashSet<int> Sentences { get; } = [];
+
+        public HashSet<int> Verses { get; } = [.. John.Marked];
+
+        public string Hit { get; set; } = "";
+
+        public string Hold { get; set; } = "";
+    }
+
+    internal enum Mode
+    {
+        Verse,
+        Sentence,
+        Word,
+    }
 
     public override VisualNode Render()
-        => ContentPage("Rich text",
-            VStack(
+        => ContentPage($"{John.Book} {John.Chapter}",
+            Grid("auto,auto,*", "*",
                 Button("Close", Close)
                     .TextColor(Paper)
                     .BackgroundColor(Ink)
@@ -30,32 +49,142 @@ sealed class RichTextTestPage : Component<RichTextTestPage.PageState>
                     .Height(36)
                     .Padding(14, 0)
                     .HStart(),
-                Label(State.Sentences.Count == 0 ? "Tap a sentence" : State.Highlighted)
-                    .FontSize(15)
-                    .TextColor(Ink),
-                Label(State.LongPressed.Length == 0 ? "Long-press a highlighted sentence" : State.LongPressed)
-                    .FontSize(15)
-                    .TextColor(Ink),
-                RichTextView()
-                    .Text(Verse)
-                    .FontSize(16)
-                    .LineSpacing(6)
-                    .TextColor(Ink)
-                    .HighlightColor(Color.FromRgba(245, 196, 40, 120))
-                    .TapTarget(TextTapTarget.Sentence)
-                    .ToggleHighlightOnTap(enabled: true)
-                    .HighlightedSentences(() => [.. State.Sentences.Keys.Order()])
-                    .OnTokenTapped(hit => SetState(s =>
-                    {
-                        if (!s.Sentences.TryAdd(hit.SentenceIndex, hit.Text))
-                            s.Sentences.Remove(hit.SentenceIndex);
-                    }))
-                    .OnTokenLongPressed(hit => SetState(s => s.LongPressed = hit.Text))
+                VStack(
+                    Label(John.Book)
+                        .FontSize(13)
+                        .TextColor(Muted),
+                    Label(John.Chapter.ToString(CultureInfo.InvariantCulture))
+                        .FontSize(34)
+                        .TextColor(Ink),
+                    HStack(
+                        ModeButton("Verse", Mode.Verse),
+                        ModeButton("Sentence", Mode.Sentence),
+                        ModeButton("Word", Mode.Word)
+                    )
+                    .Spacing(8),
+                    Label(State.Hit.Length == 0 ? "Tap a verse" : State.Hit)
+                        .FontSize(15)
+                        .TextColor(Ink),
+                    Label(State.Hold.Length == 0 ? "Hold a highlight" : State.Hold)
+                        .FontSize(13)
+                        .TextColor(Muted)
+                )
+                .Spacing(8)
+                .GridRow(1),
+                ScrollView(ChapterText())
+                    .VerticalScrollBarVisibility(ScrollBarVisibility.Never)
+                    .GridRow(2)
             )
             .Padding(20)
-            .Spacing(16)
+            .RowSpacing(16)
         )
         .BackgroundColor(Paper);
+
+    RichTextView ChapterText()
+        => RichTextView(John.Text)
+            .FontSize(18)
+            .LineSpacing(7)
+            .TextColor(Ink)
+            .HighlightColor(Gold)
+            .Appearance(_ => new TextAppearance
+            {
+                LineSpacing = 7,
+                PreserveLineBreaks = true,
+                RunAt = (start, _) => Style(start),
+            })
+            .TapTarget(State.Tap == Mode.Sentence ? TextTapTarget.Sentence : TextTapTarget.Word)
+            .TapRanges(State.Tap == Mode.Verse ? John.Verses : [])
+            .ToggleHighlightOnTap(enabled: false)
+            .HighlightedWords(State.Tap == Mode.Word ? [.. State.Words.Order()] : [])
+            .HighlightedSentences(State.Tap == Mode.Sentence ? [.. State.Sentences.Order()] : [])
+            .HighlightedRanges(State.Tap == Mode.Verse ? Ranges(State.Verses) : [])
+            .OnTokenTapped(OnTap)
+            .OnTokenLongPressed(hit => SetState(s => s.Hold = hit.Text))
+            .VStart();
+
+    MauiReactor.Button ModeButton(string label, Mode mode)
+        => Button(label, () => SetState(s => s.Tap = mode))
+            .TextColor(State.Tap == mode ? Paper : Ink)
+            .BackgroundColor(State.Tap == mode ? Ink : Colors.Transparent)
+            .FontSize(13)
+            .CornerRadius(14)
+            .Height(32)
+            .Padding(12, 0);
+
+    void OnTap(TextTokenHitEventArgs hit)
+        => SetState(s =>
+        {
+            s.Hit = hit.Text;
+            if (s.Tap == Mode.Verse && hit.Kind == TextTokenKind.Range)
+            {
+                Toggle(s.Verses, hit.Start);
+            }
+            else if (s.Tap == Mode.Sentence)
+            {
+                Toggle(s.Sentences, hit.SentenceIndex);
+            }
+            else if (s.Tap == Mode.Word)
+            {
+                Toggle(s.Words, hit.WordIndex);
+            }
+        });
+
+    static void Toggle(HashSet<int> keys, int key)
+    {
+        if (!keys.Remove(key))
+        {
+            keys.Add(key);
+        }
+    }
+
+    static TextRange[] Ranges(HashSet<int> starts)
+    {
+        var ranges = new List<TextRange>(starts.Count);
+        for (var i = 0; i < John.Verses.Count; i++)
+        {
+            var range = John.Verses[i];
+            if (starts.Contains(range.Start))
+            {
+                ranges.Add(range);
+            }
+        }
+
+        return [.. ranges];
+    }
+
+    static RunMetrics Style(int start)
+    {
+        if (Covers(John.Headings, start))
+        {
+            return new RunMetrics { Bold = true, Italic = true };
+        }
+
+        if (Covers(John.Numbers, start))
+        {
+            return new RunMetrics { Scale = 0.62f, BaselineShift = 0.45f, Color = Muted };
+        }
+
+        if (Covers(John.Speech, start))
+        {
+            return new RunMetrics { Color = Red };
+        }
+
+        return default;
+    }
+
+    static bool Covers(IReadOnlyList<TextRange> marks, int start)
+    {
+        for (var i = 0; i < marks.Count; i++)
+        {
+            var mark = marks[i];
+            if (start >= mark.Start && start < mark.Start + (long)mark.Length)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     void Close()
         => _ = Navigation?.PopModalAsync();

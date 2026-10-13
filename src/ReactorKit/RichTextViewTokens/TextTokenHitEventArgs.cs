@@ -1,7 +1,7 @@
 namespace Reactor.Kit.RichTextViewTokens;
 
 /// <summary>
-/// The word or sentence under a tap or a long-press.
+/// The word, sentence, or custom range under a tap or a long-press.
 /// </summary>
 public sealed class TextTokenHitEventArgs : EventArgs
 {
@@ -26,7 +26,7 @@ public sealed class TextTokenHitEventArgs : EventArgs
     }
 
     /// <summary>
-    /// The tapped word, or the whole sentence when the tap target is a sentence.
+    /// The tapped word, the sentence around it, or the custom range that overlaps it.
     /// </summary>
     public string Text { get; }
 
@@ -49,7 +49,7 @@ public sealed class TextTokenHitEventArgs : EventArgs
     public int SentenceIndex { get; }
 
     /// <summary>
-    /// Word or sentence, matching the tap target.
+    /// Word, sentence, or a custom range.
     /// </summary>
     public TextTokenKind Kind { get; }
 

@@ -36,6 +36,9 @@
     <MauiImage Update="Resources\Images\dotnet_bot.png" Resize="True" BaseSize="300,185" />
     <MauiFont Include="Resources\Fonts\*" />
     <MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+    <!-- The chapter page reads this at startup. net10.0 is not an app, so the file is embedded instead of opened as a package asset. -->
+    <MauiAsset Remove="Resources\Raw\john-3.json" />
+    <EmbeddedResource Include="Resources\Raw\john-3.json" LogicalName="KitTests.john-3.json" />
   </ItemGroup>
 
   <ItemGroup>

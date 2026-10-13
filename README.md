@@ -132,7 +132,7 @@ GlazeView(Label("Title").Center())
 
 ### Rich text
 
-`RichTextView` draws paragraph text with SkiaSharp. A tap hits a word or a sentence. A long-press on text that is already highlighted raises its own callback and leaves the highlight in place. Highlights are rectangles behind the text. Characters the body font does not contain, including emoji and other writing systems, are taken from the system fonts. Each word is shaped, so connected scripts stay connected.
+`RichTextView` draws paragraph text with SkiaSharp. A tap hits a word, a sentence, or a character range you supply. A long-press on text that is already highlighted raises its own callback and leaves the highlight in place. Highlights are rectangles behind the text. Characters the body font does not contain, including emoji and other writing systems, are taken from the system fonts. Each word is shaped, so connected scripts stay connected.
 
 #### Properties
 
@@ -145,11 +145,12 @@ GlazeView(Label("Title").Center())
 | `TextColor` | black | Glyph color. |
 | `HighlightColor` | amber at about 47% | Color of the rectangles behind highlighted words. |
 | `ToggleHighlightOnTap` | `true` | A tap toggles that word or sentence. The tap callback still runs. |
-| `TapTarget` | `Word` | `Sentence` reports and toggles the whole sentence. |
+| `TapTarget` | `Word` | `Sentence` reports and toggles the whole sentence. A word inside a `TapRanges` entry uses that range instead. |
+| `TapRanges` | none | Character ranges on `Text`. A tap selects the shortest range that overlaps the word. |
 | `HighlightedWords` | none | Word indexes to paint. |
 | `HighlightedSentences` | none | Sentence indexes to paint. |
 | `HighlightedRanges` | none | Character ranges. A word is highlighted when it overlaps a range. |
-| `OnTokenTapped` | none | Receives the tapped word or sentence. |
+| `OnTokenTapped` | none | Receives the tapped word, sentence, or range. |
 | `OnTokenLongPressed` | none | Receives highlighted text after a half-second hold. The tap does not also run. |
 
 ```csharp
@@ -161,6 +162,21 @@ RichTextView()
     .HighlightedSentences([0])
     .OnTokenTapped(hit => System.Diagnostics.Debug.WriteLine(hit.Text))
     .OnTokenLongPressed(hit => System.Diagnostics.Debug.WriteLine(hit.Text))
+```
+
+`TapRanges` uses indexes in that same string. The first range below ends in the middle of the second sentence, so a tap there reports more than `TapTarget.Sentence` would.
+
+```csharp
+const string Chapter =
+    "In the beginning God created the heaven and the earth. And the earth was without form, and void.";
+
+RichTextView()
+    .Text(Chapter)
+    .TapRanges([
+        new TextRange(0, 68),
+        new TextRange(69, 27),
+    ])
+    .OnTokenTapped(hit => System.Diagnostics.Debug.WriteLine(hit.Text))
 ```
 
 A new list with the same indexes keeps tap toggles. Set `ToggleHighlightOnTap(false)` and pass `HighlightedWords` when the page owns the highlights.
