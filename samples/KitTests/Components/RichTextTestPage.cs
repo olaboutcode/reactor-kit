@@ -44,24 +44,23 @@ sealed class RichTextTestPage : Component<RichTextTestPage.PageState>
                 Button("Close", Close)
                     .TextColor(Paper)
                     .BackgroundColor(Ink)
-                    .FontSize(15)
                     .CornerRadius(16)
                     .Height(36)
                     .Padding(14, 0)
                     .HStart(),
                 VStack(
                     Label(John.Book)
-                        .FontSize(13)
+                        .FontSize(16)
                         .TextColor(Muted),
                     Label(John.Chapter.ToString(CultureInfo.InvariantCulture))
-                        .FontSize(34)
+                        .FontSize(32)
                         .TextColor(Ink),
                     HStack(
                         ModeButton("Verse", Mode.Verse),
                         ModeButton("Sentence", Mode.Sentence),
                         ModeButton("Word", Mode.Word)
                     )
-                    .Spacing(8),
+                    .Spacing(7),
                     Label(State.Hit.Length == 0 ? "Tap a verse" : State.Hit)
                         .FontSize(15)
                         .TextColor(Ink),
@@ -83,7 +82,7 @@ sealed class RichTextTestPage : Component<RichTextTestPage.PageState>
     RichTextView ChapterText()
         => RichTextView(John.Text)
             .FontFamily(AppFont.Family)
-            .FontSize(18)
+            .FontSize(16)
             .LineSpacing(7)
             .TextColor(Ink)
             .HighlightColor(Gold)
@@ -107,7 +106,6 @@ sealed class RichTextTestPage : Component<RichTextTestPage.PageState>
         => Button(label, () => SetState(s => s.Tap = mode))
             .TextColor(State.Tap == mode ? Paper : Ink)
             .BackgroundColor(State.Tap == mode ? Ink : Colors.Transparent)
-            .FontSize(13)
             .CornerRadius(14)
             .Height(32)
             .Padding(12, 0);
@@ -157,7 +155,7 @@ sealed class RichTextTestPage : Component<RichTextTestPage.PageState>
     {
         if (Covers(John.Headings, start))
         {
-            return new RunMetrics { Bold = true, Italic = true };
+            return new RunMetrics { Bold = true };
         }
 
         if (Covers(John.Numbers, start))

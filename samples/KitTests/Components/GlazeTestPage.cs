@@ -261,7 +261,6 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
         {
             var band = i % 6 == 0;
             var label = Label($"Line {i + 1} The glass stays put while this text moves underneath.")
-                .FontSize(16)
                 .TextColor(band ? Ink : ink)
                 .Padding(10);
             lines[i] = band

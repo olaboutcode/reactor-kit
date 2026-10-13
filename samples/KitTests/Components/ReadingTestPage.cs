@@ -47,7 +47,7 @@ sealed class ReadingTestPage : Component
                 "Indented paragraphs. A blank line separates them.",
                 RichTextView(Novel)
                     .FontFamily(AppFont.Family)
-                    .FontSize(17)
+                    .FontSize(16)
                     .TextColor(Ink)
                     .Appearance(new TextAppearance
                     {
@@ -78,7 +78,7 @@ sealed class ReadingTestPage : Component
     static RichTextView Reading(Passage passage, bool poetry)
         => RichTextView(passage.Text)
             .FontFamily(AppFont.Family)
-            .FontSize(17)
+            .FontSize(16)
             .TextColor(Ink)
             .LineSpacing(poetry ? 5 : 4)
             .Appearance(_ => Marked(passage, poetry))

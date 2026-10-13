@@ -36,28 +36,36 @@ public static class MauiProgram
         LabelStyles.Default = label =>
         {
             labels?.Invoke(label);
-            label.FontFamily(AppFont.Family);
+            label
+                .FontFamily(AppFont.Family)
+                .FontSize(16);
         };
 
         var buttons = ButtonStyles.Default;
         ButtonStyles.Default = button =>
         {
             buttons?.Invoke(button);
-            button.FontFamily(AppFont.Family);
+            button
+                .FontFamily(AppFont.Family)
+                .FontSize(16);
         };
 
         var entries = EntryStyles.Default;
         EntryStyles.Default = entry =>
         {
             entries?.Invoke(entry);
-            entry.FontFamily(AppFont.Family);
+            entry
+                .FontFamily(AppFont.Family)
+                .FontSize(16);
         };
 
         var editors = EditorStyles.Default;
         EditorStyles.Default = editor =>
         {
             editors?.Invoke(editor);
-            editor.FontFamily(AppFont.Family);
+            editor
+                .FontFamily(AppFont.Family)
+                .FontSize(16);
         };
     }
 }
