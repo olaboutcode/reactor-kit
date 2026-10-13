@@ -88,13 +88,13 @@ public static partial class Extensions
     /// <summary>
     /// One rigid mesh. Drag to orbit it.
     /// </summary>
-    public static ObjectView ObjectView()
+    public static Object3DView Object3DView()
         => new(componentRefAction: null);
 
     /// <summary>
-    /// Same view as <see cref="ObjectView()"/>.
+    /// Same view as <see cref="Object3DView()"/>.
     /// The callback receives the mounted view, and null when it unmounts.
     /// </summary>
-    public static ObjectView ObjectView(Action<Microsoft.Maui.Controls.View?> refAction)
+    public static Object3DView Object3DView(Action<Microsoft.Maui.Controls.View?> refAction)
         => new(refAction);
 }

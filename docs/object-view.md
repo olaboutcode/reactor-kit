@@ -1,11 +1,11 @@
-# ObjectView colors
+# Object3DView colors
 
 `Color` is a tint multiplied over the mesh. It does not replace the colors that came from the mesh. The default is white, `#FFFFFF`, so a `.glb` keeps the colors stored in the file.
 
 `Mesh.Triangles`, `Mesh.Sphere`, and `Mesh.Box` have no color of their own. They stay white until the page sets `Color`. The sample paints the sphere:
 
 ```csharp
-ObjectView()
+Object3DView()
     .Mesh(Mesh.Sphere(1f, slices: 48, stacks: 32))
     .Color(Color.FromArgb("#C8C2B8"))
 ```

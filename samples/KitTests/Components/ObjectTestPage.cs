@@ -27,7 +27,7 @@ sealed class ObjectTestPage : Component<ObjectTestPage.PageState>
     public override VisualNode Render()
         => ContentPage("Object",
             VStack(
-                ObjectView()
+                Object3DView()
                     .Mesh(Cube)
                     .Rotation(State.Yaw, State.Pitch, State.Roll)
                     .Scale(State.Scale)

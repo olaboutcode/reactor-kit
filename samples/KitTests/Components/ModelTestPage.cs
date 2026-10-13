@@ -23,7 +23,7 @@ sealed class ModelTestPage : Component<ModelTestPage.PageState>
                     .HStart(),
 
                 VStack(
-                    ObjectView()
+                    Object3DView()
                         .PackagedSource("industrial_microscope.glb")
                         .Background(Ink)
                         .HeightRequest(State.ScreenHeight * 0.7)

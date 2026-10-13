@@ -3,24 +3,24 @@ using Reactor.Kit;
 
 namespace Reactor.Kit.Internals.Object3D;
 
-sealed class ObjectViewHandler : ViewHandler<ObjectSurface, ObjectPlatformView>
+sealed class ObjectViewHandler : ViewHandler<Object3DSurface, ObjectPlatformView>
 {
-    public static readonly IPropertyMapper<ObjectSurface, ObjectViewHandler> Mapper =
-        new PropertyMapper<ObjectSurface, ObjectViewHandler>(ViewMapper)
+    public static readonly IPropertyMapper<Object3DSurface, ObjectViewHandler> Mapper =
+        new PropertyMapper<Object3DSurface, ObjectViewHandler>(ViewMapper)
         {
-            [nameof(ObjectSurface.Mesh)] = MapPose,
-            [nameof(ObjectSurface.Source)] = MapPose,
-            [nameof(ObjectSurface.PackagedSource)] = MapPose,
-            [nameof(ObjectSurface.Yaw)] = MapPose,
-            [nameof(ObjectSurface.Pitch)] = MapPose,
-            [nameof(ObjectSurface.Distance)] = MapPose,
-            [nameof(ObjectSurface.Target)] = MapPose,
-            [nameof(ObjectSurface.RootRotation)] = MapPose,
-            [nameof(ObjectSurface.RootScale)] = MapPose,
-            [nameof(ObjectSurface.Color)] = MapPose,
-            [nameof(ObjectSurface.ClearColor)] = MapPose,
-            [nameof(ObjectSurface.Gestures)] = MapPose,
-            [nameof(ObjectSurface.AutoRotate)] = MapPose,
+            [nameof(Object3DSurface.Mesh)] = MapPose,
+            [nameof(Object3DSurface.Source)] = MapPose,
+            [nameof(Object3DSurface.PackagedSource)] = MapPose,
+            [nameof(Object3DSurface.Yaw)] = MapPose,
+            [nameof(Object3DSurface.Pitch)] = MapPose,
+            [nameof(Object3DSurface.Distance)] = MapPose,
+            [nameof(Object3DSurface.Target)] = MapPose,
+            [nameof(Object3DSurface.RootRotation)] = MapPose,
+            [nameof(Object3DSurface.RootScale)] = MapPose,
+            [nameof(Object3DSurface.Color)] = MapPose,
+            [nameof(Object3DSurface.ClearColor)] = MapPose,
+            [nameof(Object3DSurface.Gestures)] = MapPose,
+            [nameof(Object3DSurface.AutoRotate)] = MapPose,
         };
 
     public ObjectViewHandler()
@@ -43,6 +43,6 @@ sealed class ObjectViewHandler : ViewHandler<ObjectSurface, ObjectPlatformView>
         base.DisconnectHandler(platformView);
     }
 
-    static void MapPose(ObjectViewHandler handler, ObjectSurface view)
+    static void MapPose(ObjectViewHandler handler, Object3DSurface view)
         => handler.PlatformView.Bind(view);
 }

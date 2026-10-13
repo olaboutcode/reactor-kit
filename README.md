@@ -228,9 +228,9 @@ MarkdownView()
 - Android 21+
 - Windows 10.0.17763+
 
-### Object
+### Object3D
 
-`ObjectView` draws one rigid triangle mesh. A `.glb` includes every mesh in its default scene. Drag to orbit, pinch to zoom, and drag with two fingers to pan. `Color` is a tint multiplied over the mesh colors, including a `.glb` base-color image. `alphaMode` `MASK` cuts texels away, and `doubleSided` draws both faces. Metallic, roughness, normal maps, and blended transparency are not read. `Source` is a file path. The view reads that file and checks the glTF 2.0 header. A missing file throws the IO exception from the read. A file that is not a `.glb` throws `InvalidDataException`. `PackagedSource` is a Maui asset name and wins over `Source`. `Mesh` wins over both. A missing packaged asset, or one that is not a `.glb`, throws on the UI thread.
+`Object3DView` draws one rigid triangle mesh. A `.glb` includes every mesh in its default scene. Drag to orbit, pinch to zoom, and drag with two fingers to pan. `Color` is a tint multiplied over the mesh colors, including a `.glb` base-color image. `alphaMode` `MASK` cuts texels away, and `doubleSided` draws both faces. Metallic, roughness, normal maps, and blended transparency are not read. `Source` is a file path. The view reads that file and checks the glTF 2.0 header. A missing file throws the IO exception from the read. A file that is not a `.glb` throws `InvalidDataException`. `PackagedSource` is a Maui asset name and wins over `Source`. `Mesh` wins over both. A missing packaged asset, or one that is not a `.glb`, throws on the UI thread.
 
 #### Properties
 
@@ -251,7 +251,7 @@ MarkdownView()
 | `AutoRotate` | `false` | Advances yaw while the view is on screen. |
 
 ```csharp
-ObjectView()
+Object3DView()
     .Mesh(Mesh.Sphere(1f, slices: 48, stacks: 32))
     .Color(Color.FromArgb("#C8C2B8"))
 ```

@@ -63,7 +63,7 @@ sealed class ObjectPlatformView : TextureView, TextureView.ISurfaceTextureListen
 
     readonly HandlerThread _thread;
     readonly Handler _queue;
-    ObjectSurface? _host;
+    Object3DSurface? _host;
     EGLDisplay? _display;
     EGLSurface? _surface;
     EGLContext? _context;
@@ -101,7 +101,7 @@ sealed class ObjectPlatformView : TextureView, TextureView.ISurfaceTextureListen
         _queue = new Handler(_thread.Looper!);
     }
 
-    public void Bind(ObjectSurface host)
+    public void Bind(Object3DSurface host)
     {
         if (!ReferenceEquals(_host, host))
         {

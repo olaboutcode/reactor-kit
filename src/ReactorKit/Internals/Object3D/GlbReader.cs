@@ -39,7 +39,7 @@ static class GlbReader
 
         var version = BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(4));
         if (version != 2)
-            Invalid(path, $"is glTF {version}. ObjectView reads glTF 2.0.");
+            Invalid(path, $"is glTF {version}. Object3DView reads glTF 2.0.");
 
         if (bytes.Length < 20)
             Invalid(path, "is truncated. The JSON chunk header is missing.");
@@ -380,9 +380,9 @@ static class GlbReader
         if (vertexCount == 0 || indexCount == 0)
             Invalid(path, "has no readable triangle mesh in the default scene.");
         if (vertexCount > Mesh.MaxVertices)
-            Invalid(path, $"has {vertexCount} vertices. ObjectView draws at most {Mesh.MaxVertices}.");
+            Invalid(path, $"has {vertexCount} vertices. Object3DView draws at most {Mesh.MaxVertices}.");
         if (indexCount > Mesh.MaxIndices)
-            Invalid(path, $"has {indexCount} indices. ObjectView draws at most {Mesh.MaxIndices}.");
+            Invalid(path, $"has {indexCount} indices. Object3DView draws at most {Mesh.MaxIndices}.");
 
         var interleaved = new float[vertexCount * Mesh.FloatsPerVertex];
         var indices = new int[indexCount];

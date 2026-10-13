@@ -79,7 +79,7 @@ sealed class ObjectPlatformView : SwapChainPanel
         """;
 
     readonly Dictionary<uint, (float X, float Y)> _points = [];
-    ObjectSurface? _host;
+    Object3DSurface? _host;
     ID3D11Device? _device;
     ID3D11DeviceContext? _context;
     IDXGISwapChain1? _swapChain;
@@ -125,7 +125,7 @@ sealed class ObjectPlatformView : SwapChainPanel
         CreateDevice();
     }
 
-    public void Bind(ObjectSurface host)
+    public void Bind(Object3DSurface host)
     {
         if (!ReferenceEquals(_host, host))
         {

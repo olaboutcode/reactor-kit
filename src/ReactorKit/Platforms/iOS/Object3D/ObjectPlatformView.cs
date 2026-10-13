@@ -68,7 +68,7 @@ sealed class ObjectPlatformView : MTKView, IMTKViewDelegate
 
     readonly Dictionary<IntPtr, int> _ids = [];
     readonly Dictionary<IntPtr, CGPoint> _points = [];
-    ObjectSurface? _host;
+    Object3DSurface? _host;
     IMTLCommandQueue? _commands;
     IMTLRenderPipelineState? _pipeline;
     IMTLDepthStencilState? _depth;
@@ -100,7 +100,7 @@ sealed class ObjectPlatformView : MTKView, IMTKViewDelegate
         _commands = device?.CreateCommandQueue();
     }
 
-    public void Bind(ObjectSurface host)
+    public void Bind(Object3DSurface host)
     {
         if (!ReferenceEquals(_host, host))
         {

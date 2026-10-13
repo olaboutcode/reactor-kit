@@ -9,46 +9,46 @@ namespace Reactor.Kit;
 /// <summary>
 /// One lit mesh. The platform handler draws it.
 /// </summary>
-public sealed class ObjectSurface : Microsoft.Maui.Controls.View
+public sealed class Object3DSurface : Microsoft.Maui.Controls.View
 {
     public static readonly BindableProperty MeshProperty = BindableProperty.Create(
-        nameof(Mesh), typeof(Mesh), typeof(ObjectSurface), null, propertyChanged: OnChanged);
+        nameof(Mesh), typeof(Mesh), typeof(Object3DSurface), null, propertyChanged: OnChanged);
 
     public static readonly BindableProperty SourceProperty = BindableProperty.Create(
-        nameof(Source), typeof(string), typeof(ObjectSurface), null, propertyChanged: OnChanged);
+        nameof(Source), typeof(string), typeof(Object3DSurface), null, propertyChanged: OnChanged);
 
     public static readonly BindableProperty PackagedSourceProperty = BindableProperty.Create(
-        nameof(PackagedSource), typeof(string), typeof(ObjectSurface), null, propertyChanged: OnChanged);
+        nameof(PackagedSource), typeof(string), typeof(Object3DSurface), null, propertyChanged: OnChanged);
 
     public static readonly BindableProperty YawProperty = BindableProperty.Create(
-        nameof(Yaw), typeof(double), typeof(ObjectSurface), 30d, propertyChanged: OnChanged);
+        nameof(Yaw), typeof(double), typeof(Object3DSurface), 30d, propertyChanged: OnChanged);
 
     public static readonly BindableProperty PitchProperty = BindableProperty.Create(
-        nameof(Pitch), typeof(double), typeof(ObjectSurface), 20d, propertyChanged: OnChanged);
+        nameof(Pitch), typeof(double), typeof(Object3DSurface), 20d, propertyChanged: OnChanged);
 
     public static readonly BindableProperty DistanceProperty = BindableProperty.Create(
-        nameof(Distance), typeof(double), typeof(ObjectSurface), double.NaN, propertyChanged: OnChanged);
+        nameof(Distance), typeof(double), typeof(Object3DSurface), double.NaN, propertyChanged: OnChanged);
 
     public static readonly BindableProperty TargetProperty = BindableProperty.Create(
-        nameof(Target), typeof(LookTarget), typeof(ObjectSurface), LookTarget.Unset, propertyChanged: OnChanged);
+        nameof(Target), typeof(LookTarget), typeof(Object3DSurface), LookTarget.Unset, propertyChanged: OnChanged);
 
     public static readonly BindableProperty RootRotationProperty = BindableProperty.Create(
-        nameof(RootRotation), typeof(ModelRotation), typeof(ObjectSurface), default(ModelRotation), propertyChanged: OnChanged);
+        nameof(RootRotation), typeof(ModelRotation), typeof(Object3DSurface), default(ModelRotation), propertyChanged: OnChanged);
 
     public static readonly BindableProperty RootScaleProperty = BindableProperty.Create(
-        nameof(RootScale), typeof(double), typeof(ObjectSurface), 1d, propertyChanged: OnChanged);
+        nameof(RootScale), typeof(double), typeof(Object3DSurface), 1d, propertyChanged: OnChanged);
 
     public static readonly BindableProperty ColorProperty = BindableProperty.Create(
-        nameof(Color), typeof(Color), typeof(ObjectSurface), Colors.White, propertyChanged: OnChanged);
+        nameof(Color), typeof(Color), typeof(Object3DSurface), Colors.White, propertyChanged: OnChanged);
 
     public static readonly BindableProperty ClearColorProperty = BindableProperty.Create(
-        nameof(ClearColor), typeof(Color), typeof(ObjectSurface), Colors.Transparent, propertyChanged: OnChanged);
+        nameof(ClearColor), typeof(Color), typeof(Object3DSurface), Colors.Transparent, propertyChanged: OnChanged);
 
     public static readonly BindableProperty GesturesProperty = BindableProperty.Create(
-        nameof(Gestures), typeof(bool), typeof(ObjectSurface), true, propertyChanged: OnChanged);
+        nameof(Gestures), typeof(bool), typeof(Object3DSurface), true, propertyChanged: OnChanged);
 
     public static readonly BindableProperty AutoRotateProperty = BindableProperty.Create(
-        nameof(AutoRotate), typeof(bool), typeof(ObjectSurface), false, propertyChanged: OnChanged);
+        nameof(AutoRotate), typeof(bool), typeof(Object3DSurface), false, propertyChanged: OnChanged);
 
     readonly ObjectPose _pose = new();
     Mesh? _sourceMesh;
@@ -58,7 +58,7 @@ public sealed class ObjectSurface : Microsoft.Maui.Controls.View
     string? _packageLoaded;
     int _packageGeneration;
 
-    public ObjectSurface()
+    public Object3DSurface()
     {
         BackgroundColor = Colors.Transparent;
         _pose.Changed += OnPoseChanged;
@@ -253,7 +253,7 @@ public sealed class ObjectSurface : Microsoft.Maui.Controls.View
     }
 
     static void OnChanged(BindableObject bindable, object oldValue, object newValue)
-        => ((ObjectSurface)bindable).Push();
+        => ((Object3DSurface)bindable).Push();
 
     void OnPoseChanged(object? sender, EventArgs e)
         => FrameInvalidated?.Invoke(this, EventArgs.Empty);
