@@ -22,7 +22,7 @@ A library of custom controls for [MauiReactor](https://github.com/adospace/react
   - [Markdown](#markdown)
     - [Properties](#properties-2)
     - [Supported platforms](#supported-platforms-2)
-  - [Object](#object)
+  - [Object3D](#object3d)
     - [Properties](#properties-3)
     - [Supported platforms](#supported-platforms-3)
 - [Handlers](#handlers)
@@ -249,11 +249,23 @@ MarkdownView()
 | `Background` | transparent | Clear color. Does not tint the mesh. |
 | `Gestures` | `true` | Orbit, pinch zoom, and two-finger pan. |
 | `AutoRotate` | `false` | Advances yaw while the view is on screen. |
+| `OnOrbitChanged` | none | Settled `Orbit` after the last pointer lifts. Auto-rotate does not call it. |
 
 ```csharp
 Object3DView()
     .Mesh(Mesh.Sphere(1f, slices: 48, stacks: 32))
     .Color(Color.FromArgb("#C8C2B8"))
+```
+
+How `Color` combines with a `.glb` is in [docs/object-view.md](docs/object-view.md).
+
+Pass a callback to capture the element. It is a `ContentView`. The callback receives null when the view unmounts.
+
+```csharp
+Microsoft.Maui.Controls.ContentView? _view;
+
+Object3DView(view => _view = view)
+    .PackagedSource("industrial_microscope.glb")
 ```
 
 #### Supported platforms

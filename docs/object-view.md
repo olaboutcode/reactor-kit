@@ -1,5 +1,7 @@
 # Object3DView colors
 
+`Object3DView` is the component. A ref callback receives the mounted element, which is a `ContentView`, and null when the view unmounts.
+
 `Color` is a tint multiplied over the mesh. It does not replace the colors that came from the mesh. The default is white, `#FFFFFF`, so a `.glb` keeps the colors stored in the file.
 
 `Mesh.Triangles`, `Mesh.Sphere`, and `Mesh.Box` have no color of their own. They stay white until the page sets `Color`. The sample paints the sphere:
