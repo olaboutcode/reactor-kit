@@ -9,7 +9,7 @@ sealed class ModelTestPage : Component<ModelTestPage.PageState>
     {
         public string? Path { get; set; }
 
-        public string Note { get; set; } = "Opening gem.glb";
+        public string Note { get; set; } = "Opening the microscope";
     }
 
     public override VisualNode Render()
@@ -25,7 +25,7 @@ sealed class ModelTestPage : Component<ModelTestPage.PageState>
                         .Background(Colors.LightBlue)
                         .HeightRequest(400)
                         .HFill(),
-                Label("Two colors come from the file. Drag to orbit.")
+                Label("Industrial Microscope by Lukas Walzer, Poly Haven (CC0). Drag to orbit.")
                     .TextColor(Paper)
                     .FontSize(13)
                     .Margin(16, 12)
@@ -45,8 +45,8 @@ sealed class ModelTestPage : Component<ModelTestPage.PageState>
     {
         try
         {
-            var path = System.IO.Path.Combine(FileSystem.CacheDirectory, "gem.glb");
-            var source = await FileSystem.OpenAppPackageFileAsync("gem.glb").ConfigureAwait(false);
+            var path = System.IO.Path.Combine(FileSystem.CacheDirectory, "industrial_microscope.glb");
+            var source = await FileSystem.OpenAppPackageFileAsync("industrial_microscope.glb").ConfigureAwait(false);
             try
             {
                 var target = File.Create(path);
@@ -68,7 +68,7 @@ sealed class ModelTestPage : Component<ModelTestPage.PageState>
         }
         catch (Exception ex) when (ex is IOException or FileNotFoundException or UnauthorizedAccessException)
         {
-            MainThread.BeginInvokeOnMainThread(() => SetState(s => s.Note = "gem.glb did not open."));
+            MainThread.BeginInvokeOnMainThread(() => SetState(s => s.Note = "The microscope file did not open."));
         }
     }
 }

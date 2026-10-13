@@ -5,6 +5,7 @@ using Foundation;
 using Metal;
 using MetalKit;
 using Reactor.Kit;
+using Reactor.Kit.ObjectViewTokens;
 using UIKit;
 
 namespace Reactor.Kit.Internals.Object3D;
@@ -18,11 +19,13 @@ sealed class ObjectPlatformView : MTKView, IMTKViewDelegate
         struct VertexIn {
             float3 position [[attribute(0)]];
             float3 normal [[attribute(1)]];
+            float2 uv [[attribute(2)]];
         };
 
         struct VertexOut {
             float4 position [[position]];
             float3 normal;
+            float2 uv;
         };
 
         struct Uniforms {
@@ -36,16 +39,22 @@ sealed class ObjectPlatformView : MTKView, IMTKViewDelegate
             VertexOut out;
             out.position = uniforms.modelViewProjection * float4(in.position, 1.0);
             out.normal = (uniforms.modelView * float4(in.normal, 0.0)).xyz;
+            out.uv = in.uv;
             return out;
         }
 
-        fragment float4 object_fragment(VertexOut in [[stage_in]], constant Uniforms& uniforms [[buffer(1)]]) {
+        fragment float4 object_fragment(
+            VertexOut in [[stage_in]],
+            constant Uniforms& uniforms [[buffer(1)]],
+            texture2d<float> albedoTex [[texture(0)]],
+            sampler albedoSampler [[sampler(0)]]) {
             float3 normal = normalize(in.normal);
             float3 lightDir = normalize(float3(0.4, 0.8, 0.6));
             float ndotl = saturate(dot(normal, lightDir));
             float3 halfVector = normalize(lightDir + float3(0.0, 0.0, 1.0));
             float specular = pow(saturate(dot(normal, halfVector)), 32.0) * 0.25;
-            float3 albedo = uniforms.tint.rgb * uniforms.groupColor.rgb;
+            float3 texel = albedoTex.sample(albedoSampler, in.uv).rgb;
+            float3 albedo = texel * uniforms.tint.rgb * uniforms.groupColor.rgb;
             return float4(albedo * (0.25 + 0.75 * ndotl) + specular, 1.0);
         }
         """;
@@ -58,7 +67,11 @@ sealed class ObjectPlatformView : MTKView, IMTKViewDelegate
     IMTLDepthStencilState? _depth;
     IMTLBuffer? _vertices;
     IMTLBuffer? _indices;
+    IMTLTexture? _white;
+    IMTLTexture?[] _textures = [];
+    IMTLSamplerState? _sampler;
     int _generation;
+    static readonly byte[] WhiteRgba = [255, 255, 255, 255];
     int _nextId;
     double _lastTime;
     bool _pipelineReady;
@@ -103,12 +116,18 @@ sealed class ObjectPlatformView : MTKView, IMTKViewDelegate
         _depth?.Dispose();
         _vertices?.Dispose();
         _indices?.Dispose();
+        ReleaseTextures();
+        _white?.Dispose();
+        _sampler?.Dispose();
         _commands?.Dispose();
         _pipeline = null;
         _depth = null;
         _vertices = null;
         _indices = null;
+        _white = null;
+        _sampler = null;
         _commands = null;
+        _generation = 0;
     }
 
     public override void MovedToWindow()
@@ -292,9 +311,65 @@ sealed class ObjectPlatformView : MTKView, IMTKViewDelegate
 
         _vertices?.Dispose();
         _indices?.Dispose();
+        ReleaseTextures();
         _vertices = Device.CreateBuffer(FloatBytes(draw.Mesh.Interleaved), MTLResourceOptions.StorageModeShared);
         _indices = Device.CreateBuffer(IndexBytes(draw.Mesh.Indices), MTLResourceOptions.StorageModeShared);
+        _sampler ??= Device.CreateSamplerState(new MTLSamplerDescriptor
+        {
+            MinFilter = MTLSamplerMinMagFilter.Linear,
+            MagFilter = MTLSamplerMinMagFilter.Linear,
+            SAddressMode = MTLSamplerAddressMode.Repeat,
+            TAddressMode = MTLSamplerAddressMode.Repeat,
+        });
+        _white ??= Upload(1, 1, WhiteRgba);
+        _textures = new IMTLTexture?[draw.Mesh.Images.Length];
+        for (var i = 0; i < draw.Mesh.Images.Length; i++)
+        {
+            var image = draw.Mesh.Images[i];
+            _textures[i] = Upload(image.Width, image.Height, image.Rgba);
+        }
+
         _generation = draw.Generation;
+    }
+
+    IMTLTexture? Upload(int width, int height, byte[] rgba)
+    {
+        if (Device is null || width <= 0 || height <= 0 || rgba.Length < width * height * 4)
+            return null;
+
+        using var descriptor = MTLTextureDescriptor.CreateTexture2DDescriptor(
+            MTLPixelFormat.RGBA8Unorm_sRGB,
+            (nuint)width,
+            (nuint)height,
+            false);
+        descriptor.Usage = MTLTextureUsage.ShaderRead;
+        descriptor.StorageMode = MTLStorageMode.Shared;
+        var texture = Device.CreateTexture(descriptor);
+        if (texture is null)
+            return null;
+
+        using var data = NSData.FromArray(rgba);
+        texture.ReplaceRegion(
+            MTLRegion.Create2D(0, 0, (nuint)width, (nuint)height),
+            0,
+            data.Bytes,
+            (nuint)(width * 4));
+        return texture;
+    }
+
+    void ReleaseTextures()
+    {
+        foreach (var texture in _textures)
+            texture?.Dispose();
+        _textures = [];
+    }
+
+    IMTLTexture? TextureFor(int index)
+    {
+        if ((uint)index < (uint)_textures.Length && _textures[index] is not null)
+            return _textures[index];
+
+        return _white;
     }
 
     void Encode(MTLRenderPassDescriptor pass, ICAMetalDrawable drawable, ObjectDraw draw)
@@ -303,7 +378,8 @@ sealed class ObjectPlatformView : MTKView, IMTKViewDelegate
         var depth = _depth;
         var vertices = _vertices;
         var indices = _indices;
-        if (pipeline is null || depth is null || vertices is null || indices is null)
+        var sampler = _sampler;
+        if (pipeline is null || depth is null || vertices is null || indices is null || sampler is null)
             return;
 
         using var buffer = _commands!.CommandBuffer()!;
@@ -313,8 +389,14 @@ sealed class ObjectPlatformView : MTKView, IMTKViewDelegate
         encoder.SetCullMode(MTLCullMode.Back);
         encoder.SetFrontFacingWinding(MTLWinding.CounterClockwise);
         encoder.SetVertexBuffer(vertices, 0, 0);
+        encoder.SetFragmentSamplerState(sampler, 0);
         foreach (var group in draw.Mesh.Groups)
         {
+            var texture = TextureFor(group.Texture);
+            if (texture is null)
+                continue;
+
+            encoder.SetFragmentTexture(texture, 0);
             SetShadeBytes(encoder, ShadeUniforms.Pack(draw, group.Color));
             encoder.DrawIndexedPrimitives(
                 MTLPrimitiveType.Triangle,
@@ -365,8 +447,12 @@ sealed class ObjectPlatformView : MTKView, IMTKViewDelegate
         normal.Format = MTLVertexFormat.Float3;
         normal.Offset = 12;
         normal.BufferIndex = 0;
+        var uv = layout.Attributes[2];
+        uv.Format = MTLVertexFormat.Float2;
+        uv.Offset = 24;
+        uv.BufferIndex = 0;
         var buffer = layout.Layouts[0];
-        buffer.Stride = 24;
+        buffer.Stride = Mesh.VertexStride;
         buffer.StepFunction = MTLVertexStepFunction.PerVertex;
         buffer.StepRate = 1;
         return layout;

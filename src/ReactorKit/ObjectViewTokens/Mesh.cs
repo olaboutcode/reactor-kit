@@ -11,12 +11,15 @@ public sealed class Mesh
 {
     internal const int MaxVertices = 500_000;
     internal const int MaxIndices = 1_500_000;
+    internal const int FloatsPerVertex = 8;
+    internal const int VertexStride = FloatsPerVertex * sizeof(float);
 
-    Mesh(float[] interleaved, int[] indices, MeshGroup[] groups, Vector3 center, float radius)
+    Mesh(float[] interleaved, int[] indices, MeshGroup[] groups, MeshImage[] images, Vector3 center, float radius)
     {
         Interleaved = interleaved;
         Indices = indices;
         Groups = groups;
+        Images = images;
         Center = center;
         Radius = radius;
     }
@@ -27,17 +30,19 @@ public sealed class Mesh
 
     internal MeshGroup[] Groups { get; }
 
+    internal MeshImage[] Images { get; }
+
     internal Vector3 Center { get; }
 
     internal float Radius { get; }
 
     internal int VertexCount
-        => Interleaved.Length / 6;
+        => Interleaved.Length / FloatsPerVertex;
 
     internal bool IsEmpty
         => Indices.Length == 0;
 
-    internal static Mesh Empty { get; } = new([], [], [], Vector3.Zero, 0f);
+    internal static Mesh Empty { get; } = new([], [], [], [], Vector3.Zero, 0f);
 
     /// <summary>
     /// Triangles with flat normals. <paramref name="positions"/> is xyz. <paramref name="indices"/> is three indices per triangle.
@@ -67,11 +72,11 @@ public sealed class Mesh
         if (vertexCount > MaxVertices || indexCount > MaxIndices)
             return Empty;
 
-        var interleaved = new float[vertexCount * 6];
+        var interleaved = new float[vertexCount * FloatsPerVertex];
         var indices = new int[indexCount];
         WriteSphere(interleaved, radius, slices, stacks, columns);
         WriteSphereIndices(indices, slices, stacks, columns);
-        return new Mesh(interleaved, indices, [new MeshGroup(0, indices.Length, Vector3.One)], Vector3.Zero, radius);
+        return new Mesh(interleaved, indices, [new MeshGroup(0, indices.Length, Vector3.One)], [], Vector3.Zero, radius);
     }
 
     /// <summary>
@@ -83,7 +88,7 @@ public sealed class Mesh
             return Empty;
 
         var half = size * 0.5f;
-        var interleaved = new float[24 * 6];
+        var interleaved = new float[24 * FloatsPerVertex];
         var indices = new int[36];
         var vertex = 0;
         var index = 0;
@@ -100,19 +105,21 @@ public sealed class Mesh
         AddFace(interleaved, indices, ref vertex, ref index, new Vector3(-1f, 0f, 0f),
             new Vector3(-half, -half, -half), new Vector3(-half, -half, half), new Vector3(-half, half, half), new Vector3(-half, half, -half));
 
-        return new Mesh(interleaved, indices, [new MeshGroup(0, indices.Length, Vector3.One)], Vector3.Zero, half * MathF.Sqrt(3f));
+        return new Mesh(interleaved, indices, [new MeshGroup(0, indices.Length, Vector3.One)], [], Vector3.Zero, half * MathF.Sqrt(3f));
     }
 
-    internal static Mesh FromParts(float[] interleaved, int[] indices, MeshGroup[] groups)
+    internal static Mesh FromParts(float[] interleaved, int[] indices, MeshGroup[] groups, MeshImage[]? images = null)
     {
         if (interleaved.Length == 0 || indices.Length == 0 || groups.Length == 0)
             return Empty;
-        if (interleaved.Length / 6 > MaxVertices || indices.Length > MaxIndices)
+        if (interleaved.Length % FloatsPerVertex != 0)
+            return Empty;
+        if (interleaved.Length / FloatsPerVertex > MaxVertices || indices.Length > MaxIndices)
             return Empty;
 
         var min = new Vector3(float.PositiveInfinity);
         var max = new Vector3(float.NegativeInfinity);
-        for (var i = 0; i < interleaved.Length; i += 6)
+        for (var i = 0; i < interleaved.Length; i += FloatsPerVertex)
         {
             var point = new Vector3(interleaved[i], interleaved[i + 1], interleaved[i + 2]);
             min = Vector3.Min(min, point);
@@ -121,7 +128,7 @@ public sealed class Mesh
 
         var center = (min + max) * 0.5f;
         var radius = Vector3.Distance(center, max);
-        return new Mesh(interleaved, indices, groups, center, radius);
+        return new Mesh(interleaved, indices, groups, images ?? [], center, radius);
     }
 
     static Mesh From(float[] positions, float[]? normals, int[] indices, Vector3 groupColor)
@@ -146,11 +153,11 @@ public sealed class Mesh
         if (normals is null)
             return Flat(positions, indices, groupColor);
 
-        var interleaved = new float[vertexCount * 6];
+        var interleaved = new float[vertexCount * FloatsPerVertex];
         for (var i = 0; i < vertexCount; i++)
         {
             var source = i * 3;
-            var slot = i * 6;
+            var slot = i * FloatsPerVertex;
             interleaved[slot] = positions[source];
             interleaved[slot + 1] = positions[source + 1];
             interleaved[slot + 2] = positions[source + 2];
@@ -168,7 +175,7 @@ public sealed class Mesh
         if (triangleCount > MaxVertices / 3)
             return Empty;
 
-        var interleaved = new float[triangleCount * 3 * 6];
+        var interleaved = new float[triangleCount * 3 * FloatsPerVertex];
         var flatIndices = new int[triangleCount * 3];
         var vertex = 0;
         for (var i = 0; i < indices.Length; i += 3)
@@ -199,7 +206,7 @@ public sealed class Mesh
                 var theta = MathF.PI * 2f * slice / slices;
                 var x = ring * MathF.Cos(theta);
                 var z = ring * MathF.Sin(theta);
-                var slot = vertex * 6;
+                var slot = vertex * FloatsPerVertex;
                 interleaved[slot] = x * radius;
                 interleaved[slot + 1] = y * radius;
                 interleaved[slot + 2] = z * radius;
@@ -259,7 +266,7 @@ public sealed class Mesh
     static int Append(float[] interleaved, ref int vertex, Vector3 position, Vector3 normal)
     {
         var index = vertex;
-        var slot = vertex * 6;
+        var slot = vertex * FloatsPerVertex;
         interleaved[slot] = position.X;
         interleaved[slot + 1] = position.Y;
         interleaved[slot + 2] = position.Z;

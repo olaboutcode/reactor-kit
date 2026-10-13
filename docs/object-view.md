@@ -14,12 +14,12 @@ Setting `Color` on a loaded file tints every part of that file.
 
 ## File colors
 
-A `.glb` is drawn as one group per `pbrMetallicRoughness.baseColorFactor`. Groups that share a factor become one draw. A factor is already linear. RGB is the group color. A missing factor is white.
+A `.glb` is drawn as one group per base color. A group is the primitives that share a `baseColorFactor` and a `baseColorTexture`. A factor is already linear. RGB is the group color. A missing factor is white.
 
-The page tint is converted from sRGB to linear, then multiplied:
+The page tint is converted from sRGB to linear. The base-color image is stored as sRGB and sampled in linear. A missing image samples white. JPEG and PNG are read from the `.glb`, from a `data:` URI, or from a file next to the `.glb`. The mesh uses `TEXCOORD_0`.
 
 ```
-albedo = tintLinear * groupColor
+albedo = tintLinear * groupColor * baseColor
 ```
 
 ## Shading
@@ -37,11 +37,11 @@ Ambient is `0.25`, diffuse is `0.75`, and the highlight is white. The same numbe
 
 `Background` is only the clear color. It is converted from sRGB to linear the same way, and it is not multiplied into the mesh. Alpha `0` shows the page behind the view. Alpha `255` makes the surface opaque.
 
-Alpha on `Color`, and the alpha of a `baseColorFactor`, do not fade the object. The mesh is opaque.
+Alpha on `Color`, the alpha of a `baseColorFactor`, and the alpha of the base-color image do not fade the object. The mesh is opaque.
 
 ## Ignored
 
-Textures, vertex colors (`COLOR_0`), metallic, and roughness are not read. A textured model shows its flat factors only. A model that has vertex colors and a white factor draws white, tinted by `Color`.
+Vertex colors (`COLOR_0`), metallic, roughness, normal maps, and UV sets other than `TEXCOORD_0` are not read. A model that has vertex colors, a white factor, and no base-color image draws white, tinted by `Color`.
 
 | Member | Default | Role |
 |---|---|---|

@@ -7,6 +7,7 @@ using Android.Views;
 using Java.Nio;
 using Reactor.Kit;
 using AContext = Android.Content.Context;
+using ObjectMesh = Reactor.Kit.ObjectViewTokens.Mesh;
 
 namespace Reactor.Kit.Internals.Object3D;
 
@@ -19,21 +20,28 @@ sealed class ObjectPlatformView : TextureView, TextureView.ISurfaceTextureListen
         #version 300 es
         layout(location = 0) in vec3 aPosition;
         layout(location = 1) in vec3 aNormal;
+        layout(location = 2) in vec2 aUv;
         uniform mat4 uMvp;
         uniform mat4 uModelView;
         out vec3 vNormal;
+        out vec2 vUv;
         void main() {
             gl_Position = uMvp * vec4(aPosition, 1.0);
             vNormal = mat3(uModelView) * aNormal;
+            // glTexImage2D stores the first row at the bottom. glTF v = 0 is the top, so this matches.
+            vUv = aUv;
         }
         """;
 
     const string FragmentShader = """
         #version 300 es
         precision highp float;
+        precision highp sampler2D;
         in vec3 vNormal;
+        in vec2 vUv;
         uniform vec3 uTint;
         uniform vec3 uGroup;
+        uniform sampler2D uAlbedo;
         out vec4 oColor;
         void main() {
             vec3 normal = normalize(vNormal);
@@ -41,7 +49,8 @@ sealed class ObjectPlatformView : TextureView, TextureView.ISurfaceTextureListen
             float ndotl = clamp(dot(normal, lightDir), 0.0, 1.0);
             vec3 halfVector = normalize(lightDir + vec3(0.0, 0.0, 1.0));
             float specular = pow(clamp(dot(normal, halfVector), 0.0, 1.0), 32.0) * 0.25;
-            vec3 albedo = uTint * uGroup;
+            vec3 texel = texture(uAlbedo, vUv).rgb;
+            vec3 albedo = texel * uTint * uGroup;
             oColor = vec4(albedo * (0.25 + 0.75 * ndotl) + specular, 1.0);
         }
         """;
@@ -60,6 +69,9 @@ sealed class ObjectPlatformView : TextureView, TextureView.ISurfaceTextureListen
     int _group;
     int _vertices;
     int _indices;
+    int _albedo;
+    int _white;
+    int[] _textures = [];
     int _frame;
     int _color;
     int _depth;
@@ -242,8 +254,10 @@ sealed class ObjectPlatformView : TextureView, TextureView.ISurfaceTextureListen
         GLES30.GlBindBuffer(GLES30.GlElementArrayBuffer, _indices);
         GLES30.GlEnableVertexAttribArray(0);
         GLES30.GlEnableVertexAttribArray(1);
-        GLES30.GlVertexAttribPointer(0, 3, GLES30.GlFloat, false, 24, 0);
-        GLES30.GlVertexAttribPointer(1, 3, GLES30.GlFloat, false, 24, 12);
+        GLES30.GlEnableVertexAttribArray(2);
+        GLES30.GlVertexAttribPointer(0, 3, GLES30.GlFloat, false, ObjectMesh.VertexStride, 0);
+        GLES30.GlVertexAttribPointer(1, 3, GLES30.GlFloat, false, ObjectMesh.VertexStride, 12);
+        GLES30.GlVertexAttribPointer(2, 2, GLES30.GlFloat, false, ObjectMesh.VertexStride, 24);
         var mvp = new float[16];
         var modelView = new float[16];
         MatrixPack.Store(draw.ModelViewProjection, mvp);
@@ -251,11 +265,22 @@ sealed class ObjectPlatformView : TextureView, TextureView.ISurfaceTextureListen
         GLES30.GlUniformMatrix4fv(_mvp, 1, false, mvp, 0);
         GLES30.GlUniformMatrix4fv(_modelView, 1, false, modelView, 0);
         GLES30.GlUniform3f(_tint, draw.Tint.X, draw.Tint.Y, draw.Tint.Z);
+        GLES30.GlUniform1i(_albedo, 0);
+        GLES30.GlActiveTexture(GLES30.GlTexture0);
         foreach (var group in draw.Mesh.Groups)
         {
+            GLES30.GlBindTexture(GLES30.GlTexture2d, TextureFor(group.Texture));
             GLES30.GlUniform3f(_group, group.Color.X, group.Color.Y, group.Color.Z);
             GLES30.GlDrawElements(GLES30.GlTriangles, group.IndexCount, GLES30.GlUnsignedInt, group.IndexOffset * 4);
         }
+    }
+
+    int TextureFor(int index)
+    {
+        if ((uint)index < (uint)_textures.Length && _textures[index] != 0)
+            return _textures[index];
+
+        return _white;
     }
 
     void EnsureBuffers(ObjectDraw draw)
@@ -276,7 +301,48 @@ sealed class ObjectPlatformView : TextureView, TextureView.ISurfaceTextureListen
         GLES30.GlBufferData(GLES30.GlArrayBuffer, vertexBuffer.Capacity(), vertexBuffer, GLES30.GlStaticDraw);
         GLES30.GlBindBuffer(GLES30.GlElementArrayBuffer, _indices);
         GLES30.GlBufferData(GLES30.GlElementArrayBuffer, indexBuffer.Capacity(), indexBuffer, GLES30.GlStaticDraw);
+        DeleteMeshTextures();
+        if (_white == 0)
+            _white = Upload(WhiteRgba, 1, 1);
+        _textures = new int[draw.Mesh.Images.Length];
+        for (var i = 0; i < draw.Mesh.Images.Length; i++)
+        {
+            var image = draw.Mesh.Images[i];
+            _textures[i] = Upload(image.Rgba, image.Width, image.Height);
+        }
+
         _generation = draw.Generation;
+    }
+
+    static readonly byte[] WhiteRgba = [255, 255, 255, 255];
+
+    static int Upload(byte[] rgba, int width, int height)
+    {
+        if (width <= 0 || height <= 0 || rgba.Length < width * height * 4)
+            return 0;
+
+        var ids = new int[1];
+        GLES30.GlGenTextures(1, ids, 0);
+        var id = ids[0];
+        if (id == 0)
+            return 0;
+
+        GLES30.GlBindTexture(GLES30.GlTexture2d, id);
+        GLES30.GlTexParameteri(GLES30.GlTexture2d, GLES30.GlTextureMinFilter, GLES30.GlLinear);
+        GLES30.GlTexParameteri(GLES30.GlTexture2d, GLES30.GlTextureMagFilter, GLES30.GlLinear);
+        GLES30.GlTexParameteri(GLES30.GlTexture2d, GLES30.GlTextureWrapS, GLES30.GlRepeat);
+        GLES30.GlTexParameteri(GLES30.GlTexture2d, GLES30.GlTextureWrapT, GLES30.GlRepeat);
+        GLES30.GlTexImage2D(
+            GLES30.GlTexture2d,
+            0,
+            GLES30.GlSrgb8Alpha8,
+            width,
+            height,
+            0,
+            GLES30.GlRgba,
+            GLES30.GlUnsignedByte,
+            Bytes(rgba));
+        return id;
     }
 
     void Resolve()
@@ -318,6 +384,7 @@ sealed class ObjectPlatformView : TextureView, TextureView.ISurfaceTextureListen
         _modelView = GLES30.GlGetUniformLocation(_program, "uModelView");
         _tint = GLES30.GlGetUniformLocation(_program, "uTint");
         _group = GLES30.GlGetUniformLocation(_program, "uGroup");
+        _albedo = GLES30.GlGetUniformLocation(_program, "uAlbedo");
         GLES30.GlEnable(GLES30.GlDepthTest);
         GLES30.GlDepthFunc(GLES30.GlLequal);
         GLES30.GlEnable(GLES30.GlCullFaceConst);
@@ -438,6 +505,22 @@ sealed class ObjectPlatformView : TextureView, TextureView.ISurfaceTextureListen
             GLES30.GlDeleteBuffers(1, [_indices], 0);
             _indices = 0;
         }
+
+        DeleteMeshTextures();
+        if (_white != 0)
+        {
+            GLES30.GlDeleteTextures(1, [_white], 0);
+            _white = 0;
+        }
+    }
+
+    void DeleteMeshTextures()
+    {
+        if (_textures.Length == 0)
+            return;
+
+        GLES30.GlDeleteTextures(_textures.Length, _textures, 0);
+        _textures = [];
     }
 
     void ReleaseGl()
@@ -474,6 +557,14 @@ sealed class ObjectPlatformView : TextureView, TextureView.ISurfaceTextureListen
         _window = null;
         _generation = 0;
         _msaa = false;
+    }
+
+    static ByteBuffer Bytes(byte[] values)
+    {
+        var buffer = ByteBuffer.AllocateDirect(values.Length)!;
+        buffer.Put(values);
+        buffer.Position(0);
+        return buffer;
     }
 
     static ByteBuffer Bytes(float[] values)

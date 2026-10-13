@@ -230,7 +230,7 @@ MarkdownView()
 
 ### Object
 
-`ObjectView` draws one rigid triangle mesh. Drag to orbit, pinch to zoom, and drag with two fingers to pan. `Color` is a tint multiplied over the mesh colors. A `.glb` path is a file on disk. A Maui asset name is not a path.
+`ObjectView` draws one rigid triangle mesh. Drag to orbit, pinch to zoom, and drag with two fingers to pan. `Color` is a tint multiplied over the mesh colors, including a `.glb` base-color image. Metallic, roughness, and normal maps are not read. A `.glb` path is a file on disk. A Maui asset name is not a path.
 
 #### Properties
 
@@ -287,7 +287,7 @@ builder
 
 ## Samples
 
-`samples/KitTests` is a MauiReactor app for the controls. The glaze page scrolls text behind a top bar, a round button, a button, cards, and entries, and it can switch the page between light and dark. Text opens `RichTextTestPage`. Markdown opens `MarkdownTestPage`. Reading opens `ReadingTestPage`. Object opens `ObjectTestPage`. Model opens `ModelTestPage`, which copies `Resources/Raw/gem.glb` to a file path and passes that path to `Source`.
+`samples/KitTests` is a MauiReactor app for the controls. The glaze page scrolls text behind a top bar, a round button, a button, cards, and entries, and it can switch the page between light and dark. Text opens `RichTextTestPage`. Markdown opens `MarkdownTestPage`. Reading opens `ReadingTestPage`. Object opens `ObjectTestPage`. Model opens `ModelTestPage`, which copies `Resources/Raw/industrial_microscope.glb` to a file path and passes that path to `Source`.
 
 ## Building
 

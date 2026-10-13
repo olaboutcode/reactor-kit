@@ -12,6 +12,7 @@ static class GlbReader
     const uint BinChunk = 0x004E4942;
     const int Triangles = 4;
     const int FloatType = 5126;
+    const int UnsignedByte = 5121;
     const int UnsignedShort = 5123;
     const int UnsignedInt = 5125;
 
@@ -19,7 +20,8 @@ static class GlbReader
     {
         try
         {
-            return ReadBytes(File.ReadAllBytes(path));
+            var directory = Path.GetDirectoryName(Path.GetFullPath(path));
+            return ReadBytes(File.ReadAllBytes(path), directory);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException
             or JsonException or InvalidDataException or OverflowException or IndexOutOfRangeException
@@ -29,7 +31,7 @@ static class GlbReader
         }
     }
 
-    static Mesh ReadBytes(byte[] bytes)
+    static Mesh ReadBytes(byte[] bytes, string? directory)
     {
         if (bytes.Length < 20 || BinaryPrimitives.ReadUInt32LittleEndian(bytes) != Magic)
             return Mesh.Empty;
@@ -61,13 +63,14 @@ static class GlbReader
             return Mesh.Empty;
 
         var buckets = new List<Bucket>();
+        var images = new GlbImages.Cache();
         for (var i = 0; i < sceneNodes.GetArrayLength(); i++)
         {
-            if (TakeFirst(root, nodes, meshes, bin, sceneNodes[i].GetInt32(), Matrix4x4.Identity, buckets))
+            if (TakeFirst(root, nodes, meshes, bin, directory, sceneNodes[i].GetInt32(), Matrix4x4.Identity, buckets, images))
                 break;
         }
 
-        return Combine(buckets);
+        return Combine(buckets, images);
     }
 
     static JsonElement SceneNodes(JsonElement root)
@@ -83,9 +86,11 @@ static class GlbReader
         JsonElement nodes,
         JsonElement meshes,
         ReadOnlySpan<byte> bin,
+        string? directory,
         int nodeIndex,
         Matrix4x4 parent,
-        List<Bucket> buckets)
+        List<Bucket> buckets,
+        GlbImages.Cache images)
     {
         if (nodeIndex < 0 || nodeIndex >= nodes.GetArrayLength())
             return false;
@@ -94,7 +99,7 @@ static class GlbReader
         var world = Local(node) * parent;
         if (node.TryGetProperty("mesh", out var meshProperty))
         {
-            ReadMesh(root, meshes, bin, meshProperty.GetInt32(), world, buckets);
+            ReadMesh(root, meshes, bin, directory, meshProperty.GetInt32(), world, buckets, images);
             return true;
         }
 
@@ -103,7 +108,7 @@ static class GlbReader
 
         for (var i = 0; i < children.GetArrayLength(); i++)
         {
-            if (TakeFirst(root, nodes, meshes, bin, children[i].GetInt32(), world, buckets))
+            if (TakeFirst(root, nodes, meshes, bin, directory, children[i].GetInt32(), world, buckets, images))
                 return true;
         }
 
@@ -114,9 +119,11 @@ static class GlbReader
         JsonElement root,
         JsonElement meshes,
         ReadOnlySpan<byte> bin,
+        string? directory,
         int meshIndex,
         Matrix4x4 world,
-        List<Bucket> buckets)
+        List<Bucket> buckets,
+        GlbImages.Cache images)
     {
         if (meshIndex < 0 || meshIndex >= meshes.GetArrayLength())
             return;
@@ -128,7 +135,7 @@ static class GlbReader
         Matrix4x4.Invert(world, out var inverse);
         var normalMatrix = Matrix4x4.Transpose(inverse);
         for (var i = 0; i < primitives.GetArrayLength(); i++)
-            ReadPrimitive(root, primitives[i], accessors, views, bin, world, normalMatrix, buckets);
+            ReadPrimitive(root, primitives[i], accessors, views, bin, directory, world, normalMatrix, buckets, images);
     }
 
     static void ReadPrimitive(
@@ -137,9 +144,11 @@ static class GlbReader
         JsonElement accessors,
         JsonElement views,
         ReadOnlySpan<byte> bin,
+        string? directory,
         Matrix4x4 world,
         Matrix4x4 normalMatrix,
-        List<Bucket> buckets)
+        List<Bucket> buckets,
+        GlbImages.Cache images)
     {
         if (primitive.TryGetProperty("mode", out var mode) && mode.GetInt32() != Triangles)
             return;
@@ -181,15 +190,24 @@ static class GlbReader
         if (indices is null || indices.Length < 3 || indices.Length % 3 != 0)
             return;
 
+        float[]? texCoords = null;
+        if (attributes.TryGetProperty("TEXCOORD_0", out var texCoordAccessor)
+            && TryVec2(accessors, views, bin, texCoordAccessor.GetInt32(), out var readTexCoords)
+            && readTexCoords.Length == (positions.Length / 3) * 2)
+        {
+            texCoords = readTexCoords;
+        }
+
         var color = MaterialColor(root, primitive);
-        var bucket = BucketFor(buckets, color);
+        var texture = GlbImages.Slot(images, root, primitive, bin, directory);
+        var bucket = BucketFor(buckets, color, texture);
         if (normals is null)
-            AppendFlat(bucket, positions, indices);
+            AppendFlat(bucket, positions, texCoords, indices);
         else
-            AppendSmooth(bucket, positions, normals, indices);
+            AppendSmooth(bucket, positions, normals, texCoords, indices);
     }
 
-    static void AppendSmooth(Bucket bucket, float[] positions, float[] normals, int[] indices)
+    static void AppendSmooth(Bucket bucket, float[] positions, float[] normals, float[]? texCoords, int[] indices)
     {
         var count = positions.Length / 3;
         for (var i = 0; i < indices.Length; i++)
@@ -198,51 +216,72 @@ static class GlbReader
                 return;
         }
 
-        var start = bucket.Vertices.Count / 6;
+        var start = bucket.Vertices.Count / Mesh.FloatsPerVertex;
         for (var i = 0; i < count; i++)
         {
             var source = i * 3;
+            var uv = i * 2;
             bucket.Vertices.Add(positions[source]);
             bucket.Vertices.Add(positions[source + 1]);
             bucket.Vertices.Add(positions[source + 2]);
             bucket.Vertices.Add(normals[source]);
             bucket.Vertices.Add(normals[source + 1]);
             bucket.Vertices.Add(normals[source + 2]);
+            bucket.Vertices.Add(texCoords is null ? 0f : texCoords[uv]);
+            bucket.Vertices.Add(texCoords is null ? 0f : texCoords[uv + 1]);
         }
 
         for (var i = 0; i < indices.Length; i++)
             bucket.Indices.Add(start + indices[i]);
     }
 
-    static void AppendFlat(Bucket bucket, float[] positions, int[] indices)
+    static void AppendFlat(Bucket bucket, float[] positions, float[]? texCoords, int[] indices)
     {
         for (var i = 0; i < indices.Length; i += 3)
         {
             if (!TryCorner(positions, indices[i], out var a)
                 || !TryCorner(positions, indices[i + 1], out var b)
-                || !TryCorner(positions, indices[i + 2], out var c))
+                || !TryCorner(positions, indices[i + 2], out var c)
+                || !TryUv(texCoords, indices[i], out var uvA)
+                || !TryUv(texCoords, indices[i + 1], out var uvB)
+                || !TryUv(texCoords, indices[i + 2], out var uvC))
             {
                 return;
             }
 
             var normal = Vector3.Cross(b - a, c - a);
             normal = normal.LengthSquared() < 1e-12f ? Vector3.UnitY : Vector3.Normalize(normal);
-            AddCorner(bucket, a, normal);
-            AddCorner(bucket, b, normal);
-            AddCorner(bucket, c, normal);
+            AddCorner(bucket, a, normal, uvA);
+            AddCorner(bucket, b, normal, uvB);
+            AddCorner(bucket, c, normal, uvC);
         }
     }
 
-    static void AddCorner(Bucket bucket, Vector3 position, Vector3 normal)
+    static void AddCorner(Bucket bucket, Vector3 position, Vector3 normal, Vector2 uv)
     {
-        var index = bucket.Vertices.Count / 6;
+        var index = bucket.Vertices.Count / Mesh.FloatsPerVertex;
         bucket.Vertices.Add(position.X);
         bucket.Vertices.Add(position.Y);
         bucket.Vertices.Add(position.Z);
         bucket.Vertices.Add(normal.X);
         bucket.Vertices.Add(normal.Y);
         bucket.Vertices.Add(normal.Z);
+        bucket.Vertices.Add(uv.X);
+        bucket.Vertices.Add(uv.Y);
         bucket.Indices.Add(index);
+    }
+
+    static bool TryUv(float[]? texCoords, int index, out Vector2 uv)
+    {
+        uv = Vector2.Zero;
+        if (texCoords is null)
+            return true;
+        if ((uint)index >= (uint)(texCoords.Length / 2))
+            return false;
+
+        var source = index * 2;
+        uv = new Vector2(texCoords[source], texCoords[source + 1]);
+        return true;
     }
 
     static bool TryCorner(float[] positions, int index, out Vector3 corner)
@@ -256,24 +295,25 @@ static class GlbReader
         return true;
     }
 
-    static Bucket BucketFor(List<Bucket> buckets, Vector3 color)
+    static Bucket BucketFor(List<Bucket> buckets, Vector3 color, int texture)
     {
         var key = HashCode.Combine(
             BitConverter.SingleToInt32Bits(color.X),
             BitConverter.SingleToInt32Bits(color.Y),
-            BitConverter.SingleToInt32Bits(color.Z));
+            BitConverter.SingleToInt32Bits(color.Z),
+            texture);
         foreach (var bucket in buckets)
         {
             if (bucket.Key == key)
                 return bucket;
         }
 
-        var created = new Bucket(key, color);
+        var created = new Bucket(key, color, texture);
         buckets.Add(created);
         return created;
     }
 
-    static Mesh Combine(List<Bucket> buckets)
+    static Mesh Combine(List<Bucket> buckets, GlbImages.Cache images)
     {
         if (buckets.Count == 0)
             return Mesh.Empty;
@@ -282,14 +322,14 @@ static class GlbReader
         var indexCount = 0;
         foreach (var bucket in buckets)
         {
-            vertexCount += bucket.Vertices.Count / 6;
+            vertexCount += bucket.Vertices.Count / Mesh.FloatsPerVertex;
             indexCount += bucket.Indices.Count;
         }
 
         if (vertexCount == 0 || indexCount == 0 || vertexCount > Mesh.MaxVertices || indexCount > Mesh.MaxIndices)
             return Mesh.Empty;
 
-        var interleaved = new float[vertexCount * 6];
+        var interleaved = new float[vertexCount * Mesh.FloatsPerVertex];
         var indices = new int[indexCount];
         var groups = new MeshGroup[buckets.Count];
         var vertex = 0;
@@ -297,16 +337,16 @@ static class GlbReader
         for (var i = 0; i < buckets.Count; i++)
         {
             var bucket = buckets[i];
-            var baseVertex = vertex / 6;
+            var baseVertex = vertex / Mesh.FloatsPerVertex;
             bucket.Vertices.CopyTo(interleaved, vertex);
             var indexStart = index;
             foreach (var value in bucket.Indices)
                 indices[index++] = baseVertex + value;
-            groups[i] = new MeshGroup(indexStart, bucket.Indices.Count, bucket.Color);
+            groups[i] = new MeshGroup(indexStart, bucket.Indices.Count, bucket.Color, bucket.Texture);
             vertex += bucket.Vertices.Count;
         }
 
-        return Mesh.FromParts(interleaved, indices, groups);
+        return Mesh.FromParts(interleaved, indices, groups, images.Images.ToArray());
     }
 
     static Vector3 MaterialColor(JsonElement root, JsonElement primitive)
@@ -383,6 +423,71 @@ static class GlbReader
 
         return true;
     }
+
+    static bool TryVec2(JsonElement accessors, JsonElement views, ReadOnlySpan<byte> bin, int index, out float[] values)
+    {
+        if (TryFloatVec2(accessors, views, bin, index, out values))
+            return true;
+        if (TryNormalizedVec2(accessors, views, bin, index, UnsignedShort, 2, 65535f, out values))
+            return true;
+
+        return TryNormalizedVec2(accessors, views, bin, index, UnsignedByte, 1, 255f, out values);
+    }
+
+    static bool TryFloatVec2(JsonElement accessors, JsonElement views, ReadOnlySpan<byte> bin, int index, out float[] values)
+    {
+        values = [];
+        if (!TryView(accessors, views, index, "VEC2", FloatType, out var offset, out var count, out var stride))
+            return false;
+        if (stride == 0)
+            stride = 8;
+        if (count <= 0 || offset < 0 || (offset + ((count - 1) * stride)) + 8 > bin.Length)
+            return false;
+
+        values = new float[count * 2];
+        for (var i = 0; i < count; i++)
+        {
+            var start = offset + (i * stride);
+            values[i * 2] = BinaryPrimitives.ReadSingleLittleEndian(bin.Slice(start, 4));
+            values[(i * 2) + 1] = BinaryPrimitives.ReadSingleLittleEndian(bin.Slice(start + 4, 4));
+        }
+
+        return true;
+    }
+
+    static bool TryNormalizedVec2(
+        JsonElement accessors,
+        JsonElement views,
+        ReadOnlySpan<byte> bin,
+        int index,
+        int componentType,
+        int width,
+        float scale,
+        out float[] values)
+    {
+        values = [];
+        if (!TryView(accessors, views, index, "VEC2", componentType, out var offset, out var count, out var stride))
+            return false;
+        if (stride == 0)
+            stride = width * 2;
+        if (count <= 0 || offset < 0 || (offset + ((count - 1) * stride)) + (width * 2) > bin.Length)
+            return false;
+
+        values = new float[count * 2];
+        for (var i = 0; i < count; i++)
+        {
+            var start = offset + (i * stride);
+            values[i * 2] = ReadNormalized(bin, start, width) / scale;
+            values[(i * 2) + 1] = ReadNormalized(bin, start + width, width) / scale;
+        }
+
+        return true;
+    }
+
+    static float ReadNormalized(ReadOnlySpan<byte> bin, int start, int width)
+        => width == 1
+            ? bin[start]
+            : BinaryPrimitives.ReadUInt16LittleEndian(bin.Slice(start, 2));
 
     static int[]? ReadIndices(JsonElement accessors, JsonElement views, ReadOnlySpan<byte> bin, int index)
     {
@@ -466,11 +571,13 @@ static class GlbReader
         return indices;
     }
 
-    sealed class Bucket(int key, Vector3 color)
+    sealed class Bucket(int key, Vector3 color, int texture)
     {
         public int Key { get; } = key;
 
         public Vector3 Color { get; } = color;
+
+        public int Texture { get; } = texture;
 
         public List<float> Vertices { get; } = [];
 
