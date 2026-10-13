@@ -1,3 +1,4 @@
+using Reactor.Kit.Internals.RichText;
 using SkiaSharp;
 using SkiaSharp.Views.Maui;
 using SkiaSharp.Views.Maui.Controls;
@@ -16,6 +17,9 @@ internal sealed class MarkdownCanvas : SKCanvasView, IDisposable
     public static readonly BindableProperty FontSizeProperty = BindableProperty.Create(
         nameof(FontSize), typeof(double), typeof(MarkdownCanvas), 16d, propertyChanged: OnLayoutChanged);
 
+    public static readonly BindableProperty FontFamilyProperty = BindableProperty.Create(
+        nameof(FontFamily), typeof(string), typeof(MarkdownCanvas), null, propertyChanged: OnLayoutChanged);
+
     public static readonly BindableProperty TextColorProperty = BindableProperty.Create(
         nameof(TextColor), typeof(Color), typeof(MarkdownCanvas), Colors.Black, propertyChanged: OnPaintChanged);
 
@@ -26,6 +30,7 @@ internal sealed class MarkdownCanvas : SKCanvasView, IDisposable
     string? _cachedPath;
     string? _cachedText;
     string? _laidSource;
+    string? _laidFamily;
     float _laidWidth = -1;
     double _laidSize = -1;
     bool _layoutDirty = true;
@@ -55,6 +60,13 @@ internal sealed class MarkdownCanvas : SKCanvasView, IDisposable
     {
         get => (double)GetValue(FontSizeProperty);
         set => SetValue(FontSizeProperty, value);
+    }
+
+    /// <summary>Registered font name. An empty name keeps the system font. Code stays monospace.</summary>
+    public string? FontFamily
+    {
+        get => (string?)GetValue(FontFamilyProperty);
+        set => SetValue(FontFamilyProperty, value);
     }
 
     public Color TextColor
@@ -135,17 +147,20 @@ internal sealed class MarkdownCanvas : SKCanvasView, IDisposable
     {
         var source = Source();
         var size = FontSize;
+        var family = FontFamily;
         if (!_layoutDirty && _layout is not null && Math.Abs(width - _laidWidth) < 0.5f
             && string.Equals(_laidSource, source, StringComparison.Ordinal)
+            && string.Equals(_laidFamily, family, StringComparison.Ordinal)
             && Math.Abs(_laidSize - size) < 0.01)
         {
             return;
         }
 
         _layout?.Dispose();
-        _layout = new MarkdownLayout(source, width, (float)size);
+        _layout = new MarkdownLayout(source, width, (float)size, FontFace.Open(family));
         _laidWidth = width;
         _laidSource = source;
+        _laidFamily = family;
         _laidSize = size;
         _layoutDirty = false;
         var content = Math.Max(1d, _layout.Height);

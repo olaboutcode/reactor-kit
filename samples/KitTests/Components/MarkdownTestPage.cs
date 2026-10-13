@@ -95,6 +95,7 @@ sealed class MarkdownTestPage : Component
                 ScrollView(
                     MarkdownView()
                         .Markdown(Notes)
+                        .FontFamily(AppFont.Family)
                         .FontSize(16)
                         .TextColor(Ink)
                         .VStart()

@@ -140,6 +140,7 @@ GlazeView(Label("Title").Center())
 |---|---|---|
 | `Text` | empty | The paragraph. |
 | `FontSize` | `17` | Size in device-independent pixels. |
+| `FontFamily` | system | Registered font name. Missing glyphs still come from the system fonts. |
 | `LineSpacing` | `4` | Extra pixels between lines. |
 | `Appearance` | none | Page metrics, or a callback that builds them from the text. `RunAt` styles one word. An unset size or spacing keeps `FontSize` and `LineSpacing`. |
 | `TextColor` | black | Glyph color. |
@@ -224,6 +225,7 @@ The diagram is a flowchart. A line can set the direction: `TB`, `TD`, `BT`, `LR`
 | `Markdown` | empty | The document. |
 | `File` | empty | UTF-8 path. When set, this replaces `Markdown`. |
 | `FontSize` | `16` | Body size in device-independent pixels. |
+| `FontFamily` | system | Registered font name for the prose. Code stays monospace. |
 | `TextColor` | black | Text, rules, table grid, and diagram strokes. |
 
 ```csharp

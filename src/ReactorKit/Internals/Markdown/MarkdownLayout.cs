@@ -8,6 +8,7 @@ internal sealed class MarkdownLayout : IDisposable
 {
     readonly List<Drawn> _blocks = [];
     readonly Dictionary<int, TextShaper> _shapers = [];
+    readonly SKTypeface _body;
     readonly SKTypeface _monoFace;
     readonly SKFont _mono;
     readonly bool _disposeMono;
@@ -16,10 +17,11 @@ internal sealed class MarkdownLayout : IDisposable
 
     public float Width { get; }
 
-    public MarkdownLayout(string? markdown, float width, float fontSize)
+    public MarkdownLayout(string? markdown, float width, float fontSize, SKTypeface? body = null)
     {
         Width = Math.Max(1, width);
         fontSize = Math.Max(1, fontSize);
+        _body = body ?? SKTypeface.Default;
         (_monoFace, _disposeMono) = OpenMono();
         _mono = new SKFont(_monoFace, Math.Max(1, fontSize * 0.92f));
         var y = 0f;
@@ -127,7 +129,7 @@ internal sealed class MarkdownLayout : IDisposable
         var key = (int)Math.Round(size * 100);
         if (_shapers.TryGetValue(key, out var existing))
             return existing;
-        var shaper = new TextShaper();
+        var shaper = new TextShaper(_body);
         shaper.Use(size);
         _shapers[key] = shaper;
         return shaper;

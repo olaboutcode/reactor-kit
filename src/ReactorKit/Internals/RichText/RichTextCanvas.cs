@@ -19,6 +19,9 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
     public static readonly BindableProperty FontSizeProperty = BindableProperty.Create(
         nameof(FontSize), typeof(double), typeof(RichTextCanvas), 17d, propertyChanged: OnLayoutPropertyChanged);
 
+    public static readonly BindableProperty FontFamilyProperty = BindableProperty.Create(
+        nameof(FontFamily), typeof(string), typeof(RichTextCanvas), null, propertyChanged: OnLayoutPropertyChanged);
+
     public static readonly BindableProperty LineSpacingProperty = BindableProperty.Create(
         nameof(LineSpacing), typeof(double), typeof(RichTextCanvas), 4d, propertyChanged: OnLayoutPropertyChanged);
 
@@ -62,7 +65,8 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
 
     readonly Dictionary<int, object?> _tags = [];
     readonly Dictionary<int, TextShaper> _sizes = [];
-    readonly TextShaper _shaper = new();
+    TextShaper _shaper = new();
+    SKTypeface _body = SKTypeface.Default;
     Word[] _words = [];
     Sentence[] _sentences = [];
     bool[] _highlighted = [];
@@ -113,6 +117,13 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
     {
         get => (double)GetValue(FontSizeProperty);
         set => SetValue(FontSizeProperty, value);
+    }
+
+    /// <summary>Registered font name. An empty name keeps the system font.</summary>
+    public string? FontFamily
+    {
+        get => (string?)GetValue(FontFamilyProperty);
+        set => SetValue(FontFamilyProperty, value);
     }
 
     /// <summary>Extra pixels between lines.</summary>
@@ -396,7 +407,7 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
         var key = (int)Math.Round(size * 100f);
         if (_sizes.TryGetValue(key, out var found))
             return found;
-        var created = new TextShaper();
+        var created = new TextShaper(_body);
         created.Use(size);
         _sizes[key] = created;
         return created;
@@ -799,10 +810,23 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
 
     void EnsureFont(float size)
     {
+        var face = FontFace.Open(FontFamily);
+        if (!ReferenceEquals(face, _body))
+        {
+            _body = face;
+            _shaper.Dispose();
+            _shaper = new TextShaper(face);
+            foreach (var shaper in _sizes.Values)
+                shaper.Dispose();
+            _sizes.Clear();
+            _font?.Dispose();
+            _font = null;
+        }
+
         if (_font is not null && Math.Abs(_font.Size - size) < 0.01f)
             return;
         _font?.Dispose();
-        _font = new SKFont(SKTypeface.Default, size);
+        _font = new SKFont(face, size);
     }
 
     void DisposeSkia()

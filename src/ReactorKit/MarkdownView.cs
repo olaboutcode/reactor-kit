@@ -40,6 +40,12 @@ public sealed class MarkdownView : View<SKCanvasView>
     public MarkdownView FontSize(Func<double> size, IComponentWithState? state = null)
         => this.Set(NativeMarkdown.FontSizeProperty, new PropertyValue<double>(size, state));
 
+    public MarkdownView FontFamily(string family)
+        => this.Set(NativeMarkdown.FontFamilyProperty, family);
+
+    public MarkdownView FontFamily(Func<string> family, IComponentWithState? state = null)
+        => this.Set(NativeMarkdown.FontFamilyProperty, new PropertyValue<string>(family, state));
+
     public MarkdownView TextColor(Color color)
         => this.Set(NativeMarkdown.TextColorProperty, color);
 

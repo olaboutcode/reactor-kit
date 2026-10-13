@@ -23,10 +23,41 @@ public static class MauiProgram
             .UseReactorKit(settings => settings.EnableBorderlessEntry = true)
             .ConfigureFonts(fonts =>
             {
-                fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-                fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+                fonts.AddFont("Lexend-Regular.ttf", AppFont.Family);
             });
 
+        UseLexend();
         return builder.Build();
+    }
+
+    static void UseLexend()
+    {
+        var labels = LabelStyles.Default;
+        LabelStyles.Default = label =>
+        {
+            labels?.Invoke(label);
+            label.FontFamily(AppFont.Family);
+        };
+
+        var buttons = ButtonStyles.Default;
+        ButtonStyles.Default = button =>
+        {
+            buttons?.Invoke(button);
+            button.FontFamily(AppFont.Family);
+        };
+
+        var entries = EntryStyles.Default;
+        EntryStyles.Default = entry =>
+        {
+            entries?.Invoke(entry);
+            entry.FontFamily(AppFont.Family);
+        };
+
+        var editors = EditorStyles.Default;
+        EditorStyles.Default = editor =>
+        {
+            editors?.Invoke(editor);
+            editor.FontFamily(AppFont.Family);
+        };
     }
 }

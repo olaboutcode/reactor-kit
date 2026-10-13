@@ -24,7 +24,7 @@ internal sealed class TextShaper : IDisposable
         "C:\\Windows\\Fonts\\seguiemj.ttf",
     ];
 
-    readonly SKTypeface _body = SKTypeface.Default;
+    readonly SKTypeface _body;
     readonly Dictionary<int, SKTypeface> _matched = [];
     readonly Dictionary<string, SKTypeface> _owned = [];
     readonly Dictionary<SKTypeface, SKFont> _fonts = [];
@@ -32,6 +32,11 @@ internal sealed class TextShaper : IDisposable
     SKFont? _bodyFont;
     SKTypeface? _emoji;
     bool _emojiLookedUp;
+
+    public TextShaper(SKTypeface? body = null)
+    {
+        _body = body ?? SKTypeface.Default;
+    }
 
     public void Use(float size)
     {

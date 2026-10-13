@@ -82,6 +82,7 @@ sealed class RichTextTestPage : Component<RichTextTestPage.PageState>
 
     RichTextView ChapterText()
         => RichTextView(John.Text)
+            .FontFamily(AppFont.Family)
             .FontSize(18)
             .LineSpacing(7)
             .TextColor(Ink)

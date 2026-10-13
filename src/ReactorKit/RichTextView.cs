@@ -37,6 +37,12 @@ public sealed class RichTextView : View<SKCanvasView>
     public RichTextView FontSize(Func<double> size, IComponentWithState? state = null)
         => this.Set(NativeRichText.FontSizeProperty, new PropertyValue<double>(size, state));
 
+    public RichTextView FontFamily(string family)
+        => this.Set(NativeRichText.FontFamilyProperty, family);
+
+    public RichTextView FontFamily(Func<string> family, IComponentWithState? state = null)
+        => this.Set(NativeRichText.FontFamilyProperty, new PropertyValue<string>(family, state));
+
     public RichTextView LineSpacing(double spacing)
         => this.Set(NativeRichText.LineSpacingProperty, spacing);
 
