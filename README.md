@@ -22,6 +22,9 @@ A library of custom controls for [MauiReactor](https://github.com/adospace/react
   - [Markdown](#markdown)
     - [Properties](#properties-2)
     - [Supported platforms](#supported-platforms-2)
+  - [Object3D](#object3d)
+    - [Properties](#properties-3)
+    - [Supported platforms](#supported-platforms-3)
 - [Handlers](#handlers)
   - [BorderlessEntry](#borderlessentry)
   - [BorderlessEditor](#borderlesseditor)
@@ -73,10 +76,11 @@ GlazeView(panel => _panel = panel,
 
 ### Namespaces
 
-The namespace is `Reactor.Kit`. Rich text metrics and hits are in `Reactor.Kit.RichTextViewTokens`. Add these lines to the app's global usings.
+The namespace is `Reactor.Kit`. Rich text metrics and hits are in `Reactor.Kit.RichTextViewTokens`. Mesh and camera types are in `Reactor.Kit.ObjectViewTokens`. Add these lines to the app's global usings.
 
 ```csharp
 global using Reactor.Kit;
+global using Reactor.Kit.ObjectViewTokens;
 global using Reactor.Kit.RichTextViewTokens;
 global using static Reactor.Kit.Extensions;
 ```
@@ -222,6 +226,52 @@ MarkdownView()
 - Android 21+
 - Windows 10.0.17763+
 
+### Object3D
+
+`Object3DView` draws one rigid triangle mesh. A `.glb` includes every mesh in its default scene. Drag to orbit, pinch to zoom, and drag with two fingers to pan. `Color` is a tint multiplied over the mesh colors, including a `.glb` base-color image. `alphaMode` `MASK` cuts texels away, and `doubleSided` draws both faces. Metallic, roughness, normal maps, and blended transparency are not read. `Source` is a file path. The view reads that file and checks the glTF 2.0 header. A missing file throws the IO exception from the read. A file that is not a `.glb` throws `InvalidDataException`. `PackagedSource` is a Maui asset name and wins over `Source`. `Mesh` wins over both. A missing packaged asset, or one that is not a `.glb`, throws on the UI thread.
+
+#### Properties
+
+| Member | Default | Role |
+|---|---|---|
+| `Mesh` | empty | Triangle mesh. Copied when set. |
+| `Source` | empty | Filesystem path to a `.glb`. Ignored when `Mesh` or `PackagedSource` is set. A missing file or a non-glb throws. |
+| `PackagedSource` | empty | Maui asset name of a `.glb`. Ignored when `Mesh` is set. A missing asset or a non-glb throws on the UI thread. |
+| `Yaw` | `30` | Camera yaw around world up, in degrees. |
+| `Pitch` | `20` | Camera pitch, in degrees. |
+| `Distance` | unset | Camera distance. Unset frames the mesh. |
+| `Target` | unset | Look-at point. Unset uses the bounds center. |
+| `Rotation` | `0, 0, 0` | Root yaw, pitch, and roll, in degrees. |
+| `Scale` | `1` | Uniform scale about the mesh origin. |
+| `Color` | `#FFFFFF` | sRGB tint multiplied over the mesh. |
+| `Background` | transparent | Clear color. Does not tint the mesh. |
+| `Gestures` | `true` | Orbit, pinch zoom, and two-finger pan. |
+| `AutoRotate` | `false` | Advances yaw while the view is on screen. |
+| `OnOrbitChanged` | none | Settled `Orbit` after the last pointer lifts. Auto-rotate does not call it. |
+
+```csharp
+Object3DView()
+    .Mesh(Mesh.Sphere(1f, slices: 48, stacks: 32))
+    .Color(Color.FromArgb("#C8C2B8"))
+```
+
+How `Color` combines with a `.glb` is in [docs/object-view.md](docs/object-view.md).
+
+Pass a callback to capture the element. It is a `ContentView`. The callback receives null when the view unmounts.
+
+```csharp
+Microsoft.Maui.Controls.ContentView? _view;
+
+Object3DView(view => _view = view)
+    .PackagedSource("industrial_microscope.glb")
+```
+
+#### Supported platforms
+
+- iOS 15+
+- Mac Catalyst 17+
+- Android 21+
+
 ## Handlers
 
 List of available handlers.
@@ -248,7 +298,7 @@ builder
 
 ## Samples
 
-`samples/KitTests` is a MauiReactor app for the controls. The glaze page scrolls text behind a top bar, a round button, a button, cards, and entries, and it can switch the page between light and dark. Text opens `RichTextTestPage`. Markdown opens `MarkdownTestPage`. Reading opens `ReadingTestPage`.
+`samples/KitTests` is a MauiReactor app for the controls. The glaze page scrolls text behind a top bar, a round button, a button, cards, and entries, and it can switch the page between light and dark. Text opens `RichTextTestPage`. Markdown opens `MarkdownTestPage`. Reading opens `ReadingTestPage`. Object opens `ObjectTestPage`. Model opens `ModelTestPage`, which passes the packaged `industrial_microscope.glb` to `PackagedSource`.
 
 ## Building
 

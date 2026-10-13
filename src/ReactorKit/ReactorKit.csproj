@@ -43,6 +43,12 @@
     <PackageReference Include="Markdig" />
   </ItemGroup>
 
+  <ItemGroup Condition="$(TargetFramework.Contains('-windows'))">
+    <PackageReference Include="Vortice.Direct3D11" />
+    <PackageReference Include="Vortice.DXGI" />
+    <PackageReference Include="Vortice.D3DCompiler" />
+  </ItemGroup>
+
   <!-- Platforms/iOS is UIKit code shared with Mac Catalyst. The SDK otherwise compiles that folder for iOS only. -->
   <Target Name="ShareAppleHandlersWithMacCatalyst" BeforeTargets="_MauiNormalizePlatformSpecificFolders">
     <ItemGroup>

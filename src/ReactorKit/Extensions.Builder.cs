@@ -18,6 +18,7 @@ public static partial class Extensions
         builder.ConfigureMauiHandlers(handlers =>
         {
             Internals.Glaze.GlazeHandlers.Register(handlers);
+            Internals.Object3D.ObjectHandlers.Register(handlers);
 
             if (settings.EnableBorderlessEntry)
                 Handlers.BorderlessEntryHandler.Register();

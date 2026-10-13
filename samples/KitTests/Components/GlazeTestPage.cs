@@ -38,7 +38,9 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
                 ThemeButton(),
                 TextButton(),
                 MarkdownButton(),
-                ReadingButton()
+                ReadingButton(),
+                ObjectButton(),
+                ModelButton()
                 //,BottomSearchBar().VEnd()
             )
         )
@@ -107,6 +109,36 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
 
     void OpenReading()
         => _ = Navigation?.PushModalAsync<ReadingTestPage>();
+
+    MauiReactor.Button ObjectButton()
+        => Button("Object", OpenObject)
+            .TextColor(Paper)
+            .BackgroundColor(Ink)
+            .FontSize(15)
+            .CornerRadius(16)
+            .Height(36)
+            .Padding(14, 0)
+            .HEnd()
+            .VStart()
+            .Margin(16, 194);
+
+    void OpenObject()
+        => _ = Navigation?.PushModalAsync<ObjectTestPage>();
+
+    MauiReactor.Button ModelButton()
+        => Button("Model", OpenModel)
+            .TextColor(Paper)
+            .BackgroundColor(Ink)
+            .FontSize(15)
+            .CornerRadius(16)
+            .Height(36)
+            .Padding(14, 0)
+            .HEnd()
+            .VStart()
+            .Margin(16, 238);
+
+    void OpenModel()
+        => _ = Navigation?.PushModalAsync<ModelTestPage>();
 
     void Toggle()
         => SetState(s =>
