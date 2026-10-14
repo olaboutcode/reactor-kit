@@ -1,7 +1,9 @@
+using MauiReactor.Shapes;
+
 namespace KitTests.Components;
 
 /// <summary>
-/// A free-form panel anchored to a button. The menus come later.
+/// A pop-up menu and a free-form panel.
 /// </summary>
 sealed class MenuTestPage : Component<MenuTestPage.PageState>
 {
@@ -11,6 +13,8 @@ sealed class MenuTestPage : Component<MenuTestPage.PageState>
     internal sealed class PageState
     {
         public bool Open { get; set; }
+
+        public string Repeat { get; set; } = "never";
     }
 
     public override VisualNode Render()
@@ -18,6 +22,11 @@ sealed class MenuTestPage : Component<MenuTestPage.PageState>
             Grid("auto,*", "*",
                 NavigationBar.Create("Menu"),
                 VStack(
+                    Label("The button title follows the choice.")
+                        .FontSize(17)
+                        .TextColor(Ink)
+                        .HCenter(),
+                    RepeatMenu(),
                     Label("A panel can hold any content.")
                         .FontSize(17)
                         .TextColor(Ink)
@@ -39,6 +48,37 @@ sealed class MenuTestPage : Component<MenuTestPage.PageState>
             .Padding(16)
         )
         .BackgroundColor(Paper);
+
+    PopupMenu RepeatMenu()
+        => PopupMenu()
+            .Sections(
+            [
+                [
+                    new PopupMenuItem("never", "Never"),
+                    new PopupMenuItem("day", "Every Day"),
+                    new PopupMenuItem("week", "Every Week"),
+                ],
+                [
+                    new PopupMenuItem("custom", "Custom",
+                        HStack(
+                            new Ellipse()
+                                .Fill(Ink)
+                                .Width(8)
+                                .Height(8)
+                                .VCenter(),
+                            Label("Custom")
+                                .FontSize(17)
+                                .TextColor(Ink)
+                                .VCenter()
+                        )
+                        .Spacing(8)
+                        .VCenter()),
+                ],
+            ])
+            .Selected(State.Repeat)
+            .OnSelected(id => SetState(s => s.Repeat = id))
+            .TextColor(Paper)
+            .BackgroundColor(Ink);
 
     MauiReactor.Button ShowButton()
         => new MauiReactor.Button("Show", Open)

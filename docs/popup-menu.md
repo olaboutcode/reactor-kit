@@ -1,6 +1,6 @@
 # Popup menu and pull-down menu
 
-This is the plan for issue 11. `PopupView` is in the library. `PopupMenu` and `PullDownMenu` are not. After the menus ship, this document describes the behavior that shipped.
+This is the plan for issue 11. `PopupView` and `PopupMenu` are in the library. `PullDownMenu` is not. After the pull-down menu ships, this document describes the behavior that shipped.
 
 iOS is the reference for what the controls do. UIKit builds both from a button and a `UIMenu`. A pop-up button turns on `showsMenuAsPrimaryAction` and `changesSelectionAsPrimaryAction`, marks one action `on`, and shows that action as the button title. A pull-down button turns on `showsMenuAsPrimaryAction`, leaves `changesSelectionAsPrimaryAction` off, and keeps the button's own title while the menu runs commands. The guides are [Pop-up buttons](https://developer.apple.com/design/human-interface-guidelines/pop-up-buttons) and [Pull-down buttons](https://developer.apple.com/design/human-interface-guidelines/pull-down-buttons).
 
@@ -83,14 +83,14 @@ PopupMenu()
         },
         new[]
         {
-            new PopupMenuItem("custom", "Custom"),
+            new PopupMenuItem("custom", "Custom", Label("Custom")),
         },
     })
     .Selected(State.Repeat)
     .OnSelected(id => SetState(s => s.Repeat = id));
 ```
 
-`PopupMenuItem` is a readonly record in `Reactor.Kit.PopupMenuTokens`: `Id`, `Title`, and `Enabled` (default true). `Id` comparison is ordinal. A duplicate id throws when the menu is built.
+`PopupMenuItem` is a readonly record in `Reactor.Kit.PopupMenuTokens`: `Id`, `Title`, `Enabled` (default true), and an optional `Content` view. The button shows `Title`. When `Content` is set, the row shows that view instead of the title, so a row can hold an icon and its own text. `Id` comparison is ordinal. A duplicate id throws when the menu is built.
 
 `Sections` is a list of lists. A hairline sits between sections. An empty section is skipped. A menu with no items shows the placeholder and opens an empty panel.
 
@@ -100,7 +100,7 @@ PopupMenu()
 
 The open flag lives in the component's own state, so a parent render leaves the menu open. `Selected` stays a prop.
 
-The button is a 36pt-tall control, corner radius 14, horizontal padding 14. It uses the app font when one is set, otherwise the system font. `TextColor` and `BackgroundColor` follow the usual MAUI defaults (black on transparent) unless the page sets them.
+The button is a 36pt-tall control, corner radius 14, horizontal padding 14. It uses the app font when one is set, otherwise the system font. `TextColor` and `BackgroundColor` style that button (black on transparent unless the page sets them). A plain row title stays black, because the panel uses the light glaze tint. Custom content brings its own colors.
 
 ## PullDownMenu
 
