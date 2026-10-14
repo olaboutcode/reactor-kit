@@ -49,3 +49,6 @@ dotnet_diagnostic.CA1010.severity = none
 
 [src/ReactorKit/Object3DView.cs]
 dotnet_diagnostic.CA1010.severity = none
+
+[src/ReactorKit/PopupView.cs]
+dotnet_diagnostic.CA1010.severity = none

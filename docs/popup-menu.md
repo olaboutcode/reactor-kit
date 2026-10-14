@@ -1,6 +1,6 @@
 # Popup menu and pull-down menu
 
-This is the plan for issue 11. The controls are not written yet. After they ship, this document describes the behavior that shipped.
+This is the plan for issue 11. `PopupView` is in the library. `PopupMenu` and `PullDownMenu` are not. After the menus ship, this document describes the behavior that shipped.
 
 iOS is the reference for what the controls do. UIKit builds both from a button and a `UIMenu`. A pop-up button turns on `showsMenuAsPrimaryAction` and `changesSelectionAsPrimaryAction`, marks one action `on`, and shows that action as the button title. A pull-down button turns on `showsMenuAsPrimaryAction`, leaves `changesSelectionAsPrimaryAction` off, and keeps the button's own title while the menu runs commands. The guides are [Pop-up buttons](https://developer.apple.com/design/human-interface-guidelines/pop-up-buttons) and [Pull-down buttons](https://developer.apple.com/design/human-interface-guidelines/pull-down-buttons).
 
@@ -37,7 +37,7 @@ The page owns `IsOpen`. A tap on the anchor does not open the panel by itself. T
 
 ### Placement
 
-The panel prefers to open below the anchor, with an 8pt gap. When the space below is shorter than the panel, it opens above the anchor. It then shifts horizontally so it stays inside the window, inset by the safe area plus 8pt.
+The panel prefers to open below the anchor, with a 4pt gap. When the space below is shorter than the panel, it opens above the anchor. It then shifts horizontally so it stays inside the window, inset by the safe area plus 4pt.
 
 `Alignment` is `MenuAlignment.Trailing`, `Leading`, or `Center`. The default is trailing: the panel's trailing edge lines up with the anchor's trailing edge, which is how the Notes overflow menu sits. Center matches a menu that opens over a value in the middle of a row. Leading lines up the leading edges.
 

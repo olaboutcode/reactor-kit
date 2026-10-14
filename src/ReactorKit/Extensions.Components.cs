@@ -97,4 +97,27 @@ public static partial class Extensions
     /// </summary>
     public static Object3DView Object3DView(Action<MauiContentView?> refAction)
         => new(refAction);
+
+    /// <summary>
+    /// Anchors a floating panel to the child. The page owns whether it is open.
+    /// </summary>
+    public static PopupView PopupView(params VisualNode?[] children)
+        => CreatePopup(refAction: null, children);
+
+    /// <summary>
+    /// Same child as <see cref="PopupView(VisualNode?[])"/>.
+    /// The callback receives the mounted anchor, and null when it unmounts.
+    /// </summary>
+    public static PopupView PopupView(Action<MauiContentView?> refAction, params VisualNode?[] children)
+        => CreatePopup(refAction, children);
+
+    static PopupView CreatePopup(Action<MauiContentView?>? refAction, VisualNode?[]? children)
+    {
+        var popup = new PopupView(refAction);
+        if (children is not { Length: > 0 })
+            return popup;
+
+        popup.AddChildren(children);
+        return popup;
+    }
 }

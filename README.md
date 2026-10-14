@@ -25,6 +25,9 @@ A library of custom controls for [MauiReactor](https://github.com/adospace/react
   - [Object3D](#object3d)
     - [Properties](#properties-3)
     - [Supported platforms](#supported-platforms-3)
+  - [Popup](#popup)
+    - [Properties](#properties-4)
+    - [Supported platforms](#supported-platforms-4)
 - [Handlers](#handlers)
   - [BorderlessEntry](#borderlessentry)
   - [BorderlessEditor](#borderlesseditor)
@@ -81,6 +84,7 @@ The namespace is `Reactor.Kit`. Rich text metrics and hits are in `Reactor.Kit.R
 ```csharp
 global using Reactor.Kit;
 global using Reactor.Kit.Object3DViewTokens;
+global using Reactor.Kit.PopupMenuTokens;
 global using Reactor.Kit.RichTextViewTokens;
 global using static Reactor.Kit.Extensions;
 ```
@@ -290,6 +294,35 @@ Object3DView(view => _view = view)
 - Mac Catalyst 17+
 - Android 21+
 
+### Popup
+
+`PopupView` floats a panel from an anchor. The panel can hold any content. The page sets `IsOpen`. A tap outside the panel, a second tap on the anchor, or the platform back or Escape key runs `OnDismiss`. Placement is described in [docs/popup-menu.md](docs/popup-menu.md).
+
+#### Properties
+
+| Member | Default | Role |
+|---|---|---|
+| `Content` | empty | The floating node. An empty panel still opens. |
+| `IsOpen` | `false` | The page owns this. The anchor's tap does not open the panel. |
+| `Alignment` | `Trailing` | Lines the panel up with the anchor's trailing edge, leading edge, or center. |
+| `OnDismiss` | none | Runs once when the panel is dismissed. The kit does not change the page state. |
+
+```csharp
+PopupView(Button("Repeat"))
+    .Content(GlazeView(Label("Anything").Center()).Padding(16).CornerRadius(14))
+    .IsOpen(State.Open)
+    .OnDismiss(() => SetState(s => s.Open = false))
+```
+
+Pass a callback to capture the anchor. It is a `ContentView`. The callback receives null when the view unmounts.
+
+#### Supported platforms
+
+- iOS 15+
+- Mac Catalyst 17+
+- Android 21+
+- Windows 10.0.17763+
+
 ## Handlers
 
 List of available handlers.
@@ -316,7 +349,7 @@ builder
 
 ## Samples
 
-`samples/KitTests` is a MauiReactor app for the controls. The glaze page scrolls text behind a top bar, a round button, a button, cards, and entries, and it can switch the page between light and dark. Text opens `RichTextTestPage`. Markdown opens `MarkdownTestPage`. Reading opens `ReadingTestPage`. Object opens `ObjectTestPage`. Model opens `ModelTestPage`, which passes the packaged `industrial_microscope.glb` to `PackagedSource`.
+`samples/KitTests` is a MauiReactor app for the controls. The glaze page scrolls text behind a top bar, a round button, a button, cards, and entries, and it can switch the page between light and dark. Text opens `RichTextTestPage`. Markdown opens `MarkdownTestPage`. Reading opens `ReadingTestPage`. Object opens `ObjectTestPage`. Model opens `ModelTestPage`, which passes the packaged `industrial_microscope.glb` to `PackagedSource`. Menu opens `MenuTestPage`.
 
 ## Building
 
