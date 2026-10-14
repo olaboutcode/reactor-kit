@@ -41,7 +41,6 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
                 ReadingButton(),
                 ObjectButton(),
                 ModelButton()
-                //,BottomSearchBar().VEnd()
             )
         )
         .BackgroundColor(State.Dark ? Night : Paper);
@@ -216,34 +215,6 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
                     .Center()
             )
         )
-        .CornerRadius(12)
-        .Shadow(
-            new MauiReactor.Shadow()
-            .Brush(Brush.Black)
-            .Offset(0.3, 0.3)
-            .Radius(4)
-            .Opacity(0.28f)
-        );
-
-    static GlazeView BottomSearchBar()
-        => GlazeView(
-            Grid("auto,auto", "",
-                Entry()
-                    .Placeholder("Enter text")
-                    .TextColor(Ink)
-                    .PlaceholderColor(Colors.Grey.WithAlpha(0.7f))
-                    .BackgroundColor(Colors.Transparent),
-                HStack(
-                    
-                )
-                .GridRow(1)
-                .Height(44)
-                .BackgroundColor(Colors.LightBlue)
-            )
-            .RowSpacing(8)
-            .Padding(8)
-        )
-        .Margin(16,0)
         .CornerRadius(12)
         .Shadow(
             new MauiReactor.Shadow()

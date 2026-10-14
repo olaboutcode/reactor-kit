@@ -26,21 +26,27 @@ sealed class ObjectTestPage : Component<ObjectTestPage.PageState>
 
     public override VisualNode Render()
         => ContentPage("Object",
-            VStack(
-                Object3DView()
-                    .Mesh(Cube)
-                    .Rotation(State.Yaw, State.Pitch, State.Roll)
-                    .Scale(State.Scale)
-                    .Distance(Frame)
-                    .Color(Color.FromArgb("#C8C2B8"))
-                    .Background(Colors.LightBlue)
-                    .HeightRequest(400)
-                    .HFill(),
-                Controls()
+            Grid("auto,*", "*",
+                NavigationBar.Create("Glb Object"),
+                VStack(
+                    Object3DView()
+                        .Mesh(Cube)
+                        .Rotation(State.Yaw, State.Pitch, State.Roll)
+                        .Scale(State.Scale)
+                        .Distance(Frame)
+                        .Color(Color.FromArgb("#C8C2B8"))
+                        .Background(Colors.LightBlue)
+                        .HeightRequest(400)
+                        .HFill(),
+                    Controls()
+                )
+                .Spacing(0)
+                .GridRow(1)
             )
-            .Spacing(0)
+            .Padding(16,0)
+            .RowSpacing(16)
         )
-        .BackgroundColor(Ink);
+        .BackgroundColor(Paper);
 
     VStack Controls()
         => VStack(
@@ -51,8 +57,7 @@ sealed class ObjectTestPage : Component<ObjectTestPage.PageState>
             Axis("Pitch", Degrees(State.Pitch), Tilt),
             Axis("Roll", Degrees(State.Roll), Roll),
             Axis("Scale", State.Scale.ToString("0.00", CultureInfo.InvariantCulture), Zoom),
-            GlassButton("Reset", Reset)
-                .HStart()
+            GlassButton("Reset", Reset).HStart()
         )
         .Padding(16, 16)
         .Spacing(10)
@@ -95,7 +100,7 @@ sealed class ObjectTestPage : Component<ObjectTestPage.PageState>
         .Shadow(
             new MauiReactor.Shadow()
                 .Brush(Brush.Black)
-                .Offset(0.3, 0.3)
+                .Offset(0, 0)
                 .Radius(4)
                 .Opacity(0.28f)
         );

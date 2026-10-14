@@ -22,20 +22,13 @@ sealed class ReadingTestPage : Component
 
     public override VisualNode Render()
         => ContentPage("Reading",
-            Grid("Auto,*", "*",
-                Button("Close", Close)
-                    .TextColor(Paper)
-                    .BackgroundColor(Ink)
-                    .FontSize(15)
-                    .CornerRadius(16)
-                    .Height(36)
-                    .Padding(14, 0)
-                    .HStart(),
+            Grid("auto,*", "*",
+                NavigationBar.Create("Various Text Types"),
                 ScrollView(Sections())
                     .VerticalScrollBarVisibility(ScrollBarVisibility.Never)
                     .GridRow(1)
             )
-            .Padding(20)
+            .Padding(16)
             .RowSpacing(16)
         )
         .BackgroundColor(Paper);

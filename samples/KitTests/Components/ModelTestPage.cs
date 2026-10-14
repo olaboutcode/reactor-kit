@@ -13,15 +13,10 @@ sealed class ModelTestPage : Component<ModelTestPage.PageState>
     public override VisualNode Render()
         => ContentPage("Model",
             Grid("auto,*", "*",
-                Button("Close", Close)
-                    .TextColor(Paper)
-                    .BackgroundColor(Ink)
-                    .FontSize(15)
-                    .CornerRadius(16)
-                    .Height(36)
-                    .Padding(14, 0)
-                    .HStart(),
-
+                NavigationBar
+                    .Create("Glb Model")
+                    .TextColor(Paper),
+                    
                 VStack(
                     Object3DView()
                         .PackagedSource("industrial_microscope.glb")
@@ -33,10 +28,10 @@ sealed class ModelTestPage : Component<ModelTestPage.PageState>
                         .FontSize(13)
                         .Margin(0,16)
                 )
-                .Padding(16,0)
                 .Spacing(0)
                 .GridRow(1)
             )
+            .Padding(16)
         )
         .BackgroundColor(Ink);
 

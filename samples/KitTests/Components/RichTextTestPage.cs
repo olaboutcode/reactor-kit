@@ -41,13 +41,7 @@ sealed class RichTextTestPage : Component<RichTextTestPage.PageState>
     public override VisualNode Render()
         => ContentPage($"{John.Book} {John.Chapter}",
             Grid("auto,auto,*", "*",
-                Button("Close", Close)
-                    .TextColor(Paper)
-                    .BackgroundColor(Ink)
-                    .CornerRadius(16)
-                    .Height(36)
-                    .Padding(14, 0)
-                    .HStart(),
+                NavigationBar.Create("Rich Text Test"),
                 VStack(
                     Label(John.Book)
                         .FontSize(16)
@@ -74,7 +68,7 @@ sealed class RichTextTestPage : Component<RichTextTestPage.PageState>
                     .VerticalScrollBarVisibility(ScrollBarVisibility.Never)
                     .GridRow(2)
             )
-            .Padding(20)
+            .Padding(16)
             .RowSpacing(16)
         )
         .BackgroundColor(Paper);
