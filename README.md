@@ -321,6 +321,26 @@ PopupView(Button("Repeat"))
 
 Pass a callback to capture the anchor. It is a `ContentView`. The callback receives null when the view unmounts.
 
+`PopupMenu` is a pop-up button on that panel. The button title is the selected item, one row shows a checkmark, and a row can carry its own view.
+
+```csharp
+PopupMenu()
+    .Sections(new[]
+    {
+        new[]
+        {
+            new PopupMenuItem("never", "Never"),
+            new PopupMenuItem("day", "Every Day"),
+        },
+        new[]
+        {
+            new PopupMenuItem("custom", "Custom", Label("Custom")),
+        },
+    })
+    .Selected(State.Repeat)
+    .OnSelected(id => SetState(s => s.Repeat = id))
+```
+
 #### Supported platforms
 
 - iOS 15+

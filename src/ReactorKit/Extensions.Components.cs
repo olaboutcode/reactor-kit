@@ -120,4 +120,10 @@ public static partial class Extensions
         popup.AddChildren(children);
         return popup;
     }
+
+    /// <summary>
+    /// A pop-up button. The title follows the selected item, and the list shows one checkmark.
+    /// </summary>
+    public static PopupMenu PopupMenu()
+        => new();
 }
