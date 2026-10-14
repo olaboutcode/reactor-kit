@@ -22,20 +22,13 @@ sealed class ReadingTestPage : Component
 
     public override VisualNode Render()
         => ContentPage("Reading",
-            Grid("Auto,*", "*",
-                Button("Close", Close)
-                    .TextColor(Paper)
-                    .BackgroundColor(Ink)
-                    .FontSize(15)
-                    .CornerRadius(16)
-                    .Height(36)
-                    .Padding(14, 0)
-                    .HStart(),
+            Grid("auto,*", "*",
+                NavigationBar.Create("Various Text Types"),
                 ScrollView(Sections())
                     .VerticalScrollBarVisibility(ScrollBarVisibility.Never)
                     .GridRow(1)
             )
-            .Padding(20)
+            .Padding(16)
             .RowSpacing(16)
         )
         .BackgroundColor(Paper);
@@ -46,7 +39,8 @@ sealed class ReadingTestPage : Component
                 "Novel",
                 "Indented paragraphs. A blank line separates them.",
                 RichTextView(Novel)
-                    .FontSize(17)
+                    .FontFamily(AppFont.Family)
+                    .FontSize(16)
                     .TextColor(Ink)
                     .Appearance(new TextAppearance
                     {
@@ -76,7 +70,8 @@ sealed class ReadingTestPage : Component
 
     static RichTextView Reading(Passage passage, bool poetry)
         => RichTextView(passage.Text)
-            .FontSize(17)
+            .FontFamily(AppFont.Family)
+            .FontSize(16)
             .TextColor(Ink)
             .LineSpacing(poetry ? 5 : 4)
             .Appearance(_ => Marked(passage, poetry))

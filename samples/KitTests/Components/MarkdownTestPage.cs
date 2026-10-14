@@ -84,17 +84,11 @@ sealed class MarkdownTestPage : Component
     public override VisualNode Render()
         => ContentPage("Markdown",
             Grid("Auto,*", "*",
-                Button("Close", Close)
-                    .TextColor(Paper)
-                    .BackgroundColor(Ink)
-                    .FontSize(15)
-                    .CornerRadius(16)
-                    .Height(36)
-                    .Padding(14, 0)
-                    .HStart(),
+                NavigationBar.Create("Markdown"),
                 ScrollView(
                     MarkdownView()
                         .Markdown(Notes)
+                        .FontFamily(AppFont.Family)
                         .FontSize(16)
                         .TextColor(Ink)
                         .VStart()
@@ -102,7 +96,7 @@ sealed class MarkdownTestPage : Component
                 .VerticalScrollBarVisibility(ScrollBarVisibility.Never)
                 .GridRow(1)
             )
-            .Padding(20)
+            .Padding(16)
             .RowSpacing(16)
         )
         .BackgroundColor(Paper);

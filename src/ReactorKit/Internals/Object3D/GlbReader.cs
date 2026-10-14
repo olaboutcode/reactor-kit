@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
-using Reactor.Kit.ObjectViewTokens;
+using Reactor.Kit.Object3DViewTokens;
 
 namespace Reactor.Kit.Internals.Object3D;
 

@@ -8,4 +8,7 @@ public enum TextTokenKind
 
     /// <summary>Words up to a sentence terminator.</summary>
     Sentence,
+
+    /// <summary>A character range supplied by the page.</summary>
+    Range,
 }

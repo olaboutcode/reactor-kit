@@ -41,7 +41,6 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
                 ReadingButton(),
                 ObjectButton(),
                 ModelButton()
-                //,BottomSearchBar().VEnd()
             )
         )
         .BackgroundColor(State.Dark ? Night : Paper);
@@ -210,40 +209,12 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
         => GlazeView(
             Grid(
                 Button().Height(44).BackgroundColor(Colors.Transparent),
-                Label("Moca Button!")
+                Label("Mica Button!")
                     .TextColor(Ink)
                     .FontSize(16)
                     .Center()
             )
         )
-        .CornerRadius(12)
-        .Shadow(
-            new MauiReactor.Shadow()
-            .Brush(Brush.Black)
-            .Offset(0.3, 0.3)
-            .Radius(4)
-            .Opacity(0.28f)
-        );
-
-    static GlazeView BottomSearchBar()
-        => GlazeView(
-            Grid("auto,auto", "",
-                Entry()
-                    .Placeholder("Enter text")
-                    .TextColor(Ink)
-                    .PlaceholderColor(Colors.Grey.WithAlpha(0.7f))
-                    .BackgroundColor(Colors.Transparent),
-                HStack(
-                    
-                )
-                .GridRow(1)
-                .Height(44)
-                .BackgroundColor(Colors.LightBlue)
-            )
-            .RowSpacing(8)
-            .Padding(8)
-        )
-        .Margin(16,0)
         .CornerRadius(12)
         .Shadow(
             new MauiReactor.Shadow()
@@ -261,7 +232,6 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
         {
             var band = i % 6 == 0;
             var label = Label($"Line {i + 1} The glass stays put while this text moves underneath.")
-                .FontSize(16)
                 .TextColor(band ? Ink : ink)
                 .Padding(10);
             lines[i] = band

@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace Reactor.Kit.ObjectViewTokens;
+namespace Reactor.Kit.Object3DViewTokens;
 
 /// <summary>
 /// Root yaw, pitch, and roll, in degrees. Applied yaw, then pitch, then roll.

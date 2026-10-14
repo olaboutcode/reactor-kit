@@ -6,7 +6,7 @@ using Android.OS;
 using Android.Views;
 using Java.Nio;
 using AContext = Android.Content.Context;
-using ObjectMesh = Reactor.Kit.ObjectViewTokens.Mesh;
+using ObjectMesh = Reactor.Kit.Object3DViewTokens.Mesh;
 
 namespace Reactor.Kit.Internals.Object3D;
 
