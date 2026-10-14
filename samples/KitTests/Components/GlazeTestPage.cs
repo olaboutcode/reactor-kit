@@ -40,7 +40,8 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
                 MarkdownButton(),
                 ReadingButton(),
                 ObjectButton(),
-                ModelButton()
+                ModelButton(),
+                MenuButton()
             )
         )
         .BackgroundColor(State.Dark ? Night : Paper);
@@ -138,6 +139,21 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
 
     void OpenModel()
         => _ = Navigation?.PushModalAsync<ModelTestPage>();
+
+    MauiReactor.Button MenuButton()
+        => Button("Menu", OpenMenu)
+            .TextColor(Paper)
+            .BackgroundColor(Ink)
+            .FontSize(15)
+            .CornerRadius(16)
+            .Height(36)
+            .Padding(14, 0)
+            .HEnd()
+            .VStart()
+            .Margin(16, 282);
+
+    void OpenMenu()
+        => _ = Navigation?.PushModalAsync<MenuTestPage>();
 
     void Toggle()
         => SetState(s =>
