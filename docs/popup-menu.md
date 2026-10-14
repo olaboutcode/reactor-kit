@@ -37,11 +37,15 @@ The page owns `IsOpen`. A tap on the anchor does not open the panel by itself. T
 
 ### Placement
 
-The panel prefers to open below the anchor, with a 4pt gap. When the space below is shorter than the panel, it opens above the anchor. It then shifts horizontally so it stays inside the window, inset by the safe area plus 4pt.
+The panel prefers to open below the anchor. `Gap` is that space, in points, and the default is 8. The same value insets the panel inside the safe area. When the space below is shorter than the panel, it opens above the anchor. It then shifts horizontally so it stays inside the window.
+
+```csharp
+PopupView(Button("Open")).Gap(12)
+```
 
 `Alignment` is `MenuAlignment.Trailing`, `Leading`, or `Center`. The default is trailing: the panel's trailing edge lines up with the anchor's trailing edge, which is how the Notes overflow menu sits. Center matches a menu that opens over a value in the middle of a row. Leading lines up the leading edges.
 
-The panel width hugs the content, down to 220pt and up to the window width minus the insets. The height hugs the content. Past the space that remains on screen, the content scrolls and the panel stays inside the insets.
+The panel width hugs the content, down to `MinWidth` (220pt) and up to the window width minus the insets. The height hugs the content, down to `MinHeight` (44pt). Past the space that remains on screen, the content scrolls and the panel stays inside the insets.
 
 While the panel is open it tracks the anchor. A scroll that moves the anchor moves the panel. If the anchor is no longer on screen, the panel dismisses and `OnDismiss` runs.
 
@@ -49,7 +53,7 @@ While the panel is open it tracks the anchor. A scroll that moves the anchor mov
 
 The panel is parented above the current page, including a modal page, so a `ScrollView`, a glaze corner, or another parent cannot clip it. A clear layer covers that page and takes the outside tap. The page behind does not dim.
 
-The open animation is a fade plus a scale from 0.96 to 1, about 180ms, originating at the anchor edge the panel grows away from. Close reverses it, then removes the layer.
+The open animation is a fade plus a scale from `OpenScale` (0.96) to 1 over `Duration` milliseconds (180), originating at the anchor edge the panel grows away from. Close reverses it, then removes the layer.
 
 Hit testing belongs to the clear layer and the panel. Touches on the anchor while the panel is open dismiss it, the same way a second tap on an iOS menu button closes the menu.
 

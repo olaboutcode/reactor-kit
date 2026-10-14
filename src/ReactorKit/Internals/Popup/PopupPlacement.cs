@@ -7,32 +7,44 @@ namespace Reactor.Kit.Internals.Popup;
 /// </summary>
 static class PopupPlacement
 {
-    public const double Gap = 4;
+    public const double Gap = 8;
     public const double MinWidth = 220;
     public const double MinHeight = 44;
     public const double OpenScale = 0.96;
     public const uint Duration = 180;
 
-    public static PopupFrame Place(Rect anchor, Size desired, Rect window, Thickness safe, MenuAlignment alignment)
+    public static PopupFrame Place(
+        Rect anchor,
+        Size desired,
+        Rect window,
+        Thickness safe,
+        MenuAlignment alignment,
+        double gap,
+        double minWidth,
+        double minHeight)
     {
-        var left = window.X + safe.Left + Gap;
-        var top = window.Y + safe.Top + Gap;
-        var right = window.Right - safe.Right - Gap;
-        var bottom = window.Bottom - safe.Bottom - Gap;
+        gap = AtLeastZero(gap);
+        minWidth = AtLeastZero(minWidth);
+        minHeight = AtLeastZero(minHeight);
+
+        var left = window.X + safe.Left + gap;
+        var top = window.Y + safe.Top + gap;
+        var right = window.Right - safe.Right - gap;
+        var bottom = window.Bottom - safe.Bottom - gap;
         if (right < left)
             right = left;
         if (bottom < top)
             bottom = top;
 
         var maxWidth = Math.Max(0, right - left);
-        var floor = Math.Min(MinWidth, maxWidth);
+        var floor = Math.Min(minWidth, maxWidth);
         var width = Math.Min(Math.Max(desired.Width, floor), maxWidth);
 
-        var spaceBelow = bottom - (anchor.Bottom + Gap);
-        var spaceAbove = anchor.Top - Gap - top;
+        var spaceBelow = bottom - (anchor.Bottom + gap);
+        var spaceAbove = anchor.Top - gap - top;
         var above = desired.Height > spaceBelow && spaceAbove > spaceBelow;
         var available = Math.Max(0, above ? spaceAbove : spaceBelow);
-        var height = Math.Min(Math.Max(desired.Height, 0), available);
+        var height = Math.Min(Math.Max(desired.Height, minHeight), available);
 
         var x = alignment switch
         {
@@ -46,7 +58,7 @@ static class PopupPlacement
         if (x + width > right)
             x = Math.Max(left, right - width);
 
-        var y = above ? anchor.Top - Gap - height : anchor.Bottom + Gap;
+        var y = above ? anchor.Top - gap - height : anchor.Bottom + gap;
         if (y < top)
             y = top;
         if (y + height > bottom)
@@ -55,6 +67,14 @@ static class PopupPlacement
         var visible = anchor.Width > 0 && anchor.Height > 0 && Intersects(anchor, window);
         var scrolls = desired.Height > height + 0.5;
         return new PopupFrame(new Rect(x, y, width, height), above, visible, scrolls);
+    }
+
+    internal static double AtLeastZero(double value)
+    {
+        if (double.IsNaN(value) || double.IsInfinity(value) || value < 0)
+            return 0;
+
+        return value;
     }
 
     static bool Intersects(Rect anchor, Rect window)
