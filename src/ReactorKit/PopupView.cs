@@ -50,6 +50,56 @@ public sealed class PopupView : View<MauiContentView>
         => this.Set(PopupSurface.AlignmentProperty, new PropertyValue<MenuAlignment>(alignment, state));
 
     /// <summary>
+    /// Space between the anchor and the panel, in points. The same inset keeps the panel inside the safe area. The default is 8.
+    /// </summary>
+    public PopupView Gap(double gap)
+        => this.Set(PopupSurface.GapProperty, gap);
+
+    /// <inheritdoc cref="Gap(double)"/>
+    public PopupView Gap(Func<double> gap, IComponentWithState? state = null)
+        => this.Set(PopupSurface.GapProperty, new PropertyValue<double>(gap, state));
+
+    /// <summary>
+    /// Smallest panel width, in points. The default is 220. A narrower window uses the space that remains.
+    /// </summary>
+    public PopupView MinWidth(double width)
+        => this.Set(PopupSurface.MinWidthProperty, width);
+
+    /// <inheritdoc cref="MinWidth(double)"/>
+    public PopupView MinWidth(Func<double> width, IComponentWithState? state = null)
+        => this.Set(PopupSurface.MinWidthProperty, new PropertyValue<double>(width, state));
+
+    /// <summary>
+    /// Smallest panel height, in points. The default is 44.
+    /// </summary>
+    public PopupView MinHeight(double height)
+        => this.Set(PopupSurface.MinHeightProperty, height);
+
+    /// <inheritdoc cref="MinHeight(double)"/>
+    public PopupView MinHeight(Func<double> height, IComponentWithState? state = null)
+        => this.Set(PopupSurface.MinHeightProperty, new PropertyValue<double>(height, state));
+
+    /// <summary>
+    /// Scale the panel starts from when it opens, and returns to when it closes. The default is 0.96.
+    /// </summary>
+    public PopupView OpenScale(double scale)
+        => this.Set(PopupSurface.OpenScaleProperty, scale);
+
+    /// <inheritdoc cref="OpenScale(double)"/>
+    public PopupView OpenScale(Func<double> scale, IComponentWithState? state = null)
+        => this.Set(PopupSurface.OpenScaleProperty, new PropertyValue<double>(scale, state));
+
+    /// <summary>
+    /// Open and close animation length, in milliseconds. The default is 180.
+    /// </summary>
+    public PopupView Duration(uint milliseconds)
+        => this.Set(PopupSurface.DurationProperty, milliseconds);
+
+    /// <inheritdoc cref="Duration(uint)"/>
+    public PopupView Duration(Func<uint> milliseconds, IComponentWithState? state = null)
+        => this.Set(PopupSurface.DurationProperty, new PropertyValue<uint>(milliseconds, state));
+
+    /// <summary>
     /// Runs once when an outside tap, a second tap on the anchor, or the platform back or Escape key closes the panel.
     /// The kit does not change the page state.
     /// </summary>

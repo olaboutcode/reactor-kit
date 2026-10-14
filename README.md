@@ -305,6 +305,11 @@ Object3DView(view => _view = view)
 | `Content` | empty | The floating node. An empty panel still opens. |
 | `IsOpen` | `false` | The page owns this. The anchor's tap does not open the panel. |
 | `Alignment` | `Trailing` | Lines the panel up with the anchor's trailing edge, leading edge, or center. |
+| `Gap` | `8` | Points between the anchor and the panel. The same inset keeps the panel inside the safe area. |
+| `MinWidth` | `220` | Smallest panel width, in points. A narrower window uses the space that remains. |
+| `MinHeight` | `44` | Smallest panel height, in points. |
+| `OpenScale` | `0.96` | Scale the panel starts from when it opens, and returns to when it closes. |
+| `Duration` | `180` | Open and close animation length, in milliseconds. |
 | `OnDismiss` | none | Runs once when the panel is dismissed. The kit does not change the page state. |
 
 ```csharp
