@@ -1,8 +1,8 @@
-# Popup menu and pull-down menu
+# Popup menu
 
-This is the plan for issue 11. `PopupView` and `PopupMenu` are in the library. `PullDownMenu` is not. After the pull-down menu ships, this document describes the behavior that shipped.
+This document describes `PopupView` and `PopupMenu`.
 
-iOS is the reference for what the controls do. UIKit builds both from a button and a `UIMenu`. A pop-up button turns on `showsMenuAsPrimaryAction` and `changesSelectionAsPrimaryAction`, marks one action `on`, and shows that action as the button title. A pull-down button turns on `showsMenuAsPrimaryAction`, leaves `changesSelectionAsPrimaryAction` off, and keeps the button's own title while the menu runs commands. The guides are [Pop-up buttons](https://developer.apple.com/design/human-interface-guidelines/pop-up-buttons) and [Pull-down buttons](https://developer.apple.com/design/human-interface-guidelines/pull-down-buttons).
+iOS draws a pop-up button and a pull-down button from the same menu. `PopupMenu` is that menu. The page supplies the anchor, and a row is a title or any view. The guide is [Pop-up buttons](https://developer.apple.com/design/human-interface-guidelines/pop-up-buttons).
 
 The kit draws the panel itself. Apple platforms do not host `UIMenu`. Android does not host a `Picker` or a spinner dialog. The same MAUI content is what every platform shows.
 
@@ -12,11 +12,8 @@ The kit draws the panel itself. Apple platforms do not host `UIMenu`. Android do
 |---|---|
 | `PopupView` | Anchors a floating `ContentView` to a control. The content can be anything. |
 | `PopupMenu` | Pop-up menu on a `PopupView`. Rows are titles or any view. The page owns open. |
-| `PullDownMenu` | Pull-down button. The button label stays put. Rows run actions. |
 
-`PopupMenu` and `PullDownMenu` use `PopupView`. A page that wants another panel uses `PopupView` directly and supplies its own content.
-
-Ship `PopupView`, then `PopupMenu`. `PullDownMenu` comes after the pop-up menu is in place. Both menus are in this issue.
+`PopupMenu` uses `PopupView`. A page that wants another panel uses `PopupView` directly and supplies its own content.
 
 ## PopupView
 
@@ -93,38 +90,9 @@ PopupMenu()
 
 The panel is a `GlazeView`, padding 8, corner radius 14, with the same small shadow as the sample's free-form panel. The row stack spacing is 8. `Panel` receives that glaze view and `Stack` receives that vertical stack, so any of their setters can replace a default. `Popup` receives the `PopupView` after the anchor, panel, and open state are set, so it can change the scales, the easing, the duration, the gap, and the other popup settings. Title rows are 44pt, corner radius 12, on a transparent background. The anchor is the page's own control. `DisableAnchorWhenOpen` leaves that control in place. While the panel opens it fades to 40% opacity, and while the panel closes it fades back, using the popup duration and easing. It does not take taps while the panel is showing. The default leaves the anchor enabled.
 
-## PullDownMenu
-
-A pull-down button. The child is the anchor and keeps whatever label or icon the page gave it. Choosing a row does not change that child.
-
-```csharp
-PullDownMenu(Button("More"))
-    .Sections(new[]
-    {
-        new[]
-        {
-            new PullDownMenuItem("find", "Find in note"),
-            new PullDownMenuItem("move", "Move note"),
-        },
-        new[]
-        {
-            new PullDownMenuItem("delete", "Delete", Destructive: true),
-        },
-    })
-    .OnInvoked(id => SetState(s => s.Last = id));
-```
-
-`PullDownMenuItem` lives in the same token namespace: `Id`, `Title`, optional `ImageSource` `Icon`, `Destructive` (default false), and `Enabled` (default true). A duplicate id throws. Sections are lists of lists. An empty section is skipped.
-
-`OnInvoked` receives the id, then the menu closes. A disabled row does neither. There is no selected id and no checkmark column.
-
-A destructive row draws its title in `#FF3B30`. An icon, when set, is 20pt on the leading side. Rows without an icon leave that column empty so the titles still line up inside one menu.
-
-The top icon cluster in the Notes screenshot (Scan, Pin Note, Lock in one row) is custom `PopupView` content. `PullDownMenu` does not grow a horizontal action strip in this issue.
-
 ## Shared menu look
 
-This table is the later checkmark list and the pull-down list. The current `PopupMenu` uses the simpler chrome in the PopupMenu section.
+The shipped `PopupMenu` uses the chrome in the PopupMenu section. This table is the earlier checkmark sketch.
 
 | Piece | Value |
 |---|---|
@@ -134,31 +102,30 @@ This table is the later checkmark list and the pull-down list. The current `Popu
 | Row corner radius while pressed | 10 |
 | Title size | 17 |
 | Horizontal row padding | 16 |
-| Checkmark column | 22pt, leading, pop-up rows only |
-| Icon column | 22pt, leading, pull-down rows only |
+| Checkmark column | 22pt, leading |
 | Separator | 1pt hairline between sections |
 | Panel shadow | offset `(0, 8)`, radius 24, opacity 0.18 |
 
-The checkmark is a stroked path, the same idea as the sample back chevron, so Android does not need a symbol font. The pressed row is a 12% black wash in light appearance and a 16% white wash in dark appearance. Glaze supplies the material. The default tint is the glaze default, so a light page gets a light panel and a dark page gets a dark panel. A page that wants the Calendar black panel sets `TintColor` later. The first menus do not add a tint prop of their own. They use the glaze default.
+The checkmark is a stroked path, the same idea as the sample back chevron, so Android does not need a symbol font. The pressed row is a 12% black wash in light appearance and a 16% white wash in dark appearance. Glaze supplies the material. The default tint is the glaze default, so a light page gets a light panel and a dark page gets a dark panel. A page that wants the Calendar black panel sets `TintColor` on the glaze. The menu does not add a tint prop of its own.
 
 ## Files
 
-- `src/ReactorKit/PopupView.cs`, `PopupMenu.cs`, and `PullDownMenu.cs` are the public nodes.
-- `src/ReactorKit/PopupMenuTokens/PopupMenuItem.cs`, `PopupMenuItems.cs`, and `PullDownMenuItem.cs`. `MenuAlignment` can live beside them.
+- `src/ReactorKit/PopupView.cs` and `PopupMenu.cs` are the public nodes.
+- `src/ReactorKit/PopupMenuTokens/PopupMenuItem.cs` and `PopupMenuItems.cs`. `MenuAlignment` can live beside them.
 - `src/ReactorKit/Internals/Popup/` holds the presenter and the placement math. Namespace `Reactor.Kit.Internals.Popup`.
 - `Platforms/iOS/Popup/`, `Platforms/Android/Popup/`, and `Platforms/Windows/Popup/` insert the layer. The iOS folder is shared with Mac Catalyst the same way glaze is.
 - Factories go on `Reactor.Kit.Extensions`, next to `GlazeView`. `UseReactorKit()` does not need a new flag when the presenter is created by the view rather than a handler.
-- The README gets a short Popup section when the controls exist: one sentence, the two menu examples, and the supported platforms. Placement math stays in this document.
+- The README gets a short Popup section: one sentence, the menu example, and the supported platforms. Placement math stays in this document.
 
 Callers add `global using Reactor.Kit.PopupMenuTokens` beside the other kit usings.
 
 ## Sample
 
-`MenuTestPage` opens from the glaze page the same way the text pages open. The page shows a `PopupMenu` with a title, an icon row, a profile row, and one custom view, and one `PopupView` whose content is a glaze panel with a single label. The labels are the sample's own words. The pull-down menu is not on the page yet.
+`MenuTestPage` opens from the glaze page the same way the text pages open. The page shows a `PopupMenu` with a title, an icon row, a profile row, and one custom view, and one `PopupView` whose content is a glaze panel with a single label. The labels are the sample's own words.
 
 ## Out of scope
 
-Nested submenus and the trailing chevron. Multi-select. Long-press context menus. Keyboard arrowing through rows. A horizontal icon strip inside `PullDownMenu`. Swapping MAUI's `Picker` or `MenuFlyout` out of the framework. A `UIMenu` backend on Apple platforms. A package version bump until the controls merge.
+Nested submenus and the trailing chevron. Multi-select. Long-press context menus. Keyboard arrowing through rows. A horizontal icon strip. Swapping MAUI's `Picker` or `MenuFlyout` out of the framework. A `UIMenu` backend on Apple platforms. A package version bump until the controls merge.
 
 ## Done when
 
@@ -166,7 +133,6 @@ Nested submenus and the trailing chevron. Multi-select. Long-press context menus
 - [ ] The panel opens below the anchor, flips above when the space is short, and stays inside the safe area.
 - [ ] An outside tap, a second tap on the anchor, and the Android back gesture dismiss it and raise `OnDismiss` once.
 - [ ] `PopupMenu` shows title rows and custom views, and a tap closes the menu and runs the row callback.
-- [ ] `PullDownMenu` leaves the anchor label unchanged, runs `OnInvoked`, and draws a destructive row in red.
 - [ ] A parent render that does not change the items leaves an open menu open.
 - [ ] `MenuTestPage` shows the pop-up menu and one free-form `PopupView`.
 - [ ] The library and KitTests build for `net10.0` with no warnings. iOS and Android compile. Windows is not required for the first compile on the Mac.
