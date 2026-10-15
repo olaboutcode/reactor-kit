@@ -60,7 +60,7 @@ public sealed class PopupView : View<MauiContentView>
         => this.Set(PopupSurface.GapProperty, new PropertyValue<double>(gap, state));
 
     /// <summary>
-    /// Smallest panel width, in points. The default is 220. A narrower window uses the space that remains.
+    /// Smallest panel width, in points. The default is 220. Pass 0 to leave the measured width, so the panel hugs the content. A narrower window uses the space that remains.
     /// </summary>
     public PopupView MinWidth(double width)
         => this.Set(PopupSurface.MinWidthProperty, width);

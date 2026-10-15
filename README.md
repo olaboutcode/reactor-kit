@@ -306,7 +306,7 @@ Object3DView(view => _view = view)
 | `IsOpen` | `false` | The page owns this. The anchor's tap does not open the panel. |
 | `Alignment` | `Trailing` | Lines the panel up with the anchor's trailing edge, leading edge, or center. |
 | `Gap` | `8` | Points between the anchor and the panel. The same inset keeps the panel inside the safe area. |
-| `MinWidth` | `220` | Smallest panel width, in points. A narrower window uses the space that remains. |
+| `MinWidth` | `220` | Smallest panel width, in points. `0` leaves the measured width, so the panel hugs the content. A narrower window uses the space that remains. |
 | `MinHeight` | `44` | Smallest panel height, in points. |
 | `OpenScaleX` | `0.96` | Horizontal scale the panel starts from, and returns to when it closes. |
 | `OpenScaleY` | `0.96` | Vertical scale the panel starts from, and returns to when it closes. |

@@ -42,7 +42,7 @@ PopupView(Button("Open")).Gap(12)
 
 `Alignment` is `MenuAlignment.Trailing`, `Leading`, or `Center`. The default is trailing: the panel's trailing edge lines up with the anchor's trailing edge, which is how the Notes overflow menu sits. Center matches a menu that opens over a value in the middle of a row. Leading lines up the leading edges.
 
-The panel width hugs the content, down to `MinWidth` (220pt) and up to the window width minus the insets. The height hugs the content, down to `MinHeight` (44pt). Past the space that remains on screen, the content scrolls and the panel stays inside the insets.
+The panel width is the measured content width. `MinWidth` raises that width, and the default is 220. `MinWidth(0)` leaves the measured width, so the panel hugs the content. Either way the width stops at the window minus the insets. The height hugs the content, down to `MinHeight` (44pt). Past the space that remains on screen, the content scrolls and the panel stays inside the insets.
 
 While the panel is open it tracks the anchor. A scroll that moves the anchor moves the panel. If the anchor is no longer on screen, the panel dismisses and `OnDismiss` runs.
 
