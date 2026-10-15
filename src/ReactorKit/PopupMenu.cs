@@ -16,6 +16,7 @@ public sealed partial class PopupMenu : Component
     [Prop] private IEnumerable<PopupMenuItem>? _items;
     [Prop] private Color _titleColor = Colors.Black;
     [Prop] private Color _ruleColor = RuleInk;
+    [Prop] private bool _disableAnchorWhenOpen;
 
     static readonly Color RuleInk = Color.FromRgba(60, 60, 67, 74);
 
@@ -55,12 +56,25 @@ public sealed partial class PopupMenu : Component
 
     public override VisualNode Render()
     {
-        var popup = _anchor is null ? PopupView() : PopupView(_anchor);
+        var anchor = PreparedAnchor();
+        var popup = anchor is null ? PopupView() : PopupView(anchor);
         return popup
             .Content(Panel())
             .IsOpen(_isOpen)
             .OnDismiss(_onDismiss)
             .HorizontalOptions(LayoutOptions.Center);
+    }
+
+    VisualNode? PreparedAnchor()
+    {
+        if (_anchor is null || !_disableAnchorWhenOpen || !_isOpen)
+            return _anchor;
+
+        return ContentView(_anchor)
+            .IsEnabled(false)
+            .InputTransparent(true)
+            .CascadeInputTransparent(true)
+            .Opacity(0.4);
     }
 
     GlazeView Panel()
