@@ -122,7 +122,7 @@ public static partial class Extensions
     }
 
     /// <summary>
-    /// A pop-up button. The title follows the selected item, and the list shows one checkmark.
+    /// A pop-up menu on a PopupView. Rows are titles or custom views.
     /// </summary>
     public static PopupMenu PopupMenu()
         => new();

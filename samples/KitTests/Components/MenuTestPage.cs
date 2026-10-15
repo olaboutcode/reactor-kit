@@ -14,7 +14,7 @@ sealed class MenuTestPage : Component<MenuTestPage.PageState>
     {
         public bool Open { get; set; }
 
-        public string Repeat { get; set; } = "never";
+        public bool OpenCustomMenu { get; set; }
     }
 
     public override VisualNode Render()
@@ -22,13 +22,7 @@ sealed class MenuTestPage : Component<MenuTestPage.PageState>
             Grid("auto,*", "*",
                 NavigationBar.Create("Menu"),
                 VStack(
-                    Label("The button title follows the choice.")
-                        .FontSize(17)
-                        .TextColor(Ink)
-                        .HCenter(),
-                    RepeatMenu(),
                     Label("A panel can hold any content.")
-                        .FontSize(17)
                         .TextColor(Ink)
                         .HCenter(),
                     Label("Tap outside the panel to close it.")
@@ -39,7 +33,11 @@ sealed class MenuTestPage : Component<MenuTestPage.PageState>
                         .Content(Panel())
                         .IsOpen(State.Open)
                         .OnDismiss(Close)
-                        .HCenter()
+                        .HCenter(),
+                    Label("Popup Menu using PopupView.")
+                        .TextColor(Ink)
+                        .HCenter(),
+                    CustomMenu()
                 )
                 .Spacing(16)
                 .Center()
@@ -49,39 +47,104 @@ sealed class MenuTestPage : Component<MenuTestPage.PageState>
         )
         .BackgroundColor(Paper);
 
-    PopupMenu RepeatMenu()
+    PopupMenu CustomMenu() 
         => PopupMenu()
-            .Sections(
-            [
-                [
-                    new PopupMenuItem("never", "Never"),
-                    new PopupMenuItem("day", "Every Day"),
-                    new PopupMenuItem("week", "Every Week"),
-                ],
-                [
-                    new PopupMenuItem("custom", "Custom",
-                        HStack(
-                            new Ellipse()
-                                .Fill(Ink)
-                                .Width(8)
-                                .Height(8)
-                                .VCenter(),
-                            Label("Custom")
-                                .FontSize(17)
-                                .TextColor(Ink)
-                                .VCenter()
-                        )
-                        .Spacing(8)
-                        .VCenter()),
-                ],
-            ])
-            .Selected(State.Repeat)
-            .OnSelected(id => SetState(s => s.Repeat = id))
-            .TextColor(Paper)
-            .BackgroundColor(Ink);
+            .Anchor(ShowCustomMenuButton())
+            .Items(menu => menu
+                .Item("Plain text")
+                .Rule()
+                .Item(IconRow())
+                .Rule()
+                .Item(ProfileRow())
+                .Rule()
+                .Item(CustomRow()))
+            .IsOpen(State.OpenCustomMenu)
+            .Panel(panel => panel.Padding(8))
+            .Stack(stack => stack.Spacing(4))
+            .OnDismiss(CloseCustomMenu)
+            .TitleColor(Ink);
+
+    static HStack IconRow()
+        => HStack(
+                new MauiReactor.Shapes.Path()
+                    .Data("M6,3 H14 V17 L10,14 L6,17 Z")
+                    .Fill(Ink)
+                    .Width(16)
+                    .Height(18)
+                    .VCenter(),
+                Label("With an icon")
+                    .FontSize(17)
+                    .TextColor(Ink)
+                    .VCenter()
+            )
+            .Spacing(10)
+            .Padding(16, 0)
+            .VCenter();
+
+    static HStack ProfileRow()
+        => HStack(
+                Grid(
+                    new Ellipse()
+                        .Fill(Ink)
+                        .Width(36)
+                        .Height(36),
+                    Label("A")
+                        .FontSize(14)
+                        .TextColor(Paper)
+                        .Center()
+                )
+                .Width(32)
+                .Height(32)
+                .VCenter(),
+                VStack(
+                    Label("Ada Lovelace")
+                        .FontSize(14)
+                        .TextColor(Ink),
+                    Label("Mathematician")
+                        .FontSize(12)
+                        .TextColor(Color.FromArgb("#6B6B6F"))
+                )
+                .Spacing(1)
+                .VCenter()
+            )
+            .Spacing(10)
+            .Padding(16, 8)
+            .VCenter();
+
+    static VStack CustomRow()
+        => VStack(
+                HStack(
+                    Swatch(Ink),
+                    Swatch(Color.FromArgb("#C4A484")),
+                    Swatch(Paper)
+                )
+                .Spacing(6),
+                Label("A row can be anything.")
+                    .FontSize(13)
+                    .TextColor(Ink)
+            )
+            .Spacing(8)
+            .Padding(16, 8);
+
+    static Ellipse Swatch(Color color)
+        => new Ellipse()
+            .Fill(color)
+            .Stroke(Ink)
+            .StrokeThickness(1)
+            .Width(14)
+            .Height(14);
 
     MauiReactor.Button ShowButton()
-        => new MauiReactor.Button("Show", Open)
+        => new MauiReactor.Button("Show Popup View", Open)
+            .TextColor(Paper)
+            .BackgroundColor(Ink)
+            .FontSize(15)
+            .CornerRadius(16)
+            .Height(36)
+            .Padding(14, 0);
+
+    MauiReactor.Button ShowCustomMenuButton()
+        => new MauiReactor.Button("Show Popup Menu", OpenCustomMenu)
             .TextColor(Paper)
             .BackgroundColor(Ink)
             .FontSize(15)
@@ -106,9 +169,9 @@ sealed class MenuTestPage : Component<MenuTestPage.PageState>
                 .Opacity(0.28f)
             );
 
-    void Open()
-        => SetState(s => s.Open = true);
+    void Open() => SetState(s => s.Open = true);
+    void Close() => SetState(s => s.Open = false);
 
-    void Close()
-        => SetState(s => s.Open = false);
+    void OpenCustomMenu() => SetState(s => s.OpenCustomMenu = true);
+    void CloseCustomMenu() => SetState(s => s.OpenCustomMenu = false);
 }

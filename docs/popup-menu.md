@@ -11,7 +11,7 @@ The kit draws the panel itself. Apple platforms do not host `UIMenu`. Android do
 | Type | Role |
 |---|---|
 | `PopupView` | Anchors a floating `ContentView` to a control. The content can be anything. |
-| `PopupMenu` | Pop-up button. One selected value, a checkmark, and a button title that follows the value. |
+| `PopupMenu` | Pop-up menu on a `PopupView`. Rows are titles or any view. The page owns open. |
 | `PullDownMenu` | Pull-down button. The button label stays put. Rows run actions. |
 
 `PopupMenu` and `PullDownMenu` use `PopupView`. A page that wants another panel uses `PopupView` directly and supplies its own content.
@@ -69,38 +69,27 @@ No new package. Android's `PopupWindow` and Apple's `UIMenu` stay unused.
 
 ## PopupMenu
 
-A pop-up button. The kit draws the button and the list. The button title is the selected item's title.
+A pop-up menu built on `PopupView`. The page supplies the anchor and owns `IsOpen`. A row is a title, any view, or a hairline.
 
 ```csharp
 PopupMenu()
-    .Sections(new[]
-    {
-        new[]
-        {
-            new PopupMenuItem("never", "Never"),
-            new PopupMenuItem("day", "Every Day"),
-            new PopupMenuItem("week", "Every Week"),
-        },
-        new[]
-        {
-            new PopupMenuItem("custom", "Custom", Label("Custom")),
-        },
-    })
-    .Selected(State.Repeat)
-    .OnSelected(id => SetState(s => s.Repeat = id));
+    .Anchor(Button("Custom Menu", Open))
+    .Items(menu => menu
+        .Item("Custom Menu Item 1")
+        .Item("Custom Menu Item 2", text => { })
+        .Rule()
+        .Item(Label("Custom")))
+    .Panel(panel => panel.CornerRadius(18).Padding(12))
+    .Stack(stack => stack.Spacing(4))
+    .IsOpen(State.Open)
+    .OnDismiss(() => SetState(s => s.Open = false))
+    .TitleColor(Colors.Black)
+    .RuleColor(Color.FromRgba(60, 60, 67, 74));
 ```
 
-`PopupMenuItem` is a readonly record in `Reactor.Kit.PopupMenuTokens`: `Id`, `Title`, `Enabled` (default true), and an optional `Content` view. The button shows `Title`. When `Content` is set, the row shows that view instead of the title, so a row can hold an icon and its own text. `Id` comparison is ordinal. A duplicate id throws when the menu is built.
+`Items` takes a list in `Reactor.Kit.PopupMenuTokens`. `Item(text)` and `Item(text, onTap)` are title buttons. `Item(view)` and `Item(view, onTap)` show that view. `Rule()` is a hairline. Each call returns the list, so the rows are one chain. A tap runs `OnDismiss`, then the row callback. `TitleColor` styles title rows and defaults to black. `RuleColor` styles the hairline and defaults to `rgba(60, 60, 67, 74)`. A custom view keeps the colors the page set on it.
 
-`Sections` is a list of lists. A hairline sits between sections. An empty section is skipped. A menu with no items shows the placeholder and opens an empty panel.
-
-`Selected` is the item id. The matching row shows a leading checkmark, and the button shows that title. When no id matches, no row is checked and the button shows `Placeholder`, which defaults to `Choose`. Opening the menu does not invent a selection.
-
-`OnSelected` receives the id. The page stores it. The menu closes after a choice. A disabled row does not raise it and does not close the menu.
-
-The open flag lives in the component's own state, so a parent render leaves the menu open. `Selected` stays a prop.
-
-The button is a 36pt-tall control, corner radius 14, horizontal padding 14. It uses the app font when one is set, otherwise the system font. `TextColor` and `BackgroundColor` style that button (black on transparent unless the page sets them). A plain row title stays black, because the panel uses the light glaze tint. Custom content brings its own colors.
+The panel is a `GlazeView`, padding 8, corner radius 14, with the same small shadow as the sample's free-form panel. The row stack spacing is 8. `Panel` receives that glaze view and `Stack` receives that vertical stack, so any of their setters can replace a default. Title rows are 44pt, corner radius 12, on a transparent background. The anchor is the page's own control.
 
 ## PullDownMenu
 
@@ -123,7 +112,7 @@ PullDownMenu(Button("More"))
     .OnInvoked(id => SetState(s => s.Last = id));
 ```
 
-`PullDownMenuItem` lives in the same token namespace: `Id`, `Title`, optional `ImageSource` `Icon`, `Destructive` (default false), and `Enabled` (default true). A duplicate id throws. Sections and the empty-section rule match `PopupMenu`.
+`PullDownMenuItem` lives in the same token namespace: `Id`, `Title`, optional `ImageSource` `Icon`, `Destructive` (default false), and `Enabled` (default true). A duplicate id throws. Sections are lists of lists. An empty section is skipped.
 
 `OnInvoked` receives the id, then the menu closes. A disabled row does neither. There is no selected id and no checkmark column.
 
@@ -133,7 +122,7 @@ The top icon cluster in the Notes screenshot (Scan, Pin Note, Lock in one row) i
 
 ## Shared menu look
 
-Both lists use one internal row layout inside a `GlazeView` panel.
+This table is the later checkmark list and the pull-down list. The current `PopupMenu` uses the simpler chrome in the PopupMenu section.
 
 | Piece | Value |
 |---|---|
@@ -153,8 +142,8 @@ The checkmark is a stroked path, the same idea as the sample back chevron, so An
 ## Files
 
 - `src/ReactorKit/PopupView.cs`, `PopupMenu.cs`, and `PullDownMenu.cs` are the public nodes.
-- `src/ReactorKit/PopupMenuTokens/PopupMenuItem.cs` and `PullDownMenuItem.cs`. `MenuAlignment` can live beside them.
-- `src/ReactorKit/Internals/Popup/` holds the presenter, the placement math, and the menu list. Namespace `Reactor.Kit.Internals.Popup`.
+- `src/ReactorKit/PopupMenuTokens/PopupMenuItem.cs`, `PopupMenuItems.cs`, and `PullDownMenuItem.cs`. `MenuAlignment` can live beside them.
+- `src/ReactorKit/Internals/Popup/` holds the presenter and the placement math. Namespace `Reactor.Kit.Internals.Popup`.
 - `Platforms/iOS/Popup/`, `Platforms/Android/Popup/`, and `Platforms/Windows/Popup/` insert the layer. The iOS folder is shared with Mac Catalyst the same way glaze is.
 - Factories go on `Reactor.Kit.Extensions`, next to `GlazeView`. `UseReactorKit()` does not need a new flag when the presenter is created by the view rather than a handler.
 - The README gets a short Popup section when the controls exist: one sentence, the two menu examples, and the supported platforms. Placement math stays in this document.
@@ -163,7 +152,7 @@ Callers add `global using Reactor.Kit.PopupMenuTokens` beside the other kit usin
 
 ## Sample
 
-`MenuTestPage` opens from the glaze page the same way the text pages open. The page shows a pop-up menu whose sections look like a repeat schedule (one checked value, then a separated last row) and a pull-down menu on a button labeled More, including one destructive row. The labels are the sample's own words. The page also shows one `PopupView` whose content is a glaze panel with a single label, so the free-form host is visible.
+`MenuTestPage` opens from the glaze page the same way the text pages open. The page shows a `PopupMenu` with a title, an icon row, a profile row, and one custom view, and one `PopupView` whose content is a glaze panel with a single label. The labels are the sample's own words. The pull-down menu is not on the page yet.
 
 ## Out of scope
 
@@ -174,8 +163,8 @@ Nested submenus and the trailing chevron. Multi-select. Long-press context menus
 - [ ] `PopupView` shows caller content above the current page, including a modal page, and a parent `ScrollView` does not clip it.
 - [ ] The panel opens below the anchor, flips above when the space is short, and stays inside the safe area.
 - [ ] An outside tap, a second tap on the anchor, and the Android back gesture dismiss it and raise `OnDismiss` once.
-- [ ] `PopupMenu` shows the selected title, draws one checkmark, and reports `OnSelected` with the page's id. A disabled row does nothing.
+- [ ] `PopupMenu` shows title rows and custom views, and a tap closes the menu and runs the row callback.
 - [ ] `PullDownMenu` leaves the anchor label unchanged, runs `OnInvoked`, and draws a destructive row in red.
 - [ ] A parent render that does not change the items leaves an open menu open.
-- [ ] `MenuTestPage` shows the pop-up, the pull-down, and one free-form `PopupView`.
+- [ ] `MenuTestPage` shows the pop-up menu and one free-form `PopupView`.
 - [ ] The library and KitTests build for `net10.0` with no warnings. iOS and Android compile. Windows is not required for the first compile on the Mac.
