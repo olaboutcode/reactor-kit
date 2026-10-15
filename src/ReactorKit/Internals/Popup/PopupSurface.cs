@@ -22,11 +22,17 @@ internal sealed class PopupSurface : ContentView
     public static readonly BindableProperty MinHeightProperty = BindableProperty.Create(
         nameof(MinHeight), typeof(double), typeof(PopupSurface), PopupPlacement.MinHeight, propertyChanged: OnMetricsChanged);
 
-    public static readonly BindableProperty OpenScaleProperty = BindableProperty.Create(
-        nameof(OpenScale), typeof(double), typeof(PopupSurface), PopupPlacement.OpenScale, propertyChanged: OnMetricsChanged);
+    public static readonly BindableProperty OpenScaleXProperty = BindableProperty.Create(
+        nameof(OpenScaleX), typeof(double), typeof(PopupSurface), PopupPlacement.OpenScale, propertyChanged: OnMetricsChanged);
+
+    public static readonly BindableProperty OpenScaleYProperty = BindableProperty.Create(
+        nameof(OpenScaleY), typeof(double), typeof(PopupSurface), PopupPlacement.OpenScale, propertyChanged: OnMetricsChanged);
 
     public static readonly BindableProperty DurationProperty = BindableProperty.Create(
         nameof(Duration), typeof(uint), typeof(PopupSurface), PopupPlacement.Duration, propertyChanged: OnMetricsChanged);
+
+    public static readonly BindableProperty EasingProperty = BindableProperty.Create(
+        nameof(Easing), typeof(Easing), typeof(PopupSurface), Easing.CubicOut, propertyChanged: OnMetricsChanged);
 
     public PopupSurface()
     {
@@ -68,16 +74,28 @@ internal sealed class PopupSurface : ContentView
         set => SetValue(MinHeightProperty, value);
     }
 
-    public double OpenScale
+    public double OpenScaleX
     {
-        get => (double)GetValue(OpenScaleProperty);
-        set => SetValue(OpenScaleProperty, value);
+        get => (double)GetValue(OpenScaleXProperty);
+        set => SetValue(OpenScaleXProperty, value);
+    }
+
+    public double OpenScaleY
+    {
+        get => (double)GetValue(OpenScaleYProperty);
+        set => SetValue(OpenScaleYProperty, value);
     }
 
     public uint Duration
     {
         get => (uint)GetValue(DurationProperty);
         set => SetValue(DurationProperty, value);
+    }
+
+    public Easing Easing
+    {
+        get => (Easing)GetValue(EasingProperty);
+        set => SetValue(EasingProperty, value);
     }
 
     internal void AttachPanel(ContentView panel)

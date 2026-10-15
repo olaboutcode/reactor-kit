@@ -80,14 +80,44 @@ public sealed class PopupView : View<MauiContentView>
         => this.Set(PopupSurface.MinHeightProperty, new PropertyValue<double>(height, state));
 
     /// <summary>
-    /// Scale the panel starts from when it opens, and returns to when it closes. The default is 0.96.
+    /// Horizontal scale the panel starts from when it opens, and returns to when it closes. The default is 0.96.
+    /// </summary>
+    public PopupView OpenScaleX(double scale)
+        => this.Set(PopupSurface.OpenScaleXProperty, scale);
+
+    /// <inheritdoc cref="OpenScaleX(double)"/>
+    public PopupView OpenScaleX(Func<double> scale, IComponentWithState? state = null)
+        => this.Set(PopupSurface.OpenScaleXProperty, new PropertyValue<double>(scale, state));
+
+    /// <summary>
+    /// Vertical scale the panel starts from when it opens, and returns to when it closes. The default is 0.96.
+    /// </summary>
+    public PopupView OpenScaleY(double scale)
+        => this.Set(PopupSurface.OpenScaleYProperty, scale);
+
+    /// <inheritdoc cref="OpenScaleY(double)"/>
+    public PopupView OpenScaleY(Func<double> scale, IComponentWithState? state = null)
+        => this.Set(PopupSurface.OpenScaleYProperty, new PropertyValue<double>(scale, state));
+
+    /// <summary>
+    /// Sets <see cref="OpenScaleX(double)"/> and <see cref="OpenScaleY(double)"/> to the same scale. The default is 0.96.
     /// </summary>
     public PopupView OpenScale(double scale)
-        => this.Set(PopupSurface.OpenScaleProperty, scale);
+        => OpenScaleX(scale).OpenScaleY(scale);
 
     /// <inheritdoc cref="OpenScale(double)"/>
     public PopupView OpenScale(Func<double> scale, IComponentWithState? state = null)
-        => this.Set(PopupSurface.OpenScaleProperty, new PropertyValue<double>(scale, state));
+        => OpenScaleX(scale, state).OpenScaleY(scale, state);
+
+    /// <summary>
+    /// Curve for the fade and both scales. The default is <see cref="Easing.CubicOut"/>.
+    /// </summary>
+    public PopupView Easing(Easing easing)
+        => this.Set(PopupSurface.EasingProperty, easing);
+
+    /// <inheritdoc cref="Easing(Easing)"/>
+    public PopupView Easing(Func<Easing> easing, IComponentWithState? state = null)
+        => this.Set(PopupSurface.EasingProperty, new PropertyValue<Easing>(easing, state));
 
     /// <summary>
     /// Open and close animation length, in milliseconds. The default is 180.

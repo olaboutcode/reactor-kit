@@ -53,7 +53,7 @@ While the panel is open it tracks the anchor. A scroll that moves the anchor mov
 
 The panel is parented above the current page, including a modal page, so a `ScrollView`, a glaze corner, or another parent cannot clip it. A clear layer covers that page and takes the outside tap. The page behind does not dim.
 
-The open animation is a fade plus a scale from `OpenScale` (0.96) to 1 over `Duration` milliseconds (180), originating at the anchor edge the panel grows away from. Close reverses it, then removes the layer.
+The open animation is a fade plus a scale to 1 over `Duration` milliseconds (180), originating at the anchor edge the panel grows away from. `OpenScaleX` and `OpenScaleY` are the starting scales, both 0.96. `OpenScale` sets both. The curve is `Easing`, and the default is `CubicOut`. Close fades the panel out and returns each axis to its starting scale, then removes the layer.
 
 Hit testing belongs to the clear layer and the panel. Touches on the anchor while the panel is open dismiss it, the same way a second tap on an iOS menu button closes the menu.
 
@@ -81,6 +81,7 @@ PopupMenu()
         .Item(Label("Custom")))
     .Panel(panel => panel.CornerRadius(18).Padding(12))
     .Stack(stack => stack.Spacing(4))
+    .Popup(popup => popup.OpenScaleX(0.85).OpenScaleY(0.5))
     .IsOpen(State.Open)
     .OnDismiss(() => SetState(s => s.Open = false))
     .TitleColor(Colors.Black)
@@ -90,7 +91,7 @@ PopupMenu()
 
 `Items` takes a list in `Reactor.Kit.PopupMenuTokens`. `Item(text)` and `Item(text, onTap)` are title buttons. `Item(view)` and `Item(view, onTap)` show that view. `Rule()` is a hairline. Each call returns the list, so the rows are one chain. A tap runs `OnDismiss`, then the row callback. `TitleColor` styles title rows and defaults to black. `RuleColor` styles the hairline and defaults to `rgba(60, 60, 67, 74)`. A custom view keeps the colors the page set on it.
 
-The panel is a `GlazeView`, padding 8, corner radius 14, with the same small shadow as the sample's free-form panel. The row stack spacing is 8. `Panel` receives that glaze view and `Stack` receives that vertical stack, so any of their setters can replace a default. Title rows are 44pt, corner radius 12, on a transparent background. The anchor is the page's own control. `DisableAnchorWhenOpen` leaves that control in place and disables it only while the panel is showing. It draws at 40% opacity and does not take taps. The default leaves the anchor enabled.
+The panel is a `GlazeView`, padding 8, corner radius 14, with the same small shadow as the sample's free-form panel. The row stack spacing is 8. `Panel` receives that glaze view and `Stack` receives that vertical stack, so any of their setters can replace a default. `Popup` receives the `PopupView` after the anchor, panel, and open state are set, so it can change the scales, the easing, the duration, the gap, and the other popup settings. Title rows are 44pt, corner radius 12, on a transparent background. The anchor is the page's own control. `DisableAnchorWhenOpen` leaves that control in place and disables it only while the panel is showing. It draws at 40% opacity and does not take taps. The default leaves the anchor enabled.
 
 ## PullDownMenu
 
