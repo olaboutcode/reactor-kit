@@ -123,7 +123,8 @@ internal sealed class PopupSession
         if (_shell != null)
         {
             _shell.Opacity = 0;
-            _shell.Scale = OpenScale();
+            _shell.ScaleX = OpenScaleX();
+            _shell.ScaleY = OpenScaleY();
         }
 
         var page = FindPage();
@@ -364,9 +365,11 @@ internal sealed class PopupSession
         try
         {
             var duration = _surface.Duration;
+            var easing = Ease();
             await Task.WhenAll(
-                shell.FadeToAsync(1, duration, Easing.CubicOut),
-                shell.ScaleToAsync(1, duration, Easing.CubicOut)
+                shell.FadeToAsync(1, duration, easing),
+                shell.ScaleXToAsync(1, duration, easing),
+                shell.ScaleYToAsync(1, duration, easing)
             ).ConfigureAwait(false);
         }
         catch (ObjectDisposedException)
@@ -388,9 +391,11 @@ internal sealed class PopupSession
             if (shell != null)
             {
                 var duration = _surface.Duration;
+                var easing = Ease();
                 await Task.WhenAll(
-                    shell.FadeToAsync(0, duration, Easing.CubicOut),
-                    shell.ScaleToAsync(OpenScale(), duration, Easing.CubicOut)
+                    shell.FadeToAsync(0, duration, easing),
+                    shell.ScaleXToAsync(OpenScaleX(), duration, easing),
+                    shell.ScaleYToAsync(OpenScaleY(), duration, easing)
                 ).ConfigureAwait(false);
             }
         }
@@ -519,8 +524,14 @@ internal sealed class PopupSession
         return null;
     }
 
-    double OpenScale()
-        => PopupPlacement.AtLeastZero(_surface.OpenScale);
+    double OpenScaleX()
+        => PopupPlacement.AtLeastZero(_surface.OpenScaleX);
+
+    double OpenScaleY()
+        => PopupPlacement.AtLeastZero(_surface.OpenScaleY);
+
+    Easing Ease()
+        => _surface.Easing ?? Easing.CubicOut;
 
     static double AnchorX(MenuAlignment alignment)
         => alignment switch

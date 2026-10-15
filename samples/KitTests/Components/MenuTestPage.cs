@@ -61,9 +61,12 @@ sealed class MenuTestPage : Component<MenuTestPage.PageState>
             .IsOpen(State.OpenCustomMenu)
             .Panel(panel => panel.Padding(8))
             .Stack(stack => stack.Spacing(4))
+            .Popup(popup => popup
+                .OpenScaleX(0.85)
+                .OpenScaleY(0.5))
             .OnDismiss(CloseCustomMenu)
             .TitleColor(Ink)
-            .DisableAnchorWhenOpen(true);
+            .DisableAnchorWhenOpen(propValue: true);
 
     static HStack IconRow()
         => HStack(

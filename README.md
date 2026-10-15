@@ -308,8 +308,11 @@ Object3DView(view => _view = view)
 | `Gap` | `8` | Points between the anchor and the panel. The same inset keeps the panel inside the safe area. |
 | `MinWidth` | `220` | Smallest panel width, in points. A narrower window uses the space that remains. |
 | `MinHeight` | `44` | Smallest panel height, in points. |
-| `OpenScale` | `0.96` | Scale the panel starts from when it opens, and returns to when it closes. |
+| `OpenScaleX` | `0.96` | Horizontal scale the panel starts from, and returns to when it closes. |
+| `OpenScaleY` | `0.96` | Vertical scale the panel starts from, and returns to when it closes. |
+| `OpenScale` | `0.96` | Sets both axes to the same scale. |
 | `Duration` | `180` | Open and close animation length, in milliseconds. |
+| `Easing` | `CubicOut` | Curve for the fade and both scales. |
 | `OnDismiss` | none | Runs once when the panel is dismissed. The kit does not change the page state. |
 
 ```csharp
@@ -332,6 +335,7 @@ PopupMenu()
         .Item(Label("Custom")))
     .Panel(panel => panel.CornerRadius(18))
     .Stack(stack => stack.Spacing(4))
+    .Popup(popup => popup.OpenScaleX(0.85).OpenScaleY(0.5))
     .TitleColor(Colors.Black)
     .RuleColor(Color.FromRgba(60, 60, 67, 74))
     .DisableAnchorWhenOpen(true)

@@ -22,6 +22,7 @@ public sealed partial class PopupMenu : Component
 
     Func<GlazeView, GlazeView>? _panel;
     Func<VStack, VStack>? _stack;
+    Func<PopupView, PopupView>? _popup;
 
     /// <summary>
     /// The rows. Chain <c>Item</c> and <c>Rule</c> on the list.
@@ -54,15 +55,26 @@ public sealed partial class PopupMenu : Component
         return this;
     }
 
+    /// <summary>
+    /// Adjusts the popup that hosts the menu. The callback receives it after the anchor, panel, and open state are set.
+    /// </summary>
+    public PopupMenu Popup(Func<PopupView, PopupView> adjust)
+    {
+        ArgumentNullException.ThrowIfNull(adjust);
+        _popup = adjust;
+        return this;
+    }
+
     public override VisualNode Render()
     {
         var anchor = PreparedAnchor();
         var popup = anchor is null ? PopupView() : PopupView(anchor);
-        return popup
+        popup = popup
             .Content(Panel())
             .IsOpen(_isOpen)
             .OnDismiss(_onDismiss)
             .HorizontalOptions(LayoutOptions.Center);
+        return _popup is null ? popup : _popup(popup) ?? popup;
     }
 
     VisualNode? PreparedAnchor()
