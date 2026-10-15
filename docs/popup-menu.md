@@ -86,12 +86,12 @@ PopupMenu()
     .OnDismiss(() => SetState(s => s.Open = false))
     .TitleColor(Colors.Black)
     .RuleColor(Color.FromRgba(60, 60, 67, 74))
-    .DisableAnchorWhenOpen(true);
+    .DisableAnchorWhenOpen();
 ```
 
 `Items` takes a list in `Reactor.Kit.PopupMenuTokens`. `Item(text)` and `Item(text, onTap)` are title buttons. `Item(view)` and `Item(view, onTap)` show that view. `Rule()` is a hairline. Each call returns the list, so the rows are one chain. A tap runs `OnDismiss`, then the row callback. `TitleColor` styles title rows and defaults to black. `RuleColor` styles the hairline and defaults to `rgba(60, 60, 67, 74)`. A custom view keeps the colors the page set on it.
 
-The panel is a `GlazeView`, padding 8, corner radius 14, with the same small shadow as the sample's free-form panel. The row stack spacing is 8. `Panel` receives that glaze view and `Stack` receives that vertical stack, so any of their setters can replace a default. `Popup` receives the `PopupView` after the anchor, panel, and open state are set, so it can change the scales, the easing, the duration, the gap, and the other popup settings. Title rows are 44pt, corner radius 12, on a transparent background. The anchor is the page's own control. `DisableAnchorWhenOpen` leaves that control in place and disables it only while the panel is showing. It draws at 40% opacity and does not take taps. The default leaves the anchor enabled.
+The panel is a `GlazeView`, padding 8, corner radius 14, with the same small shadow as the sample's free-form panel. The row stack spacing is 8. `Panel` receives that glaze view and `Stack` receives that vertical stack, so any of their setters can replace a default. `Popup` receives the `PopupView` after the anchor, panel, and open state are set, so it can change the scales, the easing, the duration, the gap, and the other popup settings. Title rows are 44pt, corner radius 12, on a transparent background. The anchor is the page's own control. `DisableAnchorWhenOpen` leaves that control in place. While the panel opens it fades to 40% opacity, and while the panel closes it fades back, using the popup duration and easing. It does not take taps while the panel is showing. The default leaves the anchor enabled.
 
 ## PullDownMenu
 
