@@ -269,6 +269,8 @@ internal sealed class PopupSession
         if (_panel?.Handler == null)
             return Size.Zero;
 
+        // Clear a previous width so this measure is the content's own width.
+        // Place() raises it to MinWidth. MinWidth 0 keeps this hug.
         _panel.WidthRequest = -1;
         var natural = ((IView)_panel).Measure(double.PositiveInfinity, double.PositiveInfinity);
         var width = Finite(natural.Width);

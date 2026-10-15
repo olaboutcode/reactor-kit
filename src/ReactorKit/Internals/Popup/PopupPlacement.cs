@@ -8,6 +8,9 @@ namespace Reactor.Kit.Internals.Popup;
 static class PopupPlacement
 {
     public const double Gap = 8;
+    /// <summary>
+    /// Default smallest panel width. Zero leaves the measured content width.
+    /// </summary>
     public const double MinWidth = 220;
     public const double MinHeight = 44;
     public const double OpenScale = 0.96;
@@ -36,6 +39,8 @@ static class PopupPlacement
         if (bottom < top)
             bottom = top;
 
+        // MinWidth raises the measured width. Zero keeps that measurement, so the panel hugs the content.
+        // A window narrower than the floor still caps the width.
         var maxWidth = Math.Max(0, right - left);
         var floor = Math.Min(minWidth, maxWidth);
         var width = Math.Min(Math.Max(desired.Width, floor), maxWidth);
