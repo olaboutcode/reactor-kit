@@ -22,6 +22,10 @@ sealed class NullPopupLayer : IPopupLayer
     {
     }
 
+    public void ReleaseShadowClip(View panel)
+    {
+    }
+
     public Rect PageBounds(Page page)
         => new(0, 0, Math.Max(0, page.Width), Math.Max(0, page.Height));
 

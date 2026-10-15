@@ -87,6 +87,8 @@ sealed class GlazePlatformView : FrameLayout
         ClipToOutline = _corner > 0;
         ApplyBlurEffect();
         RequestLayout();
+        // The shadow bitmap is cached from the first draw. Rebuild it once the corner exists.
+        (Parent as View)?.Invalidate();
     }
 
     public void SetContent(View? child)
@@ -254,15 +256,31 @@ sealed class GlazePlatformView : FrameLayout
     // MAUI blurs a software-canvas copy of this view for the shadow.
     // That copy is a solid rounded silhouette, matching the iOS shadow path.
     // The glass stays on the hardware pass.
+    // A view group with nothing of its own to draw skips draw() and calls dispatchDraw(),
+    // which would snapshot the rectangular children and square the shadow off at the corners.
     public override void Draw(Canvas canvas)
     {
-        if (!canvas.IsHardwareAccelerated && VirtualView?.Shadow is not null)
-        {
-            DrawShadowMask(canvas);
+        if (PaintShadowMask(canvas))
             return;
-        }
 
         base.Draw(canvas);
+    }
+
+    protected override void DispatchDraw(Canvas canvas)
+    {
+        if (PaintShadowMask(canvas))
+            return;
+
+        base.DispatchDraw(canvas);
+    }
+
+    bool PaintShadowMask(Canvas canvas)
+    {
+        if (canvas.IsHardwareAccelerated || VirtualView?.Shadow is null)
+            return false;
+
+        DrawShadowMask(canvas);
+        return true;
     }
 
     void DrawShadowMask(Canvas canvas)

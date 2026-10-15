@@ -16,6 +16,11 @@ internal interface IPopupLayer
     /// </summary>
     void SetClip(View view, bool clip);
 
+    /// <summary>
+    /// Lets a shadow on <paramref name="panel"/> paint outside the views above it.
+    /// </summary>
+    void ReleaseShadowClip(View panel);
+
     Rect PageBounds(Page page);
 
     Rect AnchorBounds(VisualElement anchor, Page page);

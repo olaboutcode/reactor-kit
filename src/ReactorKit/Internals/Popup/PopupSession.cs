@@ -240,11 +240,14 @@ internal sealed class PopupSession
         _panel.WidthRequest = frame.Panel.Width;
         Arrange(window);
         _layer.Sync(page, _overlay);
-        // The shell is the panel's size. A scroll view clips to that rectangle and cuts off a shadow.
-        // Clip only when the content is taller than the panel and has to scroll.
+        // The shell is the panel's size. Clip it only when the content has to scroll.
+        // The Android shadow is drawn outside a wrapper inside that shell, so the views
+        // above the panel have to let it paint past the rounded corners.
         _layer.SetClip(_scroll, frame.Scrolls);
         _layer.SetClip(_shell, frame.Scrolls);
         _layer.SetClip(_panel, false);
+        if (!frame.Scrolls)
+            _layer.ReleaseShadowClip(_panel);
         if (_animated)
             return;
 

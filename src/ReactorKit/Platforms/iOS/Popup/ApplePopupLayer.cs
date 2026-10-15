@@ -47,6 +47,10 @@ sealed class ApplePopupLayer : IPopupLayer, IDisposable
             native.ClipsToBounds = clip;
     }
 
+    public void ReleaseShadowClip(View panel)
+    {
+    }
+
     public Rect PageBounds(Page page)
     {
         var view = page.ToPlatform(Context(page));
