@@ -88,25 +88,25 @@ PopupMenu()
 
 `Items` takes a list in `Reactor.Kit.PopupMenuTokens`. `Item(text)` and `Item(text, onTap)` are title buttons. `Item(view)` and `Item(view, onTap)` show that view. `Rule()` is a hairline. Each call returns the list, so the rows are one chain. A tap runs `OnDismiss`, then the row callback. `TitleColor` styles title rows and defaults to black. `RuleColor` styles the hairline and defaults to `rgba(60, 60, 67, 74)`. A custom view keeps the colors the page set on it.
 
-The panel is a `GlazeView`, padding 8, corner radius 14, with the same small shadow as the sample's free-form panel. The row stack spacing is 8. `Panel` receives that glaze view and `Stack` receives that vertical stack, so any of their setters can replace a default. `Popup` receives the `PopupView` after the anchor, panel, and open state are set, so it can change the scales, the easing, the duration, the gap, and the other popup settings. Title rows are 44pt, corner radius 12, on a transparent background. The anchor is the page's own control. `DisableAnchorWhenOpen` leaves that control in place. While the panel opens it fades to 40% opacity, and while the panel closes it fades back, using the popup duration and easing. It does not take taps while the panel is showing. The default leaves the anchor enabled.
+The panel is a `GlazeView`, padding 8, corner radius 14, with a black shadow at offset `(0.3, 0.3)`, radius 4, and opacity 0.28. The row stack spacing is 8. `Panel` receives that glaze view and `Stack` receives that vertical stack, so any of their setters can replace a default. `Popup` receives the `PopupView` after the anchor, the panel, the anchor dim, and the open state are set, so it can change the scales, the easing, the duration, the gap, and the other popup settings. Title rows are 44pt, corner radius 12, on a transparent background. The anchor is the page's own control. `DisableAnchorWhenOpen` leaves that control in place. While the panel opens it fades to 40% opacity, and while the panel closes it fades back, using the popup duration and easing. It does not take taps while the panel is showing. The default leaves the anchor enabled.
 
-## Shared menu look
-
-The shipped `PopupMenu` uses the chrome in the PopupMenu section. This table is the earlier checkmark sketch.
+## Menu chrome
 
 | Piece | Value |
 |---|---|
 | Panel corner radius | 14 |
-| Panel padding | 6 |
-| Row height | 44 |
-| Row corner radius while pressed | 10 |
-| Title size | 17 |
-| Horizontal row padding | 16 |
-| Checkmark column | 22pt, leading |
-| Separator | 1pt hairline between sections |
-| Panel shadow | offset `(0, 8)`, radius 24, opacity 0.18 |
+| Panel padding | 8 |
+| Row stack spacing | 8 |
+| Title row height | 44 |
+| Title row corner radius | 12 |
+| Title color | black |
+| Custom row minimum height | 44 |
+| Custom row corner radius | 12 |
+| Custom row padding | 4 |
+| Hairline | 1pt, `rgba(60, 60, 67, 74)`, horizontal margin 16 |
+| Panel shadow | black, offset `(0.3, 0.3)`, radius 4, opacity 0.28 |
 
-The checkmark is a stroked path, the same idea as the sample back chevron, so Android does not need a symbol font. The pressed row is a 12% black wash in light appearance and a 16% white wash in dark appearance. Glaze supplies the material. The default tint is the glaze default, so a light page gets a light panel and a dark page gets a dark panel. A page that wants the Calendar black panel sets `TintColor` on the glaze. The menu does not add a tint prop of its own.
+Glaze supplies the material. The default tint is the glaze default, so a light page gets a light panel and a dark page gets a dark panel. A page that wants another tint sets `TintColor` on the glaze through `Panel`. The menu does not add a tint prop of its own.
 
 ## Files
 
@@ -121,7 +121,7 @@ Callers add `global using Reactor.Kit.PopupMenuTokens` beside the other kit usin
 
 ## Sample
 
-`MenuTestPage` opens from the glaze page the same way the text pages open. The page shows a `PopupMenu` with a title, an icon row, a profile row, and one custom view, and one `PopupView` whose content is a glaze panel with a single label. The labels are the sample's own words.
+`HomePage` pushes `MenuTestPage` with `PushAsync`, the same way it opens the other sample pages. The page shows a `PopupMenu` with the title "Plain text", an icon row, a profile row, and one custom view, separated by hairlines, and one `PopupView` whose content is a glaze panel labeled "Anything". The menu calls `Panel` to keep padding 8 and set `ShadowElevation` level 2, offset `(0.5, 0.5)`, radius 5, opacity 0.30. The Anything panel shadow is offset `(0, 1)`, radius 4, opacity 0.28. The labels are the sample's own words.
 
 ## Out of scope
 
