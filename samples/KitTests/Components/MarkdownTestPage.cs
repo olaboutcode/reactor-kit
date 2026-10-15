@@ -88,7 +88,7 @@ sealed class MarkdownTestPage : Component
                 ScrollView(
                     MarkdownView()
                         .Markdown(Notes)
-                        .FontFamily(AppFont.Family)
+                        .FontFamily(AppTheme.FontFamily)
                         .FontSize(16)
                         .TextColor(Ink)
                         .VStart()
@@ -99,8 +99,9 @@ sealed class MarkdownTestPage : Component
             .Padding(16)
             .RowSpacing(16)
         )
-        .BackgroundColor(Paper);
+        .BackgroundColor(Paper)
+        .HasNavigationBar(false);
 
     void Close()
-        => _ = Navigation?.PopModalAsync();
+        => _ = Navigation?.PopAsync();
 }
