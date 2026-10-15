@@ -54,6 +54,37 @@ sealed class AndroidPopupLayer : IPopupLayer, IDisposable
 
         group.SetClipChildren(clip);
         group.SetClipToPadding(clip);
+
+        // MauiScrollView is created with ClipToOutline set. That clips drawing to the
+        // view rectangle after clipChildren is off, so a shadow stops where the panel curves.
+        if (group is MauiScrollView)
+            group.ClipToOutline = clip;
+    }
+
+    public void ReleaseShadowClip(View panel)
+    {
+        if (panel.Handler?.MauiContext is not IMauiContext context)
+            return;
+
+        // ToPlatform is the shadow wrapper when the panel has a shadow. Every
+        // ancestor up to the page is the panel's size or a scroll view created
+        // with an outline clip, and each one cuts the shadow off at the corners.
+        var native = panel.ToPlatform(context);
+        var current = native.Parent as AView;
+        while (current != null && !ReferenceEquals(current, _pageView))
+        {
+            if (current is AViewGroup group)
+            {
+                group.SetClipChildren(false);
+                group.SetClipToPadding(false);
+                group.ClipToOutline = false;
+                group.ClipBounds = null;
+            }
+
+            current = current.Parent as AView;
+        }
+
+        native.Invalidate();
     }
 
     public Rect PageBounds(Page page)

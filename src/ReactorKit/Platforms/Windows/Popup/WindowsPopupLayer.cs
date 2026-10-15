@@ -54,6 +54,10 @@ sealed class WindowsPopupLayer : IPopupLayer
         element.Clip = null;
     }
 
+    public void ReleaseShadowClip(View panel)
+    {
+    }
+
     public Rect PageBounds(Page page)
     {
         var view = ViewOf(page);
