@@ -31,7 +31,8 @@ sealed class ReadingTestPage : Component
             .Padding(16)
             .RowSpacing(16)
         )
-        .BackgroundColor(Paper);
+        .BackgroundColor(Paper)
+        .HasNavigationBar(false);
 
     static VStack Sections()
         => VStack(
@@ -39,7 +40,7 @@ sealed class ReadingTestPage : Component
                 "Novel",
                 "Indented paragraphs. A blank line separates them.",
                 RichTextView(Novel)
-                    .FontFamily(AppFont.Family)
+                    .FontFamily(AppTheme.FontFamily)
                     .FontSize(16)
                     .TextColor(Ink)
                     .Appearance(new TextAppearance
@@ -70,7 +71,7 @@ sealed class ReadingTestPage : Component
 
     static RichTextView Reading(Passage passage, bool poetry)
         => RichTextView(passage.Text)
-            .FontFamily(AppFont.Family)
+            .FontFamily(AppTheme.FontFamily)
             .FontSize(16)
             .TextColor(Ink)
             .LineSpacing(poetry ? 5 : 4)
@@ -141,7 +142,7 @@ sealed class ReadingTestPage : Component
         return new Passage(text.ToString(), numbers, red);
     }
 
-    void Close() => _ = Navigation?.PopModalAsync();
+    void Close() => _ = Navigation?.PopAsync();
 
     sealed record Passage(string Text, List<Mark> Numbers, List<Mark> Red);
 

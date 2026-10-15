@@ -46,7 +46,8 @@ sealed class ObjectTestPage : Component<ObjectTestPage.PageState>
             .Padding(16,0)
             .RowSpacing(16)
         )
-        .BackgroundColor(Paper);
+        .BackgroundColor(Paper)
+        .HasNavigationBar(false);
 
     VStack Controls()
         => VStack(

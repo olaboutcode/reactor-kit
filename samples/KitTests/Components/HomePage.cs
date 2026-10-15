@@ -2,21 +2,17 @@ using MauiReactor.Shapes;
 
 namespace KitTests.Components;
 
-sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
+sealed class HomePage : Component
 {
-    internal sealed class PageState
-    {
-        public bool Dark { get; set; }
-    }
-
     static readonly Color Ink = Color.FromArgb("#1C1C1E");
     static readonly Color Paper = Color.FromArgb("#F7F5F2");
     static readonly Color Night = Color.FromArgb("#111110");
 
     public override VisualNode Render()
     {
-        var ink = State.Dark ? Paper : Ink;
-        return ContentPage("Glaze",
+        var ink = Theme.IsDarkTheme ? Paper : Ink;
+        return NavigationPage(
+            ContentPage("Glaze",
             Grid(
                 ScrollView(
                     VStack(Lines(ink))
@@ -35,7 +31,7 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
                 .Height(64)
                 .VStart(),
                 Samples(),
-                ThemeButton(),
+                HomePage.ThemeButton(),
                 TextButton(),
                 MarkdownButton(),
                 ReadingButton(),
@@ -43,18 +39,14 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
                 ModelButton(),
                 MenuButton()
             )
-        )
-        .BackgroundColor(State.Dark ? Night : Paper);
+            )
+            .BackgroundColor(Theme.IsDarkTheme ? Night : Paper)
+            .HasNavigationBar(false)
+        );
     }
 
-    protected override void OnMounted()
-    {
-        ApplyTheme(dark: false);
-        base.OnMounted();
-    }
-
-    MauiReactor.Button ThemeButton()
-        => Button(State.Dark ? "Light" : "Dark", Toggle)
+    static MauiReactor.Button ThemeButton()
+        => Button(Theme.IsDarkTheme ? "Light" : "Dark", AppTheme.ToggleCurrentAppTheme)
             .TextColor(Paper)
             .BackgroundColor(Ink)
             .FontSize(15)
@@ -78,7 +70,7 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
             .Margin(16, 62);
 
     void OpenText()
-        => _ = Navigation?.PushModalAsync<RichTextTestPage>();
+        => _ = Navigation?.PushAsync<RichTextTestPage>();
 
     MauiReactor.Button MarkdownButton()
         => Button("Markdown", OpenMarkdown)
@@ -93,7 +85,7 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
             .Margin(16, 106);
 
     void OpenMarkdown()
-        => _ = Navigation?.PushModalAsync<MarkdownTestPage>();
+        => _ = Navigation?.PushAsync<MarkdownTestPage>();
 
     MauiReactor.Button ReadingButton()
         => Button("Reading", OpenReading)
@@ -108,7 +100,7 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
             .Margin(16, 150);
 
     void OpenReading()
-        => _ = Navigation?.PushModalAsync<ReadingTestPage>();
+        => _ = Navigation?.PushAsync<ReadingTestPage>();
 
     MauiReactor.Button ObjectButton()
         => Button("Object", OpenObject)
@@ -123,10 +115,10 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
             .Margin(16, 194);
 
     void OpenObject()
-        => _ = Navigation?.PushModalAsync<ObjectTestPage>();
+        => _ = Navigation?.PushAsync<ObjectTestPage>();
 
     MauiReactor.Button ModelButton()
-        => Button("Model", OpenModel)
+        => Button("Model", OpenModelTestPage)
             .TextColor(Paper)
             .BackgroundColor(Ink)
             .FontSize(15)
@@ -137,11 +129,11 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
             .VStart()
             .Margin(16, 238);
 
-    void OpenModel()
-        => _ = Navigation?.PushModalAsync<ModelTestPage>();
+    void OpenModelTestPage()
+        => _ = Navigation?.PushAsync<ModelTestPage>();
 
     MauiReactor.Button MenuButton()
-        => Button("Menu", OpenMenu)
+        => Button("Menu", GotoMenuTestPage)
             .TextColor(Paper)
             .BackgroundColor(Ink)
             .FontSize(15)
@@ -152,21 +144,8 @@ sealed class GlazeTestPage : Component<GlazeTestPage.PageState>
             .VStart()
             .Margin(16, 282);
 
-    void OpenMenu()
-        => _ = Navigation?.PushModalAsync<MenuTestPage>();
-
-    void Toggle()
-        => SetState(s =>
-        {
-            s.Dark = !s.Dark;
-            ApplyTheme(s.Dark);
-        });
-
-    static void ApplyTheme(bool dark)
-    {
-        if (Application.Current is { } app)
-            app.UserAppTheme = dark ? AppTheme.Dark : AppTheme.Light;
-    }
+    void GotoMenuTestPage()
+        => _ = Navigation?.PushAsync<MenuTestPage>();
 
     static VStack Samples()
         => VStack(

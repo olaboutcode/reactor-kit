@@ -22,10 +22,11 @@ sealed class MenuTestPage : Component<MenuTestPage.PageState>
             Grid("auto,*", "*",
                 NavigationBar.Create("Menu"),
                 VStack(
-                    Label("A panel can hold any content.")
+                    Label("Tap outside the panel to close the menu!"),
+
+                    Label("PopupView: A panel can hold any content.")
                         .TextColor(Ink)
-                        .HCenter(),
-                    Label("Tap outside the panel to close it.")
+                        .HCenter()
                         .FontSize(15)
                         .TextColor(Ink)
                         .HCenter(),
@@ -34,10 +35,12 @@ sealed class MenuTestPage : Component<MenuTestPage.PageState>
                         .IsOpen(State.Open)
                         .OnDismiss(Close)
                         .HCenter(),
-                    Label("Popup Menu using PopupView.")
+
+                    Label("Popup Menu.")
+                        .FontSize(15)
                         .TextColor(Ink)
                         .HCenter(),
-                    CustomMenu()
+                    CustomPopupMenu()
                 )
                 .Spacing(16)
                 .Center()
@@ -45,9 +48,10 @@ sealed class MenuTestPage : Component<MenuTestPage.PageState>
             )
             .Padding(16)
         )
-        .BackgroundColor(Paper);
+        .BackgroundColor(Paper)
+        .HasNavigationBar(false);
 
-    PopupMenu CustomMenu() 
+    PopupMenu CustomPopupMenu() 
         => PopupMenu()
             .Anchor(ShowCustomMenuButton())
             .Items(menu => menu
@@ -59,7 +63,14 @@ sealed class MenuTestPage : Component<MenuTestPage.PageState>
                 .Rule()
                 .Item(CustomRow()))
             .IsOpen(State.OpenCustomMenu)
-            .Panel(panel => panel.Padding(8))
+            .Panel(panel => panel
+                .Padding(8)
+                .Shadow(
+                    new MauiReactor.Shadow()
+                    .Brush(Brush.Black)
+                    .Offset(0.3, 0.3)
+                    .Radius(4)
+                    .Opacity(0.28f)))
             .Stack(stack => stack.Spacing(4))
             .Popup(popup => popup
                 .OpenScaleX(0.85)
@@ -168,7 +179,7 @@ sealed class MenuTestPage : Component<MenuTestPage.PageState>
             .Shadow(
                 new MauiReactor.Shadow()
                 .Brush(Brush.Black)
-                .Offset(0.3, 0.3)
+                .Offset(0, 1)
                 .Radius(4)
                 .Opacity(0.28f)
             );

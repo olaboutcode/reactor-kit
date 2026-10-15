@@ -33,7 +33,8 @@ sealed class ModelTestPage : Component<ModelTestPage.PageState>
             )
             .Padding(16)
         )
-        .BackgroundColor(Ink);
+        .BackgroundColor(Ink)
+        .HasNavigationBar(false);
 
     protected override void OnMounted()
     {
@@ -59,5 +60,5 @@ sealed class ModelTestPage : Component<ModelTestPage.PageState>
         SetState(s => s.ScreenHeight = calculatedHeight);
     }
 
-    void Close() => _ = Navigation?.PopModalAsync();
+    void Close() => _ = Navigation?.PopAsync();
 }

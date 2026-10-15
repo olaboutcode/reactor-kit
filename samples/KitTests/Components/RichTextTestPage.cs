@@ -71,11 +71,12 @@ sealed class RichTextTestPage : Component<RichTextTestPage.PageState>
             .Padding(16)
             .RowSpacing(16)
         )
-        .BackgroundColor(Paper);
+        .BackgroundColor(Paper)
+        .HasNavigationBar(false);
 
     RichTextView ChapterText()
         => RichTextView(John.Text)
-            .FontFamily(AppFont.Family)
+            .FontFamily(AppTheme.FontFamily)
             .FontSize(16)
             .LineSpacing(7)
             .TextColor(Ink)
@@ -180,5 +181,5 @@ sealed class RichTextTestPage : Component<RichTextTestPage.PageState>
     }
 
     void Close()
-        => _ = Navigation?.PopModalAsync();
+        => _ = Navigation?.PopAsync();
 }
