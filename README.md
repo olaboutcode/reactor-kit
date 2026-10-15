@@ -321,24 +321,21 @@ PopupView(Button("Repeat"))
 
 Pass a callback to capture the anchor. It is a `ContentView`. The callback receives null when the view unmounts.
 
-`PopupMenu` is a pop-up button on that panel. The button title is the selected item, one row shows a checkmark, and a row can carry its own view.
+`PopupMenu` is that panel with title rows or any view. The page owns `IsOpen`. A tap closes the menu, then runs the row callback.
 
 ```csharp
 PopupMenu()
-    .Sections(new[]
-    {
-        new[]
-        {
-            new PopupMenuItem("never", "Never"),
-            new PopupMenuItem("day", "Every Day"),
-        },
-        new[]
-        {
-            new PopupMenuItem("custom", "Custom", Label("Custom")),
-        },
-    })
-    .Selected(State.Repeat)
-    .OnSelected(id => SetState(s => s.Repeat = id))
+    .Anchor(Button("Custom Menu", Open))
+    .Items(menu => menu
+        .Item("Custom Menu Item 1")
+        .Rule()
+        .Item(Label("Custom")))
+    .Panel(panel => panel.CornerRadius(18))
+    .Stack(stack => stack.Spacing(4))
+    .TitleColor(Colors.Black)
+    .RuleColor(Color.FromRgba(60, 60, 67, 74))
+    .IsOpen(State.Open)
+    .OnDismiss(() => SetState(s => s.Open = false))
 ```
 
 #### Supported platforms

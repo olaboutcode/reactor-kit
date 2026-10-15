@@ -1,143 +1,144 @@
 using MauiReactor;
-using Reactor.Kit.Internals.Popup;
 using Reactor.Kit.PopupMenuTokens;
 using static Reactor.Kit.Extensions;
 
 namespace Reactor.Kit;
 
 /// <summary>
-/// A pop-up button. The button title is the selected item. The list draws one checkmark.
-/// The open flag lives on this component, so a parent render leaves the menu open.
+/// A pop-up menu on a <see cref="PopupView"/>. A row is a title or any view.
+/// The page owns <see cref="IsOpen(bool)"/>.
 /// </summary>
-public sealed partial class PopupMenu : Component<PopupMenu.MenuState>
+public sealed partial class PopupMenu : Component
 {
-    [Prop] private IEnumerable<IEnumerable<PopupMenuItem>>? _sections;
-    [Prop] private string? _selected;
-    [Prop] private Action<string>? _onSelected;
-    [Prop] private string _placeholder = MenuChrome.Placeholder;
-    [Prop] private Color? _textColor;
-    [Prop] private Color? _backgroundColor;
+    [Prop] private VisualNode? _anchor;
+    [Prop] private bool _isOpen;
+    [Prop] private Action? _onDismiss;
+    [Prop] private IEnumerable<PopupMenuItem>? _items;
+    [Prop] private Color _titleColor = Colors.Black;
+    [Prop] private Color _ruleColor = RuleInk;
 
-    public sealed class MenuState
+    static readonly Color RuleInk = Color.FromRgba(60, 60, 67, 74);
+
+    Func<GlazeView, GlazeView>? _panel;
+    Func<VStack, VStack>? _stack;
+
+    /// <summary>
+    /// The rows. Chain <c>Item</c> and <c>Rule</c> on the list.
+    /// </summary>
+    public PopupMenu Items(Func<PopupMenuItems, PopupMenuItems> build)
     {
-        public bool Open { get; set; }
+        ArgumentNullException.ThrowIfNull(build);
+        var items = new PopupMenuItems();
+        _items = (build(items) ?? items).Rows;
+        return this;
+    }
+
+    /// <summary>
+    /// Adjusts the glaze panel. The callback receives the panel after its defaults, already holding the row stack.
+    /// </summary>
+    public PopupMenu Panel(Func<GlazeView, GlazeView> adjust)
+    {
+        ArgumentNullException.ThrowIfNull(adjust);
+        _panel = adjust;
+        return this;
+    }
+
+    /// <summary>
+    /// Adjusts the vertical stack that holds the rows. The callback receives that stack after its default spacing.
+    /// </summary>
+    public PopupMenu Stack(Func<VStack, VStack> adjust)
+    {
+        ArgumentNullException.ThrowIfNull(adjust);
+        _stack = adjust;
+        return this;
     }
 
     public override VisualNode Render()
     {
-        var sections = Rows();
-        return PopupView(Anchor(Title(sections)))
-            .Content(Panel(sections))
-            .IsOpen(State.Open)
-            .OnDismiss(Close)
-            .HorizontalOptions(LayoutOptions.Center)
-            .VerticalOptions(LayoutOptions.Center);
-    }
-
-    List<List<PopupMenuItem>> Rows()
-    {
-        var sections = new List<List<PopupMenuItem>>();
-        if (_sections is null)
-            return sections;
-
-        var seen = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var section in _sections)
-        {
-            if (section is null)
-                continue;
-
-            var items = new List<PopupMenuItem>();
-            foreach (var item in section)
-            {
-                if (item is null)
-                    throw new InvalidOperationException("A popup menu section contains a missing item.");
-
-                if (!seen.Add(item.Id))
-                    throw new InvalidOperationException($"The popup menu item id '{item.Id}' is used more than once.");
-
-                items.Add(item);
-            }
-
-            if (items.Count > 0)
-                sections.Add(items);
-        }
-
-        return sections;
-    }
-
-    string Title(List<List<PopupMenuItem>> sections)
-    {
-        if (_selected is null)
-            return _placeholder;
-
-        foreach (var section in sections)
-        {
-            foreach (var item in section)
-            {
-                if (string.Equals(item.Id, _selected, StringComparison.Ordinal))
-                    return item.Title;
-            }
-        }
-
-        return _placeholder;
-    }
-
-    MauiReactor.Button Anchor(string title)
-        => new MauiReactor.Button(title, Open)
-            .TextColor(_textColor ?? Colors.Black)
-            .BackgroundColor(_backgroundColor ?? Colors.Transparent)
-            .FontSize(MenuChrome.TitleSize)
-            .CornerRadius((int)MenuChrome.ButtonRadius)
-            .HeightRequest(MenuChrome.ButtonHeight)
-            .Padding(MenuChrome.ButtonPadding, 0)
+        var popup = _anchor is null ? PopupView() : PopupView(_anchor);
+        return popup
+            .Content(Panel())
+            .IsOpen(_isOpen)
+            .OnDismiss(_onDismiss)
             .HorizontalOptions(LayoutOptions.Center);
+    }
 
-    GlazeView Panel(List<List<PopupMenuItem>> sections)
+    GlazeView Panel()
     {
-        var stack = new List<VisualNode>();
-        for (var index = 0; index < sections.Count; index++)
-        {
-            if (index > 0)
-                stack.Add(Rule());
+        var stack = VStack(Rows()).Spacing(8);
+        if (_stack is not null)
+            stack = _stack(stack) ?? stack;
 
-            foreach (var item in sections[index])
-            {
-                stack.Add(new MenuRow()
-                    .Item(item)
-                    .Marked(string.Equals(item.Id, _selected, StringComparison.Ordinal))
-                    .Chosen(() => Choose(item)));
-            }
-        }
-
-        return GlazeView(VStack(stack.ToArray()))
-            .Padding(MenuChrome.PanelPadding)
-            .CornerRadius(MenuChrome.PanelRadius)
+        var panel = GlazeView(stack)
+            .Padding(8)
+            .CornerRadius(14)
             .Shadow(
                 new MauiReactor.Shadow()
                     .Brush(Brush.Black)
-                    .Offset(0, 8)
-                    .Radius(24)
-                    .Opacity(0.18f));
+                    .Offset(0.3, 0.3)
+                    .Radius(4)
+                    .Opacity(0.28f));
+
+        return _panel is null ? panel : _panel(panel) ?? panel;
     }
 
-    static MauiReactor.BoxView Rule()
-        => new MauiReactor.BoxView()
-            .HeightRequest(MenuChrome.Separator)
-            .Color(MenuChrome.Hairline())
-            .Margin(MenuChrome.RowPadding, 4);
-
-    void Open()
-        => SetState(s => s.Open = true);
-
-    void Close()
-        => SetState(s => s.Open = false);
-
-    void Choose(PopupMenuItem item)
+    VisualNode[] Rows()
     {
-        if (!item.Enabled)
-            return;
+        if (_items is null)
+            return [];
 
-        _onSelected?.Invoke(item.Id);
-        Close();
+        var rows = new List<VisualNode>();
+        foreach (var item in _items)
+        {
+            if (item is null)
+                continue;
+
+            rows.Add(Row(item));
+        }
+
+        return [.. rows];
     }
+
+    VisualNode Row(PopupMenuItem item)
+    {
+        if (item.IsRule)
+            return Rule();
+
+        if (item.Content is { } content)
+            return Custom(content, item.Tap);
+
+        return Title(item.Text ?? string.Empty, item.TextTap);
+    }
+
+    MauiReactor.Button Title(string text, Action<string>? onTap)
+        => new MauiReactor.Button(text)
+            .BackgroundColor(Colors.Transparent)
+            .CornerRadius(12)
+            .HeightRequest(44)
+            .TextColor(_titleColor)
+            .OnClicked(() =>
+            {
+                _onDismiss?.Invoke();
+                onTap?.Invoke(text);
+            });
+
+    MauiReactor.Border Custom(VisualNode view, Action? onTap)
+        => Border(view)
+            .BackgroundColor(Colors.Transparent)
+            .MinimumHeightRequest(44)
+            .Stroke(Colors.Transparent)
+            .StrokeCornerRadius(12)
+            .Padding(4)
+            .Margin(0)
+            .OnTapped(() =>
+            {
+                _onDismiss?.Invoke();
+                onTap?.Invoke();
+            });
+
+    MauiReactor.BoxView Rule()
+        => new MauiReactor.BoxView()
+            .HeightRequest(1)
+            .Color(_ruleColor)
+            .Margin(16, 1);
 }
