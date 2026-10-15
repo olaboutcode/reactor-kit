@@ -334,6 +334,7 @@ PopupMenu()
     .Stack(stack => stack.Spacing(4))
     .TitleColor(Colors.Black)
     .RuleColor(Color.FromRgba(60, 60, 67, 74))
+    .DisableAnchorWhenOpen(true)
     .IsOpen(State.Open)
     .OnDismiss(() => SetState(s => s.Open = false))
 ```
