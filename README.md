@@ -316,6 +316,7 @@ Object3DView(view => _view = view)
 | `OpenScale` | `0.96` | Sets both axes to the same scale. |
 | `Duration` | `180` | Open and close animation length, in milliseconds. |
 | `Easing` | `CubicOut` | Curve for the fade and both scales. |
+| `DimAnchor` | `false` | Fades the anchor to 40% opacity while the panel is open and ignores taps on it. |
 | `OnDismiss` | none | Runs once when the panel is dismissed. The kit does not change the page state. |
 
 ```csharp
@@ -379,7 +380,7 @@ builder
 
 ## Samples
 
-`samples/KitTests` is a MauiReactor app for the controls. The glaze page scrolls text behind a top bar, a round button, a button, cards, and entries, and it can switch the page between light and dark. Text opens `RichTextTestPage`. Markdown opens `MarkdownTestPage`. Reading opens `ReadingTestPage`. Object opens `ObjectTestPage`. Model opens `ModelTestPage`, which passes the packaged `industrial_microscope.glb` to `PackagedSource`. Menu opens `MenuTestPage`.
+`samples/KitTests` is a MauiReactor app for the controls. `HomePage` is a `NavigationPage`. It scrolls text behind a top bar, a round button, a button, cards, and entries, and it can switch the page between light and dark. Text, Markdown, Reading, Object, Model, and Menu push their pages with `PushAsync`. Model passes the packaged `industrial_microscope.glb` to `PackagedSource`. Sample shadows go through `ShadowElevation`. Level 1, the fallback, is offset `(0.3, 0.3)`, radius 4, opacity 0.28. Level 2 is offset `(0.5, 0.5)`, radius 5, opacity 0.30. Level 3 is offset `(0.7, 0.7)`, radius 6, opacity 0.32. The home buttons and the back chevron use level 1. The menu panel uses level 2.
 
 ## Building
 
