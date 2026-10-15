@@ -49,7 +49,7 @@ sealed class MenuTestPage : Component<MenuTestPage.PageState>
             .Padding(16)
         )
         .BackgroundColor(Paper)
-        .HasNavigationBar(false);
+        .HasNavigationBar(hasNavigationBar: false);
 
     PopupMenu CustomPopupMenu() 
         => PopupMenu()
@@ -65,12 +65,7 @@ sealed class MenuTestPage : Component<MenuTestPage.PageState>
             .IsOpen(State.OpenCustomMenu)
             .Panel(panel => panel
                 .Padding(8)
-                .Shadow(
-                    new MauiReactor.Shadow()
-                    .Brush(Brush.Black)
-                    .Offset(0.3, 0.3)
-                    .Radius(4)
-                    .Opacity(0.28f)))
+                .Shadow(ShadowElevation.For(2)))
             .Stack(stack => stack.Spacing(4))
             .Popup(popup => popup
                 .OpenScaleX(0.85)

@@ -40,12 +40,7 @@ public sealed partial class NavigationBar : Component
         .Height(44)
         .CornerRadius(22)
         .HCenter()
-        .Shadow(new MauiReactor.Shadow()
-            .Brush(Brush.Black)
-            .Offset(0, 0)
-            .Radius(4)
-            .Opacity(0.28f)
-        )
+        .Shadow(ShadowElevation.For(1))
         .OnTapped(onClick);
 
     public static NavigationBar Create(string title) 

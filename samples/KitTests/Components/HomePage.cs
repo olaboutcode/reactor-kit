@@ -191,17 +191,14 @@ sealed class HomePage : Component
         .Height(44)
         .CornerRadius(22)
         .HCenter()
-        .Shadow(new MauiReactor.Shadow()
-            .Brush(Brush.Black)
-            .Offset(0.3, 0.3)
-            .Radius(4)
-            .Opacity(0.28f)
-        );
+        .Shadow(ShadowElevation.For(1));
 
     static GlazeView MochaButton()
         => GlazeView(
             Grid(
-                Button().Height(44).BackgroundColor(Colors.Transparent),
+                Button()
+                    .Height(44)
+                    .BackgroundColor(Colors.Transparent),
                 Label("Mica Button!")
                     .TextColor(Ink)
                     .FontSize(16)
@@ -209,13 +206,7 @@ sealed class HomePage : Component
             )
         )
         .CornerRadius(12)
-        .Shadow(
-            new MauiReactor.Shadow()
-            .Brush(Brush.Black)
-            .Offset(0.3, 0.3)
-            .Radius(4)
-            .Opacity(0.28f)
-        );
+        .Shadow(ShadowElevation.For(1));
 
     static VisualNode[] Lines(Color ink)
     {
