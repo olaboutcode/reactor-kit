@@ -56,6 +56,15 @@ public sealed partial class PopupMenu : Component
     }
 
     /// <summary>
+    /// Fades the anchor while the panel is open.
+    /// </summary>
+    public PopupMenu DisableAnchorWhenOpen()
+    {
+        _disableAnchorWhenOpen = true;
+        return this;
+    }
+
+    /// <summary>
     /// Adjusts the popup that hosts the menu. The callback receives it after the anchor, panel, and open state are set.
     /// </summary>
     public PopupMenu Popup(Func<PopupView, PopupView> adjust)
@@ -67,26 +76,14 @@ public sealed partial class PopupMenu : Component
 
     public override VisualNode Render()
     {
-        var anchor = PreparedAnchor();
-        var popup = anchor is null ? PopupView() : PopupView(anchor);
+        var popup = _anchor is null ? PopupView() : PopupView(_anchor);
         popup = popup
             .Content(Panel())
+            .DimAnchor(_disableAnchorWhenOpen)
             .IsOpen(_isOpen)
             .OnDismiss(_onDismiss)
             .HorizontalOptions(LayoutOptions.Center);
         return _popup is null ? popup : _popup(popup) ?? popup;
-    }
-
-    VisualNode? PreparedAnchor()
-    {
-        if (_anchor is null || !_disableAnchorWhenOpen || !_isOpen)
-            return _anchor;
-
-        return ContentView(_anchor)
-            .IsEnabled(false)
-            .InputTransparent(true)
-            .CascadeInputTransparent(true)
-            .Opacity(0.4);
     }
 
     GlazeView Panel()

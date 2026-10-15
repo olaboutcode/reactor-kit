@@ -110,6 +110,16 @@ public sealed class PopupView : View<MauiContentView>
         => OpenScaleX(scale, state).OpenScaleY(scale, state);
 
     /// <summary>
+    /// Fades the anchor to 40% while the panel opens, and back to full opacity while it closes.
+    /// </summary>
+    public PopupView DimAnchor(bool dim)
+        => this.Set(PopupSurface.DimAnchorProperty, dim);
+
+    /// <inheritdoc cref="DimAnchor(bool)"/>
+    public PopupView DimAnchor(Func<bool> dim, IComponentWithState? state = null)
+        => this.Set(PopupSurface.DimAnchorProperty, new PropertyValue<bool>(dim, state));
+
+    /// <summary>
     /// Curve for the fade and both scales. The default is <see cref="Easing.CubicOut"/>.
     /// </summary>
     public PopupView Easing(Easing easing)

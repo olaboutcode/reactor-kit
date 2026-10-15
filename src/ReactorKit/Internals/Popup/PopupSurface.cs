@@ -34,6 +34,9 @@ internal sealed class PopupSurface : ContentView
     public static readonly BindableProperty EasingProperty = BindableProperty.Create(
         nameof(Easing), typeof(Easing), typeof(PopupSurface), Easing.CubicOut, propertyChanged: OnMetricsChanged);
 
+    public static readonly BindableProperty DimAnchorProperty = BindableProperty.Create(
+        nameof(DimAnchor), typeof(bool), typeof(PopupSurface), false);
+
     public PopupSurface()
     {
         BackgroundColor = Colors.Transparent;
@@ -96,6 +99,12 @@ internal sealed class PopupSurface : ContentView
     {
         get => (Easing)GetValue(EasingProperty);
         set => SetValue(EasingProperty, value);
+    }
+
+    public bool DimAnchor
+    {
+        get => (bool)GetValue(DimAnchorProperty);
+        set => SetValue(DimAnchorProperty, value);
     }
 
     internal void AttachPanel(ContentView panel)

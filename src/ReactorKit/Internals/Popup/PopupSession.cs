@@ -127,6 +127,12 @@ internal sealed class PopupSession
             _shell.ScaleY = OpenScaleY();
         }
 
+        if (_surface.DimAnchor)
+        {
+            _surface.InputTransparent = true;
+            _surface.CascadeInputTransparent = true;
+        }
+
         var page = FindPage();
         if (page?.Handler?.MauiContext == null || _overlay == null)
         {
@@ -366,11 +372,16 @@ internal sealed class PopupSession
         {
             var duration = _surface.Duration;
             var easing = Ease();
-            await Task.WhenAll(
+            var motion = new List<Task>
+            {
                 shell.FadeToAsync(1, duration, easing),
                 shell.ScaleXToAsync(1, duration, easing),
-                shell.ScaleYToAsync(1, duration, easing)
-            ).ConfigureAwait(false);
+                shell.ScaleYToAsync(1, duration, easing),
+            };
+            if (_surface.DimAnchor)
+                motion.Add(_surface.FadeToAsync(AnchorDim, duration, easing));
+
+            await Task.WhenAll(motion).ConfigureAwait(false);
         }
         catch (ObjectDisposedException)
         {
@@ -392,11 +403,16 @@ internal sealed class PopupSession
             {
                 var duration = _surface.Duration;
                 var easing = Ease();
-                await Task.WhenAll(
+                var motion = new List<Task>
+                {
                     shell.FadeToAsync(0, duration, easing),
                     shell.ScaleXToAsync(OpenScaleX(), duration, easing),
-                    shell.ScaleYToAsync(OpenScaleY(), duration, easing)
-                ).ConfigureAwait(false);
+                    shell.ScaleYToAsync(OpenScaleY(), duration, easing),
+                };
+                if (_surface.DimAnchor)
+                    motion.Add(_surface.FadeToAsync(1, duration, easing));
+
+                await Task.WhenAll(motion).ConfigureAwait(false);
             }
         }
         catch (ObjectDisposedException)
@@ -435,6 +451,10 @@ internal sealed class PopupSession
             _layer.Remove(_overlay);
             _inserted = false;
         }
+
+        _surface.Opacity = 1;
+        _surface.InputTransparent = false;
+        _surface.CascadeInputTransparent = false;
     }
 
     void Watch()
@@ -529,6 +549,8 @@ internal sealed class PopupSession
 
     double OpenScaleY()
         => PopupPlacement.AtLeastZero(_surface.OpenScaleY);
+
+    const double AnchorDim = 0.4;
 
     Easing Ease()
         => _surface.Easing ?? Easing.CubicOut;

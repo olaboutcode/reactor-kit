@@ -338,7 +338,7 @@ PopupMenu()
     .Popup(popup => popup.OpenScaleX(0.85).OpenScaleY(0.5))
     .TitleColor(Colors.Black)
     .RuleColor(Color.FromRgba(60, 60, 67, 74))
-    .DisableAnchorWhenOpen(true)
+    .DisableAnchorWhenOpen()
     .IsOpen(State.Open)
     .OnDismiss(() => SetState(s => s.Open = false))
 ```

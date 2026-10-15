@@ -66,7 +66,7 @@ sealed class MenuTestPage : Component<MenuTestPage.PageState>
                 .OpenScaleY(0.5))
             .OnDismiss(CloseCustomMenu)
             .TitleColor(Ink)
-            .DisableAnchorWhenOpen(propValue: true);
+            .DisableAnchorWhenOpen();
 
     static HStack IconRow()
         => HStack(
