@@ -1,4 +1,5 @@
 using MauiReactor;
+using Reactor.Kit.SheetTokens;
 using MauiContentView = Microsoft.Maui.Controls.ContentView;
 using SKCanvasView = SkiaSharp.Views.Maui.Controls.SKCanvasView;
 
@@ -126,4 +127,29 @@ public static partial class Extensions
     /// </summary>
     public static PopupMenu PopupMenu()
         => new();
+
+    /// <summary>
+    /// A page sheet. On a phone the large detent is a card under the status bar.
+    /// </summary>
+    public static SheetView PageSheet(params VisualNode?[] children)
+        => new SheetView().Style(SheetStyle.Page).PageSizing(true).Content(OneBody(children));
+
+    /// <summary>
+    /// A form sheet. A centered card on a regular width, and a page sheet on a compact width.
+    /// </summary>
+    public static SheetView FormSheet(params VisualNode?[] children)
+        => new SheetView().Style(SheetStyle.Form).PageSizing(false).Content(OneBody(children));
+
+    static VisualNode? OneBody(VisualNode?[]? children)
+    {
+        if (children is not { Length: > 0 })
+            return null;
+
+        if (children.Length == 1)
+            return children[0];
+
+        var grid = new MauiReactor.Grid();
+        grid.AddChildren(children);
+        return grid;
+    }
 }

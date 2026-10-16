@@ -36,7 +36,8 @@ sealed class HomePage : Component
                 ReadingButton(),
                 ObjectButton(),
                 ModelButton(),
-                MenuButton()
+                MenuButton(),
+                SheetButton()
             )
         )
         .BackgroundColor(Theme.IsDarkTheme ? Night : Paper)
@@ -144,6 +145,21 @@ sealed class HomePage : Component
 
     void GotoMenuTestPage()
         => _ = Navigation?.PushModalAsync<MenuTestPage>(animated: false);
+
+    MauiReactor.Button SheetButton()
+        => Button("Sheet", GotoSheetTestPage)
+            .TextColor(Paper)
+            .BackgroundColor(Ink)
+            .FontSize(15)
+            .CornerRadius(16)
+            .Height(36)
+            .Padding(14, 0)
+            .HEnd()
+            .VStart()
+            .Margin(16, 326);
+
+    void GotoSheetTestPage()
+        => _ = Navigation?.PushModalAsync<SheetTestPage>(animated: false);
 
     static VStack Samples()
         => VStack(
