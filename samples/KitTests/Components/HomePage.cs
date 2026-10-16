@@ -11,8 +11,7 @@ sealed class HomePage : Component
     public override VisualNode Render()
     {
         var ink = Theme.IsDarkTheme ? Paper : Ink;
-        return NavigationPage(
-            ContentPage("Glaze",
+        return ContentPage("Glaze",
             Grid(
                 ScrollView(
                     VStack(Lines(ink))
@@ -39,10 +38,9 @@ sealed class HomePage : Component
                 ModelButton(),
                 MenuButton()
             )
-            )
-            .BackgroundColor(Theme.IsDarkTheme ? Night : Paper)
-            .HasNavigationBar(false)
-        );
+        )
+        .BackgroundColor(Theme.IsDarkTheme ? Night : Paper)
+        .Set(Microsoft.Maui.Controls.Shell.NavBarIsVisibleProperty, false);
     }
 
     static MauiReactor.Button ThemeButton()
@@ -70,7 +68,7 @@ sealed class HomePage : Component
             .Margin(16, 62);
 
     void OpenText()
-        => _ = Navigation?.PushAsync<RichTextTestPage>();
+        => _ = Navigation?.PushModalAsync<RichTextTestPage>();
 
     MauiReactor.Button MarkdownButton()
         => Button("Markdown", OpenMarkdown)
@@ -85,7 +83,7 @@ sealed class HomePage : Component
             .Margin(16, 106);
 
     void OpenMarkdown()
-        => _ = Navigation?.PushAsync<MarkdownTestPage>();
+        => _ = Navigation?.PushModalAsync<MarkdownTestPage>();
 
     MauiReactor.Button ReadingButton()
         => Button("Reading", OpenReading)
@@ -100,7 +98,7 @@ sealed class HomePage : Component
             .Margin(16, 150);
 
     void OpenReading()
-        => _ = Navigation?.PushAsync<ReadingTestPage>();
+        => _ = Navigation?.PushModalAsync<ReadingTestPage>();
 
     MauiReactor.Button ObjectButton()
         => Button("Object", OpenObject)
@@ -115,7 +113,7 @@ sealed class HomePage : Component
             .Margin(16, 194);
 
     void OpenObject()
-        => _ = Navigation?.PushAsync<ObjectTestPage>();
+        => _ = Navigation?.PushModalAsync<ObjectTestPage>();
 
     MauiReactor.Button ModelButton()
         => Button("Model", OpenModelTestPage)
@@ -130,7 +128,7 @@ sealed class HomePage : Component
             .Margin(16, 238);
 
     void OpenModelTestPage()
-        => _ = Navigation?.PushAsync<ModelTestPage>();
+        => _ = Navigation?.PushModalAsync<ModelTestPage>();
 
     MauiReactor.Button MenuButton()
         => Button("Menu", GotoMenuTestPage)
@@ -145,7 +143,7 @@ sealed class HomePage : Component
             .Margin(16, 282);
 
     void GotoMenuTestPage()
-        => _ = Navigation?.PushAsync<MenuTestPage>();
+        => _ = Navigation?.PushModalAsync<MenuTestPage>();
 
     static VStack Samples()
         => VStack(

@@ -103,5 +103,5 @@ sealed class MarkdownTestPage : Component
         .HasNavigationBar(false);
 
     void Close()
-        => _ = Navigation?.PopAsync();
+        => _ = Navigation?.PopModalAsync();
 }

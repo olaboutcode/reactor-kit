@@ -142,7 +142,7 @@ sealed class ReadingTestPage : Component
         return new Passage(text.ToString(), numbers, red);
     }
 
-    void Close() => _ = Navigation?.PopAsync();
+    void Close() => _ = Navigation?.PopModalAsync();
 
     sealed record Passage(string Text, List<Mark> Numbers, List<Mark> Red);
 

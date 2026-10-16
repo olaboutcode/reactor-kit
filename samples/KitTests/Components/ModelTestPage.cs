@@ -60,5 +60,5 @@ sealed class ModelTestPage : Component<ModelTestPage.PageState>
         SetState(s => s.ScreenHeight = calculatedHeight);
     }
 
-    void Close() => _ = Navigation?.PopAsync();
+    void Close() => _ = Navigation?.PopModalAsync();
 }

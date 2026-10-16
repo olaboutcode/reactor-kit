@@ -181,5 +181,5 @@ sealed class RichTextTestPage : Component<RichTextTestPage.PageState>
     }
 
     void Close()
-        => _ = Navigation?.PopAsync();
+        => _ = Navigation?.PopModalAsync();
 }

@@ -51,5 +51,5 @@ public sealed partial class NavigationBar : Component
     public static NavigationBar Create(string title) 
         => new NavigationBar().Title(title);
 
-    void Close() => _ = Navigation?.PopAsync();
+    void Close() => _ = Navigation?.PopModalAsync();
 }

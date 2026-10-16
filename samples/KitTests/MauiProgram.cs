@@ -12,7 +12,7 @@ public static class MauiProgram
     {
         var builder = MauiApp.CreateBuilder();
         builder
-            .UseMauiReactorApp<HomePage>(app =>
+            .UseMauiReactorApp<AppShell>(app =>
             {
                 app.UseTheme<AppTheme>();
             },
