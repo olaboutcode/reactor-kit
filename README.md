@@ -390,7 +390,7 @@ dotnet build ReactorKit.slnx
 
 Package versions are centralized in `Directory.Packages.props`.
 
-CI builds `net10.0` and `net10.0-android` on Ubuntu and `net10.0-ios` on macOS. A tag such as `v0.1.0-alpha.5` packs on macOS and publishes `Reactor.Kit` to NuGet and GitHub Packages.
+CI builds `net10.0` and `net10.0-android` on Ubuntu and `net10.0-ios` on macOS. A tag such as `v0.1.0-alpha.6` packs on macOS and publishes `Reactor.Kit` to NuGet and GitHub Packages.
 
 ## License
 
