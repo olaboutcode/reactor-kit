@@ -24,6 +24,7 @@ sealed class SheetController : UIViewController
     string? _appliedDetents;
     string? _appliedSelected;
     string? _appliedUndimmed;
+    bool _reportDetent;
 
     public SheetController()
     {
@@ -71,6 +72,7 @@ sealed class SheetController : UIViewController
 
         _presentRetries = 0;
         _dismissNotified = false;
+        _reportDetent = false;
         presenter.PresentViewController(this, true, null);
     }
 
@@ -95,6 +97,8 @@ sealed class SheetController : UIViewController
     {
         base.ViewWillAppear(animated);
         AttachHost();
+        if (SheetPresentationController is UISheetPresentationController sheet && _appliedSelected != null)
+            SheetDetentBridge.SetIdentifier(sheet, SheetDetentBridge.SelectedKey, _appliedSelected);
     }
 
     public override void ViewDidAppear(bool animated)
@@ -102,6 +106,7 @@ sealed class SheetController : UIViewController
         base.ViewDidAppear(animated);
         AttachHost();
         View?.LayoutIfNeeded();
+        _reportDetent = true;
         if (_native?.Props.BackdropDismiss != true || _tap != null)
             return;
 
@@ -337,7 +342,7 @@ sealed class SheetController : UIViewController
 
     void OnDetent(string? id)
     {
-        if (_programmatic)
+        if (_programmatic || !_reportDetent)
             return;
 
         _native?.DetentSettled?.Invoke(id ?? "");
@@ -353,6 +358,7 @@ sealed class SheetController : UIViewController
         _appliedDetents = null;
         _appliedSelected = null;
         _appliedUndimmed = null;
+        _reportDetent = false;
         if (_tap != null)
         {
             _tap.View?.RemoveGestureRecognizer(_tap);
@@ -372,8 +378,7 @@ sealed class SheetController : UIViewController
 
         public override void DidChangeSelectedDetentIdentifier(UISheetPresentationController sheetPresentationController)
         {
-            var value = sheetPresentationController.ValueForKey(SheetDetentBridge.SelectedKey);
-            Changed?.Invoke(value?.ToString());
+            Changed?.Invoke(SheetDetentBridge.ReadIdentifier(sheetPresentationController));
         }
 
         public override bool ShouldDismiss(UIPresentationController presentationController)

@@ -67,7 +67,36 @@ static class SheetDetentBridge
             return;
         }
 
+        // A new NSString("medium") is not the system constant, so UIKit ignores it and rests on the first detent.
+        if (TrySystem(id, out var system))
+        {
+            if (ReferenceEquals(key, UndimmedKey))
+                sheet.LargestUndimmedDetentIdentifier = system;
+            else
+                sheet.SelectedDetentIdentifier = system;
+
+            return;
+        }
+
         sheet.SetValueForKey(new NSString(id), key);
+    }
+
+    static bool TrySystem(string id, out UISheetPresentationControllerDetentIdentifier identifier)
+    {
+        if (string.Equals(id, SheetIds.Medium, StringComparison.Ordinal))
+        {
+            identifier = UISheetPresentationControllerDetentIdentifier.Medium;
+            return true;
+        }
+
+        if (string.Equals(id, SheetIds.Large, StringComparison.Ordinal))
+        {
+            identifier = UISheetPresentationControllerDetentIdentifier.Large;
+            return true;
+        }
+
+        identifier = default;
+        return false;
     }
 
     [DllImport(Constants.ObjectiveCLibrary, EntryPoint = "objc_msgSend")]

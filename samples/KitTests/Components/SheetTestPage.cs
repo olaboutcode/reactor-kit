@@ -50,9 +50,12 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
                         DoneButton(ClosePage)
                     )
                     .Spacing(12)
-                    .Padding(20))
-                    .IsOpen(State.PageOpen)
-                    .OnDismiss(ClosePage),
+                    .Padding(20)
+                )
+                .CornerRadius(16)
+                .IsOpen(State.PageOpen)
+                .OnDismiss(ClosePage),
+
                 FormSheet(
                     VStack(
                         Label("New event").FontSize(17).TextColor(Ink),
@@ -63,15 +66,22 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
                         DoneButton(CloseForm)
                     )
                     .Spacing(12)
-                    .Padding(20))
-                    .IsOpen(State.FormOpen)
-                    .OnDismiss(CloseForm),
+                    .Padding(20)
+                )
+                .CornerRadius(16)
+                .IsOpen(State.FormOpen)
+                .OnDismiss(CloseForm),
+
                 PageSheet(Player())
-                    .Detents(SheetDetent.Fraction("peek", 0.3), SheetDetent.Medium, SheetDetent.Large)
+                    .Detents(
+                        SheetDetent.Fraction("peek", 0.3),
+                        SheetDetent.Medium,
+                        SheetDetent.Large)
                     .SelectedDetent(State.Detent)
                     .OnDetentChanged(id => SetState(s => s.Detent = id))
                     .Grabber(propValue: true)
                     .UndimmedDetent(SheetIds.Medium)
+                    .CornerRadius(16)
                     .IsOpen(State.PlayerOpen)
                     .OnDismiss(ClosePlayer)
             )
