@@ -68,7 +68,7 @@ sealed class HomePage : Component
             .Margin(16, 62);
 
     void OpenText()
-        => _ = Navigation?.PushModalAsync<RichTextTestPage>();
+        => _ = Navigation?.PushModalAsync<RichTextTestPage>(animated: false);
 
     MauiReactor.Button MarkdownButton()
         => Button("Markdown", OpenMarkdown)
@@ -83,7 +83,7 @@ sealed class HomePage : Component
             .Margin(16, 106);
 
     void OpenMarkdown()
-        => _ = Navigation?.PushModalAsync<MarkdownTestPage>();
+        => _ = Navigation?.PushModalAsync<MarkdownTestPage>(animated: false);
 
     MauiReactor.Button ReadingButton()
         => Button("Reading", OpenReading)
@@ -98,7 +98,7 @@ sealed class HomePage : Component
             .Margin(16, 150);
 
     void OpenReading()
-        => _ = Navigation?.PushModalAsync<ReadingTestPage>();
+        => _ = Navigation?.PushModalAsync<ReadingTestPage>(animated: false);
 
     MauiReactor.Button ObjectButton()
         => Button("Object", OpenObject)
@@ -113,7 +113,7 @@ sealed class HomePage : Component
             .Margin(16, 194);
 
     void OpenObject()
-        => _ = Navigation?.PushModalAsync<ObjectTestPage>();
+        => _ = Navigation?.PushModalAsync<ObjectTestPage>(animated: false);
 
     MauiReactor.Button ModelButton()
         => Button("Model", OpenModelTestPage)
@@ -128,7 +128,7 @@ sealed class HomePage : Component
             .Margin(16, 238);
 
     void OpenModelTestPage()
-        => _ = Navigation?.PushModalAsync<ModelTestPage>();
+        => _ = Navigation?.PushModalAsync<ModelTestPage>(animated: false);
 
     MauiReactor.Button MenuButton()
         => Button("Menu", GotoMenuTestPage)
@@ -143,7 +143,7 @@ sealed class HomePage : Component
             .Margin(16, 282);
 
     void GotoMenuTestPage()
-        => _ = Navigation?.PushModalAsync<MenuTestPage>();
+        => _ = Navigation?.PushModalAsync<MenuTestPage>(animated: false);
 
     static VStack Samples()
         => VStack(
