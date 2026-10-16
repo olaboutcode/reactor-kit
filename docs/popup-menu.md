@@ -121,7 +121,9 @@ Callers add `global using Reactor.Kit.PopupMenuTokens` beside the other kit usin
 
 ## Sample
 
-`HomePage` opens `MenuTestPage` with `PushModalAsync`, the same way it opens the other sample pages. The page shows a `PopupMenu` with the title "Plain text", an icon row, a profile row, and one custom view, separated by hairlines, and one `PopupView` whose content is a glaze panel labeled "Anything". The menu calls `Panel` to keep padding 8 and set `ShadowElevation` level 2, offset `(0.5, 0.5)`, radius 5, opacity 0.30. The Anything panel shadow is offset `(0, 1)`, radius 4, opacity 0.28. The labels are the sample's own words.
+`AppShell` hosts `HomePage` with the flyout disabled and the shell navigation bar hidden. `HomePage` opens `MenuTestPage` with `PushModalAsync`, the same way it opens the other sample pages. The page closes with `PopModalAsync`. On Android the menu panel is a `GlazeView`, and that glass is a snapshot of the page behind it, so the page has to stay attached. A modal leaves it in place. A `NavigationPage`, or a Shell `PushAsync`, takes the page down, and the panel draws flat for a frame when the page comes back.
+
+The page shows a `PopupMenu` with the title "Plain text", an icon row, a profile row, and one custom view, separated by hairlines, and one `PopupView` whose content is a glaze panel labeled "Anything". The menu calls `Panel` to keep padding 8 and set `ShadowElevation` level 2, offset `(0.5, 0.5)`, radius 5, opacity 0.30. The Anything panel shadow is offset `(0, 1)`, radius 4, opacity 0.28. The labels are the sample's own words.
 
 ## Out of scope
 
