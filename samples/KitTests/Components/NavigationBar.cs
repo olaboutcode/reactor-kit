@@ -5,8 +5,6 @@ namespace KitTests.Components;
 public sealed partial class NavigationBar : Component
 {
     static readonly Color Ink = Color.FromArgb("#1C1C1E");
-    static readonly Color Paper = Color.FromArgb("#F7F5F2");
-    static readonly Color Night = Color.FromArgb("#111110");
 
     [Prop]private string? _title = null;
     [Prop]private Color? _textColor = null;
