@@ -380,7 +380,7 @@ builder
 
 ## Samples
 
-`samples/KitTests` is a MauiReactor app for the controls. `HomePage` is a `NavigationPage`. It scrolls text behind a top bar, a round button, a button, cards, and entries, and it can switch the page between light and dark. Text, Markdown, Reading, Object, Model, and Menu push their pages with `PushAsync`. Model passes the packaged `industrial_microscope.glb` to `PackagedSource`. Sample shadows go through `ShadowElevation`. Level 1, the fallback, is offset `(0.3, 0.3)`, radius 4, opacity 0.28. Level 2 is offset `(0.5, 0.5)`, radius 5, opacity 0.30. Level 3 is offset `(0.7, 0.7)`, radius 6, opacity 0.32. The home buttons and the back chevron use level 1. The menu panel uses level 2.
+`samples/KitTests` is a MauiReactor app for the controls. `AppShell` hosts `HomePage`, a content page, with the flyout disabled. It scrolls text behind a top bar, a round button, a button, cards, and entries, and it can switch the page between light and dark. Text, Markdown, Reading, Object, Model, and Menu open with `PushModalAsync`. Model passes the packaged `industrial_microscope.glb` to `PackagedSource`. Sample shadows go through `ShadowElevation`. Level 1, the fallback, is offset `(0.3, 0.3)`, radius 4, opacity 0.28. Level 2 is offset `(0.5, 0.5)`, radius 5, opacity 0.30. Level 3 is offset `(0.7, 0.7)`, radius 6, opacity 0.32. The home buttons and the back chevron use level 1. The menu panel uses level 2.
 
 ## Building
 
