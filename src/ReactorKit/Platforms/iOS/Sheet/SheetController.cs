@@ -106,6 +106,13 @@ sealed class SheetController : UIViewController
         base.ViewDidAppear(animated);
         AttachHost();
         View?.LayoutIfNeeded();
+        // UIKit shrinks this card while another sheet is on top. Restore it when that sheet is gone.
+        if (SheetPresentationController is UISheetPresentationController sheet && _native != null)
+        {
+            sheet.PreferredCornerRadius = (NFloat)(_native.Props.CornerRadius ?? 10);
+            sheet.PrefersGrabberVisible = _native.Props.Grabber;
+        }
+
         _reportDetent = true;
         if (_native?.Props.BackdropDismiss != true || _tap != null)
             return;

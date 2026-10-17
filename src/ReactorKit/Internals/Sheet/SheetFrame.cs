@@ -20,4 +20,10 @@ sealed class SheetFrame
     public string? ActiveId { get; init; }
 
     public double RestHeight { get; init; }
+
+    /// <summary>How many sheets cover this one. Zero is the front sheet.</summary>
+    public double Stack { get; init; }
+
+    /// <summary>Strength of this card's grabber. The front card stays solid. A covered card fades out, then back in as the sheet in front closes.</summary>
+    public double GrabberAlpha { get; init; } = 1;
 }

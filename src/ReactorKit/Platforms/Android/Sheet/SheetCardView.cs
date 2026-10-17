@@ -12,6 +12,8 @@ sealed class SheetCardView : AViewGroup
 {
     readonly List<(long Time, float Y)> _samples = [];
     readonly AView _grabber;
+    readonly AView _scrim;
+    readonly int[] _screen = new int[2];
     bool _down;
     bool _grabberHit;
     float _downY;
@@ -21,7 +23,14 @@ sealed class SheetCardView : AViewGroup
     {
         SetClipToPadding(false);
         SetClipChildren(false);
+        _scrim = new AView(context);
+        _scrim.SetBackgroundColor(Android.Graphics.Color.Black);
+        _scrim.Alpha = 0;
+        _scrim.Clickable = false;
+        _scrim.Focusable = false;
+        _scrim.Visibility = ViewStates.Gone;
         _grabber = new AView(context);
+        AddView(_scrim);
         AddView(_grabber);
     }
 
@@ -37,7 +46,7 @@ sealed class SheetCardView : AViewGroup
         for (var i = ChildCount - 1; i >= 0; i--)
         {
             var child = GetChildAt(i);
-            if (child == null || ReferenceEquals(child, _grabber))
+            if (child == null || IsChrome(child))
                 continue;
 
             RemoveViewAt(i);
@@ -60,6 +69,22 @@ sealed class SheetCardView : AViewGroup
         pill.SetCornerRadius(2.5f * density);
         pill.SetColor(ink);
         _grabber.Background = pill;
+    }
+
+    /// <summary>Fades the grabber. A stacked sheet keeps only one handle solid.</summary>
+    public void SetGrabberAlpha(float alpha)
+    {
+        var shown = alpha > 0.01f;
+        _grabber.Alpha = alpha;
+        _grabber.Visibility = shown ? ViewStates.Visible : ViewStates.Gone;
+    }
+
+    /// <summary>Dims the card while another sheet covers it. Zero leaves the card solid.</summary>
+    public void SetCover(float amount)
+    {
+        var alpha = Math.Clamp(amount, 0f, 1f) * 0.09f;
+        _scrim.Alpha = alpha;
+        _scrim.Visibility = alpha > 0.004f ? ViewStates.Visible : ViewStates.Gone;
     }
 
     public override bool DispatchKeyEvent(KeyEvent? e)
@@ -154,13 +179,14 @@ sealed class SheetCardView : AViewGroup
             child.Layout(0, 0, width, height);
         }
 
+        BringChildToFront(_scrim);
         BringChildToFront(_grabber);
     }
 
     void Emit(MotionEvent ev, bool down, bool up)
     {
         var density = Density();
-        var y = ev.GetY() / density;
+        var y = ScreenY(ev) / density;
         var hit = Hit(ev.GetX(), ev.GetY());
         var hasScroll = false;
         var atTop = true;
@@ -189,10 +215,17 @@ sealed class SheetCardView : AViewGroup
         });
     }
 
+    /// <summary>Finger Y in screen pixels. The card moves under the finger, so the view's own Y would step the drag backward.</summary>
+    float ScreenY(MotionEvent ev)
+    {
+        GetLocationOnScreen(_screen);
+        return _screen[1] + ev.GetY();
+    }
+
     void Remember(MotionEvent ev)
     {
         var now = SystemClock();
-        _samples.Add((now, ev.GetY()));
+        _samples.Add((now, ScreenY(ev)));
         var cutoff = now - 100;
         while (_samples.Count > 2 && _samples[0].Time < cutoff)
             _samples.RemoveAt(0);
@@ -217,7 +250,7 @@ sealed class SheetCardView : AViewGroup
         for (var i = ChildCount - 1; i >= 0; i--)
         {
             var child = GetChildAt(i);
-            if (child == null || ReferenceEquals(child, _grabber))
+            if (child == null || IsChrome(child))
                 continue;
 
             if (x < child.Left || x >= child.Right || y < child.Top || y >= child.Bottom)
@@ -259,6 +292,9 @@ sealed class SheetCardView : AViewGroup
 
         return group;
     }
+
+    bool IsChrome(AView child)
+        => ReferenceEquals(child, _grabber) || ReferenceEquals(child, _scrim);
 
     float Density()
     {

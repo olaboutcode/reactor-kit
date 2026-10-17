@@ -114,7 +114,18 @@ sealed class AppleSheetLayer : ISheetLayer
         _metrics?.Invoke();
     }
 
+    /// <summary>The page controller, or the top kit sheet already presented from it.</summary>
     static UIViewController? Presenter(Page page)
+    {
+        var controller = FindController(page);
+        // A sheet presented from the page replaces this one. Presenting from the open sheet stacks them.
+        while (controller?.PresentedViewController is SheetController upper)
+            controller = upper;
+
+        return controller;
+    }
+
+    static UIViewController? FindController(Page page)
     {
         var handler = page.Handler as IPlatformViewHandler;
         var controller = handler?.ViewController;

@@ -12,10 +12,13 @@ namespace Reactor.Kit.Internals.Sheet;
 
 /// <summary>
 /// A dim and a card on the window that contains the owner page.
-/// Shared code owns the rectangle. This type reports dips, insets, and touches.
+/// Shared code owns the rectangle. A covered card scales down so its grabber stays visible.
 /// </summary>
 sealed class AndroidSheetLayer : ISheetLayer, IDisposable
 {
+    static readonly List<AndroidSheetLayer> Live = [];
+    static readonly Dictionary<AViewGroup, AndroidSheetLayer> InsetOwners = [];
+
     AViewGroup? _root;
     AView? _dim;
     SheetCardView? _card;
@@ -59,6 +62,7 @@ sealed class AndroidSheetLayer : ISheetLayer, IDisposable
         _host = host;
         var native = host.ToPlatform(context);
         _dim = new AView(activity);
+        _dim.Visibility = ViewStates.Gone;
         _card = new SheetCardView(activity);
         (native.Parent as AViewGroup)?.RemoveView(native);
         native.Visibility = ViewStates.Visible;
@@ -69,6 +73,9 @@ sealed class AndroidSheetLayer : ISheetLayer, IDisposable
             ViewGroup.LayoutParams.MatchParent,
             ViewGroup.LayoutParams.MatchParent));
         _root.AddView(_card, new FrameLayout.LayoutParams(0, 0));
+        if (!Live.Contains(this))
+            Live.Add(this);
+
         WatchInsets();
         return true;
     }
@@ -76,15 +83,8 @@ sealed class AndroidSheetLayer : ISheetLayer, IDisposable
     public void Detach()
     {
         ReleaseBack();
-        if (_root != null && _insets != null)
-            ViewCompat.SetOnApplyWindowInsetsListener(_root, null);
-
-        if (_layout != null && _root?.ViewTreeObserver != null)
-            _root.ViewTreeObserver.GlobalLayout -= _layout;
-
-        _insets?.Dispose();
-        _insets = null;
-        _layout = null;
+        Live.Remove(this);
+        ReleaseWatch();
         if (_card != null)
         {
             _card.Pointer = null;
@@ -169,11 +169,13 @@ sealed class AndroidSheetLayer : ISheetLayer, IDisposable
         try
         {
             Place(frame);
+            Scale(frame);
             Chrome(frame);
             _dim.SetBackgroundColor(Android.Graphics.Color.Black);
             _dim.Alpha = (float)Math.Clamp(frame.DimOpacity, 0, 1);
             _dim.Clickable = frame.DimHits;
             _dim.Visibility = frame.DimOpacity <= 0.01 && !frame.DimHits ? ViewStates.Gone : ViewStates.Visible;
+            Order();
         }
         finally
         {
@@ -209,6 +211,40 @@ sealed class AndroidSheetLayer : ISheetLayer, IDisposable
         _card.Layout(left, top, left + width, top + height);
     }
 
+    /// <summary>Widens the corner of a covered card. The sheet in front keeps its own radius.</summary>
+    static double CoveredRadius(SheetFrame frame)
+    {
+        var t = Math.Clamp(frame.Stack, 0, 1);
+        const double covered = 34;
+        return frame.CornerRadius + ((Math.Max(covered, frame.CornerRadius) - frame.CornerRadius) * t);
+    }
+
+    /// <summary>Shrinks a covered card from its top edge. The sheet in front stays full size.</summary>
+    void Scale(SheetFrame frame)
+    {
+        if (_card == null)
+            return;
+
+        var scale = (float)Math.Pow(0.94, Math.Max(0, frame.Stack));
+        _card.PivotX = _card.Width / 2f;
+        _card.PivotY = 0;
+        _card.ScaleX = scale;
+        _card.ScaleY = scale;
+    }
+
+    /// <summary>Keeps each dim under its own card. A hidden dim stays behind the cards.</summary>
+    static void Order()
+    {
+        foreach (var layer in Live)
+        {
+            if (layer._dim is { Visibility: ViewStates.Visible, Parent: not null })
+                layer._dim.BringToFront();
+
+            if (layer._card is { Parent: not null })
+                layer._card.BringToFront();
+        }
+    }
+
     /// <summary>Updates the fill, grabber, corner, and content padding when they change.</summary>
     void Chrome(SheetFrame frame)
     {
@@ -216,15 +252,19 @@ sealed class AndroidSheetLayer : ISheetLayer, IDisposable
             return;
 
         var dark = Application.Current?.RequestedTheme == AppTheme.Dark;
-        var radiusChanged = Math.Abs(_chromeRadius - frame.CornerRadius) > 0.5;
+        var radius = CoveredRadius(frame);
+        var radiusChanged = Math.Abs(_chromeRadius - radius) > 0.2;
         if (!_chromeSet || _chromeGrabber != frame.Grabber || radiusChanged || _chromeDark != dark)
         {
             _chromeSet = true;
             _chromeGrabber = frame.Grabber;
-            _chromeRadius = frame.CornerRadius;
+            _chromeRadius = radius;
             _chromeDark = dark;
-            _card.ApplyChrome(frame.Grabber, frame.CornerRadius, dark);
+            _card.ApplyChrome(frame.Grabber, radius, dark);
         }
+
+        _card.SetGrabberAlpha(frame.Grabber ? (float)Math.Clamp(frame.GrabberAlpha, 0, 1) : 0);
+        _card.SetCover((float)Math.Clamp(frame.Stack, 0, 1));
 
         if (_host is not Microsoft.Maui.Controls.Layout layout)
             return;
@@ -271,19 +311,65 @@ sealed class AndroidSheetLayer : ISheetLayer, IDisposable
     {
     }
 
+    /// <summary>Listens for inset and layout changes. The first sheet on a root owns the inset callback.</summary>
     void WatchInsets()
     {
         if (_root == null)
             return;
 
         _insets = new InsetsListener(Notify);
-        ViewCompat.SetOnApplyWindowInsetsListener(_root, _insets);
+        if (!InsetOwners.ContainsKey(_root))
+        {
+            InsetOwners[_root] = this;
+            ViewCompat.SetOnApplyWindowInsetsListener(_root, _insets);
+        }
+
         _layout = (_, _) => Notify();
         var observer = _root.ViewTreeObserver;
         if (observer != null)
-        {
             observer.GlobalLayout += _layout;
+    }
+
+    /// <summary>Drops this sheet's layout watch and leaves the inset callback with a sheet that is still open.</summary>
+    void ReleaseWatch()
+    {
+        if (_layout != null && _root?.ViewTreeObserver != null)
+            _root.ViewTreeObserver.GlobalLayout -= _layout;
+
+        _layout = null;
+        if (_root == null || _insets == null)
+        {
+            _insets?.Dispose();
+            _insets = null;
+            return;
         }
+
+        if (InsetOwners.TryGetValue(_root, out var owner) && ReferenceEquals(owner, this))
+        {
+            InsetOwners.Remove(_root);
+            AndroidSheetLayer? next = null;
+            foreach (var layer in Live)
+            {
+                if (ReferenceEquals(layer._root, _root) && layer._insets != null)
+                {
+                    next = layer;
+                    break;
+                }
+            }
+
+            if (next == null)
+            {
+                ViewCompat.SetOnApplyWindowInsetsListener(_root, null);
+            }
+            else
+            {
+                InsetOwners[_root] = next;
+                ViewCompat.SetOnApplyWindowInsetsListener(_root, next._insets);
+            }
+        }
+
+        _insets.Dispose();
+        _insets = null;
     }
 
     /// <summary>Reports a size or inset change that this layer did not cause.</summary>

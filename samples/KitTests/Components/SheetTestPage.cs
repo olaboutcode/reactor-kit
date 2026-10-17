@@ -2,6 +2,7 @@ namespace KitTests.Components;
 
 /// <summary>
 /// A page sheet, a form sheet, and a player sheet on this page.
+/// Form sheet inside the page sheet stacks on top of it.
 /// </summary>
 sealed class SheetTestPage : Component<SheetTestPage.PageState>
 {
@@ -47,11 +48,13 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
                         Editor()
                             .Placeholder("Message")
                             .Height(180),
+                        OpenButton("Form sheet", OpenFormOnPage),
                         DoneButton(ClosePage)
                     )
                     .Spacing(12)
                     .Padding(20)
                 )
+                .Grabber(propValue: true)
                 .CornerRadius(16)
                 .IsOpen(State.PageOpen)
                 .OnDismiss(ClosePage),
@@ -68,6 +71,7 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
                     .Spacing(12)
                     .Padding(20)
                 )
+                .Grabber(propValue: true)
                 .CornerRadius(16)
                 .IsOpen(State.FormOpen)
                 .OnDismiss(CloseForm),
@@ -135,6 +139,14 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
         => SetState(s =>
         {
             s.PageOpen = false;
+            s.FormOpen = true;
+            s.PlayerOpen = false;
+        });
+
+    void OpenFormOnPage()
+        => SetState(s =>
+        {
+            s.PageOpen = true;
             s.FormOpen = true;
             s.PlayerOpen = false;
         });

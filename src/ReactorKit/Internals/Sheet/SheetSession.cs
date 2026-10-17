@@ -101,6 +101,9 @@ sealed class SheetSession
             _dragging = Capture(pointer, dy);
             if (!_dragging)
                 return;
+
+            // A snap still running would write frames between the finger samples.
+            Hold();
         }
 
         if (!_dragging)
@@ -150,6 +153,29 @@ sealed class SheetSession
             return;
 
         BeginClose(raise: true);
+    }
+
+    /// <summary>True while the card is in the window, including while it slides away.</summary>
+    public bool IsAttached => _attached;
+
+    /// <summary>True while this sheet is open and not sliding away.</summary>
+    public bool CoversStack => _attached && !_closing && _wantOpen;
+
+    /// <summary>True when this sheet is a bottom card. A centered card leaves the sheets behind it alone.</summary>
+    public bool StacksAsCard => _layout is { Frame.Centered: false, Frame.FullScreen: false };
+
+    /// <summary>Eases this card when a sheet above it opens or closes.</summary>
+    public void Restack()
+    {
+        if (!_attached || _closing || _dragging || _layout == null || !_layer.PositionsCard)
+            return;
+
+        var next = Stamp(_layout.Frame);
+        Animate(next, () =>
+        {
+            _visibleId ??= next.ActiveId;
+            _visibleHeight = next.RestHeight;
+        });
     }
 
     /// <summary>Opens the sheet. A present that starts while one is already running is ignored.</summary>
@@ -212,23 +238,31 @@ sealed class SheetSession
         _metrics = metrics;
         var layout = Resolve(metrics);
         _layout = layout;
+        Open(layout);
+    }
+
+    /// <summary>Eases the card to the measured frame, then eases the other sheets into the stack.</summary>
+    void Open(SheetLayout layout)
+    {
+        var placed = Stamp(layout.Frame);
         var native = Native(layout);
         if (_shown.Card.Height <= 0 && _shown.Card.Width <= 0)
         {
             _layer.PresentNative(native);
             // Start off screen. Presenting at the open rectangle skips the entrance.
             if (_layer.PositionsCard)
-            {
-                _shown = Hidden(layout.Frame);
-                _layer.Apply(_shown);
-            }
+                PresentFrame(Hidden(placed));
 
-            Animate(layout.Frame, () => Settle(layout));
-            return;
+            Animate(placed, () => Settle(layout));
+        }
+        else
+        {
+            _layer.UpdateNative(native);
+            Animate(placed, () => Settle(layout));
         }
 
-        _layer.UpdateNative(native);
-        Animate(layout.Frame, () => Settle(layout));
+        if (_root != null)
+            SheetStack.RestackOthers(_root, this);
     }
 
     /// <summary>Presents again when the container size, insets, or keyboard changed.</summary>
@@ -266,7 +300,7 @@ sealed class SheetSession
 
     void Settle(SheetLayout layout)
     {
-        _shown = layout.Frame;
+        _shown = Stamp(layout.Frame);
         var id = layout.Frame.ActiveId;
         if (layout.RaiseInactive && id != null && !string.Equals(id, _props.SelectedDetent, StringComparison.Ordinal))
         {
@@ -279,7 +313,7 @@ sealed class SheetSession
 
         _visibleId = id;
         _visibleHeight = layout.Frame.RestHeight;
-        _layer.Apply(layout.Frame);
+        PresentFrame(_shown);
     }
 
     void BeginClose(bool raise)
@@ -300,6 +334,9 @@ sealed class SheetSession
             _layer.DismissNative();
             return;
         }
+
+        if (_root != null)
+            SheetStack.RestackOthers(_root, this);
 
         Animate(Hidden(_shown), () => Finish(raise));
     }
@@ -341,6 +378,13 @@ sealed class SheetSession
         _props.OnDetentChanged?.Invoke(id);
     }
 
+    /// <summary>Drops a running move so the finger owns the card.</summary>
+    void Hold()
+    {
+        _ticket++;
+        _anchor.AbortAnimation(AnimationName);
+    }
+
     bool Capture(SheetPointer pointer, double dy)
     {
         if (_armedInGrabber)
@@ -372,15 +416,13 @@ sealed class SheetSession
         {
             _dragY += dy;
             var card = _layout.Frame.Card;
-            _shown = Copy(_layout.Frame, new Rect(card.X, _dragY, card.Width, card.Height), _layout.Frame.DimOpacity);
-            _layer.Apply(_shown);
+            PresentFrame(Stamp(Copy(_layout.Frame, new Rect(card.X, _dragY, card.Width, card.Height), _layout.Frame.DimOpacity)));
             return;
         }
 
         var largest = _layout.Rests[^1].Height;
         _dragHeight = Math.Clamp(_dragHeight - dy, 0, largest);
-        _shown = CardAt(_dragHeight);
-        _layer.Apply(_shown);
+        PresentFrame(CardAt(_dragHeight));
     }
 
     void Release(double velocityY)
@@ -430,7 +472,7 @@ sealed class SheetSession
         var top = _layout.Frame.FullScreen ? 0 : Math.Max(0, _metrics.Height - height);
         var rect = new Rect(card.X, top, card.Width, _layout.Frame.FullScreen ? card.Height : height);
         var (opacity, hits) = DimFor(height);
-        return new SheetFrame
+        return Stamp(new SheetFrame
         {
             Card = rect,
             DimOpacity = opacity,
@@ -441,7 +483,7 @@ sealed class SheetSession
             Grabber = _layout.Frame.Grabber,
             ActiveId = _layout.Frame.ActiveId,
             RestHeight = height,
-        };
+        });
     }
 
     (double Opacity, bool Hits) DimFor(double height)
@@ -476,8 +518,7 @@ sealed class SheetSession
         var from = _shown;
         if (!_layer.PositionsCard)
         {
-            _shown = to;
-            _layer.Apply(to);
+            PresentFrame(to);
             done();
             return;
         }
@@ -485,8 +526,7 @@ sealed class SheetSession
         var ticket = ++_ticket;
         if (SameFrame(from, to))
         {
-            _shown = to;
-            _layer.Apply(to);
+            PresentFrame(to);
             done();
             return;
         }
@@ -497,8 +537,7 @@ sealed class SheetSession
             if (ticket != _ticket)
                 return;
 
-            _shown = Lerp(from, to, t);
-            _layer.Apply(_shown);
+            PresentFrame(Lerp(from, to, t));
         });
         var length = _props.Duration == 0 ? 1u : _props.Duration;
         animation.Commit(
@@ -512,8 +551,7 @@ sealed class SheetSession
                 if (ticket != _ticket)
                     return;
 
-                _shown = to;
-                _layer.Apply(to);
+                PresentFrame(to);
                 done();
             });
     }
@@ -587,7 +625,8 @@ sealed class SheetSession
             && Nearly(left.CornerRadius, right.CornerRadius)
             && left.Grabber == right.Grabber
             && left.Centered == right.Centered
-            && left.FullScreen == right.FullScreen;
+            && left.FullScreen == right.FullScreen
+            && Nearly(left.Stack, right.Stack);
 
     /// <summary>True when both values are absent, or both are present and nearly equal.</summary>
     static bool NullableNearly(double? left, double? right)
@@ -604,10 +643,11 @@ sealed class SheetSession
             from.Card.Y + ((to.Card.Y - from.Card.Y) * t),
             from.Card.Width + ((to.Card.Width - from.Card.Width) * t),
             from.Card.Height + ((to.Card.Height - from.Card.Height) * t));
-        return Copy(to, card, from.DimOpacity + ((to.DimOpacity - from.DimOpacity) * t));
+        var stack = from.Stack + ((to.Stack - from.Stack) * t);
+        return Copy(to, card, from.DimOpacity + ((to.DimOpacity - from.DimOpacity) * t), stack);
     }
 
-    static SheetFrame Copy(SheetFrame source, Rect card, double opacity)
+    static SheetFrame Copy(SheetFrame source, Rect card, double opacity, double? stack = null, double? grabberAlpha = null)
         => new()
         {
             Card = card,
@@ -619,7 +659,96 @@ sealed class SheetSession
             Grabber = source.Grabber,
             ActiveId = source.ActiveId,
             RestHeight = source.RestHeight,
+            Stack = stack ?? source.Stack,
+            GrabberAlpha = grabberAlpha ?? source.GrabberAlpha,
         };
+
+    /// <summary>Puts the card on screen and sets this grabber from how far the card is covered.</summary>
+    void PresentFrame(SheetFrame frame)
+    {
+        if (!_layer.PositionsCard)
+        {
+            _shown = frame;
+            _layer.Apply(frame);
+            return;
+        }
+
+        var dressed = Dress(frame);
+        _shown = dressed;
+        _layer.Apply(dressed);
+    }
+
+    /// <summary>Keeps the front grabber solid. A covered grabber fades with the stack.</summary>
+    SheetFrame Dress(SheetFrame frame)
+    {
+        if (!_layer.PositionsCard || _root == null)
+            return frame;
+
+        var alpha = frame.Grabber ? HandleAlpha(frame) : 0;
+        if (Math.Abs(frame.GrabberAlpha - alpha) < 0.02)
+            return frame;
+
+        return Copy(frame, frame.Card, frame.DimOpacity, frame.Stack, alpha);
+    }
+
+    /// <summary>Front grabber stays fully visible. A covered grabber fades out as the stack settles and back in as the sheet in front closes.</summary>
+    double HandleAlpha(SheetFrame frame)
+    {
+        if (_root == null || !SheetStack.HasCardAbove(_root, this))
+            return 1;
+
+        return 1 - Math.Clamp(frame.Stack, 0, 1);
+    }
+
+    /// <summary>
+    /// Lowers a card that has sheets behind it so their top edge stays visible.
+    /// Pass the measured frame. A frame that was already stamped drops twice.
+    /// </summary>
+    SheetFrame Stamp(SheetFrame frame)
+    {
+        if (!_layer.PositionsCard || _root == null)
+            return frame;
+
+        var (depth, below, stacked) = SheetStack.Place(_root, this);
+        var stack = stacked ? depth : 0d;
+        var drop = stacked && !frame.Centered && !frame.FullScreen ? SheetStack.Peek * below : 0;
+        var card = frame.Card;
+        if (drop > 0)
+            card = new Rect(card.X, card.Y + drop, card.Width, Math.Max(0, card.Height - drop));
+
+        var opacity = frame.DimOpacity;
+        var hits = frame.DimHits;
+        if (stacked && below > 0)
+        {
+            opacity = 0;
+            hits = false;
+        }
+
+        if (Nearly(frame.Stack, stack)
+            && Nearly(card.X, frame.Card.X)
+            && Nearly(card.Y, frame.Card.Y)
+            && Nearly(card.Width, frame.Card.Width)
+            && Nearly(card.Height, frame.Card.Height)
+            && Nearly(opacity, frame.DimOpacity)
+            && hits == frame.DimHits)
+        {
+            return frame;
+        }
+
+        return new SheetFrame
+        {
+            Card = card,
+            DimOpacity = opacity,
+            DimHits = hits,
+            CornerRadius = frame.CornerRadius,
+            Centered = frame.Centered,
+            FullScreen = frame.FullScreen,
+            Grabber = frame.Grabber,
+            ActiveId = frame.ActiveId,
+            RestHeight = frame.RestHeight,
+            Stack = stack,
+        };
+    }
 
     static bool Contains(IReadOnlyList<SheetDetent> detents, string id)
     {
