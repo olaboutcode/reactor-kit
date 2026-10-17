@@ -30,6 +30,11 @@ sealed class AndroidSheetLayer : ISheetLayer, IDisposable
     Action? _escape;
     double _safeBottom;
     bool _measuring;
+    bool _applying;
+    bool _chromeSet;
+    bool _chromeGrabber;
+    double _chromeRadius;
+    bool _chromeDark;
 
     public bool PositionsCard => true;
 
@@ -56,6 +61,7 @@ sealed class AndroidSheetLayer : ISheetLayer, IDisposable
         _dim = new AView(activity);
         _card = new SheetCardView(activity);
         (native.Parent as AViewGroup)?.RemoveView(native);
+        native.Visibility = ViewStates.Visible;
         _card.AddView(native, new FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MatchParent,
             ViewGroup.LayoutParams.MatchParent));
@@ -83,6 +89,8 @@ sealed class AndroidSheetLayer : ISheetLayer, IDisposable
         {
             _card.Pointer = null;
             _card.Escape = null;
+            // The card is ours. The MAUI view inside it is not. Leave that view alive for the next open.
+            _card.ReleaseContent();
             _root?.RemoveView(_card);
             _card.Dispose();
         }
@@ -99,6 +107,7 @@ sealed class AndroidSheetLayer : ISheetLayer, IDisposable
         _host = null;
         _page = null;
         _dialog = null;
+        _chromeSet = false;
     }
 
     public void Dispose()
@@ -155,27 +164,71 @@ sealed class AndroidSheetLayer : ISheetLayer, IDisposable
         if (_root == null || _card == null || _dim == null)
             return;
 
+        _applying = true;
+        try
+        {
+            Place(frame);
+            Chrome(frame);
+            _dim.SetBackgroundColor(Android.Graphics.Color.Black);
+            _dim.Alpha = (float)Math.Clamp(frame.DimOpacity, 0, 1);
+            _dim.Clickable = frame.DimHits;
+            _dim.Visibility = frame.DimOpacity <= 0.01 && !frame.DimHits ? ViewStates.Gone : ViewStates.Visible;
+        }
+        finally
+        {
+            _applying = false;
+        }
+    }
+
+    void Place(SheetFrame frame)
+    {
+        if (_root == null || _card == null)
+            return;
+
         var density = Density(_root);
         var card = frame.Card;
-        var parameters = new FrameLayout.LayoutParams(
-            Math.Max(0, (int)(card.Width * density)),
-            Math.Max(0, (int)(card.Height * density)))
+        var width = Math.Max(0, (int)(card.Width * density));
+        var height = Math.Max(0, (int)(card.Height * density));
+        var left = (int)(card.X * density);
+        var top = (int)(card.Y * density);
+        if (_card.LayoutParameters is not FrameLayout.LayoutParams current
+            || current.Width != width
+            || current.Height != height
+            || current.LeftMargin != left
+            || current.TopMargin != top)
         {
-            LeftMargin = (int)(card.X * density),
-            TopMargin = (int)(card.Y * density),
-        };
-        _card.LayoutParameters = parameters;
-        var dark = Application.Current?.RequestedTheme == AppTheme.Dark;
-        _card.ApplyChrome(frame.Grabber, frame.CornerRadius, dark);
-        if (_host is Microsoft.Maui.Controls.Layout layout)
-        {
-            layout.Padding = new Thickness(0, frame.Grabber ? 16 : 0, 0, _safeBottom);
+            _card.LayoutParameters = new FrameLayout.LayoutParams(width, height)
+            {
+                LeftMargin = left,
+                TopMargin = top,
+            };
         }
 
-        _dim.SetBackgroundColor(Android.Graphics.Color.Black);
-        _dim.Alpha = (float)Math.Clamp(frame.DimOpacity, 0, 1);
-        _dim.Clickable = frame.DimHits;
-        _dim.Visibility = frame.DimOpacity <= 0.01 && !frame.DimHits ? ViewStates.Gone : ViewStates.Visible;
+        _card.Layout(left, top, left + width, top + height);
+    }
+
+    void Chrome(SheetFrame frame)
+    {
+        if (_card == null)
+            return;
+
+        var dark = Application.Current?.RequestedTheme == AppTheme.Dark;
+        var radiusChanged = Math.Abs(_chromeRadius - frame.CornerRadius) > 0.5;
+        if (!_chromeSet || _chromeGrabber != frame.Grabber || radiusChanged || _chromeDark != dark)
+        {
+            _chromeSet = true;
+            _chromeGrabber = frame.Grabber;
+            _chromeRadius = frame.CornerRadius;
+            _chromeDark = dark;
+            _card.ApplyChrome(frame.Grabber, frame.CornerRadius, dark);
+        }
+
+        if (_host is not Microsoft.Maui.Controls.Layout layout)
+            return;
+
+        var padding = new Thickness(0, frame.Grabber ? 16 : 0, 0, _safeBottom);
+        if (layout.Padding != padding)
+            layout.Padding = padding;
     }
 
     public void Watch(Action? metricsChanged, Action? back, Action? escape)
@@ -205,7 +258,6 @@ sealed class AndroidSheetLayer : ISheetLayer, IDisposable
             return;
 
         _card.Pointer = native.Pointer;
-        Apply(native.Layout.Frame);
     }
 
     public void UpdateNative(SheetNative native)
@@ -232,7 +284,7 @@ sealed class AndroidSheetLayer : ISheetLayer, IDisposable
 
     void Notify()
     {
-        if (_measuring)
+        if (_measuring || _applying)
             return;
 
         _metrics?.Invoke();

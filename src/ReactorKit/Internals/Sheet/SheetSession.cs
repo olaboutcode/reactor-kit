@@ -36,6 +36,7 @@ sealed class SheetSession
     bool _dragging;
     bool _arming;
     bool _armedInGrabber;
+    bool _inPresent;
     double _dragHeight;
     double _dragY;
     double _armY;
@@ -153,9 +154,22 @@ sealed class SheetSession
 
     void Present()
     {
-        if (!_wantOpen || _host == null)
+        if (_inPresent || !_wantOpen || _host == null)
             return;
 
+        _inPresent = true;
+        try
+        {
+            PresentCore();
+        }
+        finally
+        {
+            _inPresent = false;
+        }
+    }
+
+    void PresentCore()
+    {
         if (_closing)
         {
             _closing = false;
@@ -171,7 +185,7 @@ sealed class SheetSession
 
         if (!_attached)
         {
-            if (!_layer.TryAttach(page, _host))
+            if (_host is not View host || !_layer.TryAttach(page, host))
             {
                 Schedule();
                 return;
@@ -200,20 +214,34 @@ sealed class SheetSession
         if (_shown.Card.Height <= 0 && _shown.Card.Width <= 0)
         {
             _layer.PresentNative(native);
-            var hidden = Hidden(layout.Frame);
-            _shown = hidden;
-            Animate(hidden, layout.Frame, _ticket, () => Settle(layout));
+            // Start off screen. Presenting at the open rectangle skips the entrance.
+            if (_layer.PositionsCard)
+            {
+                _shown = Hidden(layout.Frame);
+                _layer.Apply(_shown);
+            }
+
+            Animate(layout.Frame, () => Settle(layout));
             return;
         }
 
         _layer.UpdateNative(native);
-        Animate(_shown, layout.Frame, _ticket, () => Settle(layout));
+        Animate(layout.Frame, () => Settle(layout));
     }
 
     void OnMetrics()
     {
-        if (_wantOpen)
-            Present();
+        // The card move lays the window out. That is not a new measurement, and presenting again aborts the animation.
+        if (!_wantOpen || _dragging || _closing || _page == null)
+            return;
+
+        if (!_layer.TryMeasure(_page, out var metrics) || metrics.Width <= 0 || metrics.Height <= 0)
+            return;
+
+        if (_layout != null && SameMetrics(_metrics, metrics))
+            return;
+
+        Present();
     }
 
     SheetLayout Resolve(SheetMetrics metrics)
@@ -257,7 +285,6 @@ sealed class SheetSession
             return;
 
         _closing = true;
-        var ticket = ++_ticket;
         if (!raise)
             _programmaticClose = true;
         else
@@ -266,18 +293,12 @@ sealed class SheetSession
         _wantOpen = false;
         if (!_layer.PositionsCard)
         {
+            _ticket++;
             _layer.DismissNative();
             return;
         }
 
-        var hidden = Hidden(_shown);
-        Animate(_shown, hidden, ticket, () =>
-        {
-            if (ticket != _ticket)
-                return;
-
-            Finish(raise);
-        });
+        Animate(Hidden(_shown), () => Finish(raise));
     }
 
     void Finish(bool raise)
@@ -374,7 +395,7 @@ sealed class SheetSession
                 return;
             }
 
-            Animate(_shown, _layout.Frame, _ticket, () => Settle(_layout));
+            Animate(_layout.Frame, () => Settle(_layout));
             return;
         }
 
@@ -387,14 +408,13 @@ sealed class SheetSession
 
         var rest = FindRest(_layout.Rests, id) ?? _layout.Rests[^1];
         var frame = CardAt(rest.Height);
-        if (!string.Equals(rest.Id, _visibleId, StringComparison.Ordinal))
-            RaiseDetent(rest.Id);
-
+        var changed = !string.Equals(rest.Id, _visibleId, StringComparison.Ordinal);
         _visibleHeight = rest.Height;
-        Animate(_shown, frame, _ticket, () =>
+        // Tell the page after the card arrives. Telling it now renders, and that present fights this snap.
+        Animate(frame, () =>
         {
-            _shown = frame;
-            _layer.Apply(frame);
+            if (changed)
+                RaiseDetent(rest.Id);
         });
     }
 
@@ -447,9 +467,19 @@ sealed class SheetSession
         return Copy(shown, card, 0);
     }
 
-    void Animate(SheetFrame from, SheetFrame to, int ticket, Action done)
+    void Animate(SheetFrame to, Action done)
     {
+        var from = _shown;
         if (!_layer.PositionsCard)
+        {
+            _shown = to;
+            _layer.Apply(to);
+            done();
+            return;
+        }
+
+        var ticket = ++_ticket;
+        if (SameFrame(from, to))
         {
             _shown = to;
             _layer.Apply(to);
@@ -463,7 +493,8 @@ sealed class SheetSession
             if (ticket != _ticket)
                 return;
 
-            _layer.Apply(Lerp(from, to, t));
+            _shown = Lerp(from, to, t);
+            _layer.Apply(_shown);
         });
         var length = _props.Duration == 0 ? 1u : _props.Duration;
         animation.Commit(
@@ -527,6 +558,36 @@ sealed class SheetSession
 
         return null;
     }
+
+    static bool SameMetrics(SheetMetrics left, SheetMetrics right)
+        => Nearly(left.Width, right.Width)
+            && Nearly(left.Height, right.Height)
+            && Nearly(left.Safe.Left, right.Safe.Left)
+            && Nearly(left.Safe.Top, right.Safe.Top)
+            && Nearly(left.Safe.Right, right.Safe.Right)
+            && Nearly(left.Safe.Bottom, right.Safe.Bottom)
+            && Nearly(left.KeyboardOverlap, right.KeyboardOverlap)
+            && left.CompactWidth == right.CompactWidth
+            && left.CompactHeight == right.CompactHeight
+            && NullableNearly(left.FocusedBottom, right.FocusedBottom);
+
+    static bool SameFrame(SheetFrame left, SheetFrame right)
+        => Nearly(left.Card.X, right.Card.X)
+            && Nearly(left.Card.Y, right.Card.Y)
+            && Nearly(left.Card.Width, right.Card.Width)
+            && Nearly(left.Card.Height, right.Card.Height)
+            && Nearly(left.DimOpacity, right.DimOpacity)
+            && left.DimHits == right.DimHits
+            && Nearly(left.CornerRadius, right.CornerRadius)
+            && left.Grabber == right.Grabber
+            && left.Centered == right.Centered
+            && left.FullScreen == right.FullScreen;
+
+    static bool NullableNearly(double? left, double? right)
+        => left is null ? right is null : right is not null && Nearly(left.Value, right.Value);
+
+    static bool Nearly(double left, double right)
+        => Math.Abs(left - right) < 0.5;
 
     static SheetFrame Lerp(SheetFrame from, SheetFrame to, double t)
     {

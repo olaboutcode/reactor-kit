@@ -31,6 +31,18 @@ sealed class SheetCardView : AViewGroup
 
     public bool AcceptPointer { get; set; } = true;
 
+    public void ReleaseContent()
+    {
+        for (var i = ChildCount - 1; i >= 0; i--)
+        {
+            var child = GetChildAt(i);
+            if (child == null || ReferenceEquals(child, _grabber))
+                continue;
+
+            RemoveViewAt(i);
+        }
+    }
+
     public void ApplyChrome(bool grabber, double radiusDip, bool dark)
     {
         var density = Density();
