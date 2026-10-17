@@ -23,7 +23,11 @@ public static class MauiProgram
 #if DEBUG
             .UseMauiReactorHotReload()
 #endif
-            .UseReactorKit(settings => settings.EnableBorderlessEntry = true)
+            .UseReactorKit(settings =>
+            {
+                settings.EnableBorderlessEntry = true;
+                settings.EnableBorderlessEditor = true;
+            })
             .ConfigureFonts(AppTheme.RegisterFonts);
 
         return builder.Build();
