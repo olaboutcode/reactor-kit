@@ -152,6 +152,7 @@ sealed class SheetSession
         BeginClose(raise: true);
     }
 
+    /// <summary>Opens the sheet. A present that starts while one is already running is ignored.</summary>
     void Present()
     {
         if (_inPresent || !_wantOpen || _host == null)
@@ -168,6 +169,7 @@ sealed class SheetSession
         }
     }
 
+    /// <summary>Attaches the layer, measures the page, and eases the card in or across to the new frame.</summary>
     void PresentCore()
     {
         if (_closing)
@@ -229,6 +231,7 @@ sealed class SheetSession
         Animate(layout.Frame, () => Settle(layout));
     }
 
+    /// <summary>Presents again when the container size, insets, or keyboard changed.</summary>
     void OnMetrics()
     {
         // The card move lays the window out. That is not a new measurement, and presenting again aborts the animation.
@@ -467,6 +470,7 @@ sealed class SheetSession
         return Copy(shown, card, 0);
     }
 
+    /// <summary>Eases the card from the frame on screen to the target. A layer that does not move the card applies the target at once.</summary>
     void Animate(SheetFrame to, Action done)
     {
         var from = _shown;
@@ -559,6 +563,7 @@ sealed class SheetSession
         return null;
     }
 
+    /// <summary>True when the container measurements agree within half a point.</summary>
     static bool SameMetrics(SheetMetrics left, SheetMetrics right)
         => Nearly(left.Width, right.Width)
             && Nearly(left.Height, right.Height)
@@ -571,6 +576,7 @@ sealed class SheetSession
             && left.CompactHeight == right.CompactHeight
             && NullableNearly(left.FocusedBottom, right.FocusedBottom);
 
+    /// <summary>True when the card rectangles and chrome agree within half a point.</summary>
     static bool SameFrame(SheetFrame left, SheetFrame right)
         => Nearly(left.Card.X, right.Card.X)
             && Nearly(left.Card.Y, right.Card.Y)
@@ -583,9 +589,11 @@ sealed class SheetSession
             && left.Centered == right.Centered
             && left.FullScreen == right.FullScreen;
 
+    /// <summary>True when both values are absent, or both are present and nearly equal.</summary>
     static bool NullableNearly(double? left, double? right)
         => left is null ? right is null : right is not null && Nearly(left.Value, right.Value);
 
+    /// <summary>True when the two lengths differ by less than half a point.</summary>
     static bool Nearly(double left, double right)
         => Math.Abs(left - right) < 0.5;
 

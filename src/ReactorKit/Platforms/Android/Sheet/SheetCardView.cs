@@ -31,6 +31,7 @@ sealed class SheetCardView : AViewGroup
 
     public bool AcceptPointer { get; set; } = true;
 
+    /// <summary>Detaches the sheet content and leaves the grabber on the card.</summary>
     public void ReleaseContent()
     {
         for (var i = ChildCount - 1; i >= 0; i--)

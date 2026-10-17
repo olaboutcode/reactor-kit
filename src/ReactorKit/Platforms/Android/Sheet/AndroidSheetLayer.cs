@@ -159,6 +159,7 @@ sealed class AndroidSheetLayer : ISheetLayer, IDisposable
         }
     }
 
+    /// <summary>Places the card, refreshes its chrome, and sets the dim.</summary>
     public void Apply(SheetFrame frame)
     {
         if (_root == null || _card == null || _dim == null)
@@ -180,6 +181,7 @@ sealed class AndroidSheetLayer : ISheetLayer, IDisposable
         }
     }
 
+    /// <summary>Moves the card onto the frame rectangle, in pixels.</summary>
     void Place(SheetFrame frame)
     {
         if (_root == null || _card == null)
@@ -207,6 +209,7 @@ sealed class AndroidSheetLayer : ISheetLayer, IDisposable
         _card.Layout(left, top, left + width, top + height);
     }
 
+    /// <summary>Updates the fill, grabber, corner, and content padding when they change.</summary>
     void Chrome(SheetFrame frame)
     {
         if (_card == null)
@@ -252,6 +255,7 @@ sealed class AndroidSheetLayer : ISheetLayer, IDisposable
         dispatcher.AddCallback(_back);
     }
 
+    /// <summary>Stores the pointer. The session places the card.</summary>
     public void PresentNative(SheetNative native)
     {
         if (_card == null)
@@ -282,6 +286,7 @@ sealed class AndroidSheetLayer : ISheetLayer, IDisposable
         }
     }
 
+    /// <summary>Reports a size or inset change that this layer did not cause.</summary>
     void Notify()
     {
         if (_measuring || _applying)
