@@ -27,6 +27,9 @@ csharp_style_var_for_built_in_types = true:silent
 csharp_style_var_when_type_is_apparent = true:silent
 csharp_style_var_elsewhere = true:silent
 
+# Method length is not a gate.
+dotnet_diagnostic.MA0051.severity = none
+
 [**/obj/**]
 generated_code = true
 
