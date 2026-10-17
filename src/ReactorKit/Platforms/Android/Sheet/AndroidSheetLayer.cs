@@ -31,7 +31,6 @@ sealed class AndroidSheetLayer : ISheetLayer, IDisposable
     Action? _metrics;
     Action? _backAction;
     Action? _escape;
-    double _safeBottom;
     bool _measuring;
     bool _applying;
     bool _chromeSet;
@@ -138,7 +137,6 @@ sealed class AndroidSheetLayer : ISheetLayer, IDisposable
                 (bars?.Top ?? 0) / density,
                 (bars?.Right ?? 0) / density,
                 (bars?.Bottom ?? 0) / density);
-            _safeBottom = safe.Bottom;
             var width = _root.Width / density;
             var height = _root.Height / density;
             metrics = new SheetMetrics
@@ -269,7 +267,7 @@ sealed class AndroidSheetLayer : ISheetLayer, IDisposable
         if (_host is not Microsoft.Maui.Controls.Layout layout)
             return;
 
-        var padding = new Thickness(0, frame.Grabber ? 16 : 0, 0, _safeBottom);
+        var padding = new Thickness(0, frame.Grabber ? 16 : 0, 0, 0);
         if (layout.Padding != padding)
             layout.Padding = padding;
     }

@@ -132,13 +132,19 @@ public static partial class Extensions
     /// A page sheet. On a phone the large detent is a card under the status bar.
     /// </summary>
     public static SheetView PageSheet(params VisualNode?[] children)
-        => new SheetView().Style(SheetStyle.Page).PageSizing(true).Content(OneBody(children));
+        => new SheetView()
+        .Style(SheetStyle.Page)
+        .PageSizing(propValue: true)
+        .Content(OneBody(children));
 
     /// <summary>
     /// A form sheet. A centered card on a regular width, and a page sheet on a compact width.
     /// </summary>
     public static SheetView FormSheet(params VisualNode?[] children)
-        => new SheetView().Style(SheetStyle.Form).PageSizing(false).Content(OneBody(children));
+        => new SheetView()
+        .Style(SheetStyle.Form)
+        .PageSizing(propValue: false)
+        .Content(OneBody(children));
 
     static VisualNode? OneBody(VisualNode?[]? children)
     {

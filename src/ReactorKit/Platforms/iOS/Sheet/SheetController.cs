@@ -129,9 +129,8 @@ sealed class SheetController : UIViewController
             return;
 
         var grabber = _native?.Props.Grabber == true ? 16 : 0;
-        var bottom = View.SafeAreaInsets.Bottom;
         var width = Math.Max(0, View.Bounds.Width);
-        var height = Math.Max(0, View.Bounds.Height - grabber - bottom);
+        var height = Math.Max(0, View.Bounds.Height - grabber);
         _hostView.Frame = new CGRect(0, grabber, width, height);
         _maui.Measure(width, height);
         _maui.Arrange(new Rect(0, 0, width, height));
