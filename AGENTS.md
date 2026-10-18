@@ -16,6 +16,8 @@ Do these in order. Stop after the design doc.
 
 Do not add the component, the factory, the test page, or a README section before approval. Leave the Done when boxes unchecked. Do not open a pull request, and do not write Fixes or Closes, until asked. Do not bump `Version` or tag.
 
+After approval, update `README.md`, the main doc, with the new component. The steps are in After approval.
+
 ## Improvement
 
 Follow this when the component already exists. Do not add a second public type for the change.
@@ -30,7 +32,7 @@ Do these in order. Stop after the design doc.
 
 The issue is the plan. This doc is the spec. Do not change the control before approval. Leave the Done when boxes unchecked. Do not open a pull request, and do not write Fixes or Closes, until asked. Do not bump `Version` or tag.
 
-After approval, implement the spec on that branch. Show the result and wait. When asked for a tweak, make that change and wait again. Do not commit during that wait.
+After approval, implement the spec on that branch. Update `README.md`, the main doc, and `docs/<name>.md` so both match the change. Show the result and wait. When asked for a tweak, make that change, update `README.md` and the spec, and wait again. Do not commit during that wait.
 
 When the implementation is approved, commit and push that branch. Do not push `main`. The message has an imperative subject, a blank line, and paragraphs. Say what was built and what was not run. Do not use Fixes or Closes. Do not merge unless asked.
 
@@ -53,13 +55,13 @@ The issue is the goal. This doc is the spec.
 
 This section is for a new component. An improvement stays on the existing control and follows the Improvement section through commit.
 
-Three pieces, then a short README section.
+Three pieces, then `README.md`.
 
 1. One public component at `src/ReactorKit/<Name>View.cs`. One type in that file. The constructor is `internal`. Callers do not use `new`.
 2. One static factory on `Reactor.Kit.Extensions` in `src/ReactorKit/Extensions.Components.cs`, next to `GlazeView`. The method name is what pages write: `GlazeView(...)`, `PopupView(...)`, `PageSheet(...)`.
 3. One test page at `samples/KitTests/Components/<Name>TestPage.cs`. `HomePage` opens it with `PushModalAsync(animated: false)`. The page closes with `PopModalAsync(animated: false)` through `NavigationBar`.
 
-The README section is one sentence, one example, and the supported platforms. Behavior and math stay in the design doc.
+4. Update `README.md`, the main doc. The section is one sentence, one example, and the supported platforms. Behavior and math stay in `docs/<name>.md`. Update that spec when the built control differs from it. A tweak that changes behavior updates `README.md` and the spec in the same change.
 
 ## Structure
 
