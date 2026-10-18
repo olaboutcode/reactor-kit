@@ -1,7 +1,6 @@
 using System.Globalization;
 using MauiReactor;
 using MauiReactor.Shapes;
-using Reactor.Kit.SwitchTokens;
 
 namespace Reactor.Kit;
 
@@ -20,7 +19,7 @@ public sealed partial class SwitchView : Component
     [Prop] private double _disabledOpacity = 0.38;
     [Prop] private VisualNode? _label;
     [Prop] private double _labelSpacing = 12;
-    [Prop] private SwitchLabelSide _labelSide = SwitchLabelSide.Leading;
+    SwitchLabelSide _labelSide = SwitchLabelSide.Leading;
     [Prop] private double _trackWidth = 52;
     [Prop] private double _trackHeight = 32;
     [Prop] private Color _trackOnColor = Color.FromArgb("#1C1C1E");
@@ -57,6 +56,26 @@ public sealed partial class SwitchView : Component
     public SwitchView Label(string text)
     {
         _label = new MauiReactor.Label(text).FontSize(17);
+        return this;
+    }
+
+    /// <summary>
+    /// Puts the label at the start and the pill at the end. This is the default.
+    /// A later call replaces an earlier one.
+    /// </summary>
+    public SwitchView LabelLeading()
+    {
+        _labelSide = SwitchLabelSide.Leading;
+        return this;
+    }
+
+    /// <summary>
+    /// Puts the pill at the start and the label at the end.
+    /// A later call replaces an earlier one.
+    /// </summary>
+    public SwitchView LabelTrailing()
+    {
+        _labelSide = SwitchLabelSide.Trailing;
         return this;
     }
 
@@ -393,6 +412,12 @@ public sealed partial class SwitchView : Component
             from.Green + ((to.Green - from.Green) * u),
             from.Blue + ((to.Blue - from.Blue) * u),
             from.Alpha + ((to.Alpha - from.Alpha) * u));
+    }
+
+    enum SwitchLabelSide
+    {
+        Leading,
+        Trailing,
     }
 
     sealed class Motion

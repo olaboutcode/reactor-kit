@@ -31,7 +31,7 @@ The thumb moves, grows, and the track color changes over `Duration` milliseconds
 
 ## Parts
 
-`Label` takes a view. `Label(string)` puts that string in a 17pt label and leaves the text color to the theme. One slot: a later call replaces the earlier one. `LabelSpacing` is 12. `LabelSide` is `Leading`, so the label is at the start and the pill is at the end. `Trailing` puts the pill first. With a width on the row, the label takes the remaining space. With no width, the row hugs the label, the gap, and the track.
+`Label` takes a view. `Label(string)` puts that string in a 17pt label and leaves the text color to the theme. One slot: a later call replaces the earlier one. `LabelSpacing` is 12. `LabelLeading` puts the label at the start and the pill at the end. That is the default. `LabelTrailing` puts the pill first. A later side call replaces an earlier one. With a width on the row, the label takes the remaining space. With no width, the row hugs the label, the gap, and the track.
 
 The track is a capsule. `TrackCornerRadius` defaults to half `TrackHeight`. Each of fill, stroke color, and stroke thickness has an on value and an off value. A stroke thickness of zero draws no stroke.
 
@@ -53,7 +53,7 @@ The unset view is a plain pill. It is not a copy of one platform.
 | `DisabledOpacity` | 0.38 | Opacity of the row while disabled. |
 | `Label` | none | Any view, or a string. |
 | `LabelSpacing` | 12 | Gap between the label and the pill. |
-| `LabelSide` | Leading | Label at the start, pill at the end. |
+| `LabelLeading` | the default | Label at the start, pill at the end. |
 | `TrackWidth` | 52 | |
 | `TrackHeight` | 32 | |
 | `TrackOnColor` | `#1C1C1E` | |
@@ -160,13 +160,12 @@ SwitchView()
 
 ## Files
 
-- `src/ReactorKit/SwitchView.cs` is the public node.
-- `src/ReactorKit/SwitchTokens/SwitchLabelSide.cs` holds `Leading` and `Trailing`. Namespace `Reactor.Kit.SwitchTokens`.
+- `src/ReactorKit/SwitchView.cs` is the public node. `SwitchLabelSide` is a private enum in that class.
 - `SwitchView()` is the factory on `Reactor.Kit.Extensions`, next to `GlazeView`.
 - The track, the thumb, and the hole are shared MAUI shapes. No platform folder. `UseReactorKit()` does not grow a flag.
 - The README gets a short Switch section: one sentence, one example, and the supported platforms. The part list stays in this document.
 
-Callers add `global using Reactor.Kit.SwitchTokens` beside the other kit usings.
+Callers set the side with `LabelLeading` and `LabelTrailing`. They do not name `SwitchLabelSide`.
 
 ## Sample
 
