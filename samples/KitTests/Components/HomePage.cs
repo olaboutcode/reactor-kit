@@ -39,7 +39,8 @@ sealed class HomePage : Component
                 MenuButton(),
                 SheetButton(),
                 SwitchButton(),
-                CheckboxButton()
+                CheckboxButton(),
+                TimelineButton()
             )
         )
         .BackgroundColor(Theme.IsDarkTheme ? Night : Paper)
@@ -192,6 +193,21 @@ sealed class HomePage : Component
 
     void GotoCheckboxTestPage()
         => _ = Navigation?.PushModalAsync<CheckboxTestPage>(animated: false);
+
+    MauiReactor.Button TimelineButton()
+        => Button("Timeline", GotoTimelineTestPage)
+            .TextColor(Paper)
+            .BackgroundColor(Ink)
+            .FontSize(15)
+            .CornerRadius(16)
+            .Height(36)
+            .Padding(14, 0)
+            .HEnd()
+            .VStart()
+            .Margin(16, 458);
+
+    void GotoTimelineTestPage()
+        => _ = Navigation?.PushModalAsync<TimelineTestPage>(animated: false);
 
     static VStack Samples()
         => VStack(
