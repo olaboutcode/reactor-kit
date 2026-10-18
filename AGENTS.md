@@ -2,7 +2,7 @@
 
 MauiReactor controls live in `src/ReactorKit` (namespace `Reactor.Kit`, package `Reactor.Kit`). Samples live in `samples/KitTests`. Specs live in `docs/`.
 
-Follow this when adding a component. Copy the spec from `docs/sheet.md` and `docs/popup-menu.md`. Copy the code from `GlazeView`, `PopupView`, and `SheetView`.
+Follow the Flow section when adding a component. Follow the Improvement section when changing a component that already exists. Copy the spec from `docs/sheet.md` and `docs/popup-menu.md`. Copy the code from `GlazeView`, `PopupView`, and `SheetView`.
 
 ## Flow
 
@@ -15,6 +15,24 @@ Do these in order. Stop after the design doc.
 5. Stop. Show the doc and wait for approval.
 
 Do not add the component, the factory, the test page, or a README section before approval. Leave the Done when boxes unchecked. Do not open a pull request, and do not write Fixes or Closes, until asked. Do not bump `Version` or tag.
+
+## Improvement
+
+Follow this when the component already exists. Do not add a second public type for the change.
+
+Do these in order. Stop after the design doc.
+
+1. Open an issue on [olaboutcode/reactor-kit](https://github.com/olaboutcode/reactor-kit). The title names the component and the improvement. The body is the plan: what changes, what stays, and what is out of scope. Label it `enhancement`. Do not label it `New Component`. `gh` may be logged out; the git credential for github.com still works. Do not print tokens.
+2. Fetch `origin`. Branch from `origin/main`, not from the branch you are on. Name it `{issue-number}-{slug}`, for example `17-add-a-paged-view-to-richtextview`.
+3. Check out that branch.
+4. Write the design doc. Extend `docs/<name>.md` when that spec exists. Create it when it does not. Match `docs/sheet.md`: straight apostrophes, present tense, the behavior, the defaults, and the numbers.
+5. Stop. Show the doc and wait for approval.
+
+The issue is the plan. This doc is the spec. Do not change the control before approval. Leave the Done when boxes unchecked. Do not open a pull request, and do not write Fixes or Closes, until asked. Do not bump `Version` or tag.
+
+After approval, implement the spec on that branch. Show the result and wait. When asked for a tweak, make that change and wait again. Do not commit during that wait.
+
+When the implementation is approved, commit and push that branch. Do not push `main`. The message has an imperative subject, a blank line, and paragraphs. Say what was built and what was not run. Do not use Fixes or Closes. Do not merge unless asked.
 
 ## Design doc
 
@@ -32,6 +50,8 @@ One public component. Write the behavior, the defaults, and the numbers. Match `
 The issue is the goal. This doc is the spec.
 
 ## After approval
+
+This section is for a new component. An improvement stays on the existing control and follows the Improvement section through commit.
 
 Three pieces, then a short README section.
 
