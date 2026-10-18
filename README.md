@@ -87,6 +87,7 @@ global using Reactor.Kit.Object3DViewTokens;
 global using Reactor.Kit.PopupMenuTokens;
 global using Reactor.Kit.RichTextViewTokens;
 global using Reactor.Kit.SwitchTokens;
+global using Reactor.Kit.CheckboxTokens;
 global using static Reactor.Kit.Extensions;
 ```
 
@@ -373,6 +374,24 @@ SwitchView()
 - Android 21+
 - Windows 10.0.17763+
 
+### Checkbox
+
+`CheckboxView` is one box and one check. The page owns `IsChecked`. Size, corner radius, fill, stroke, and the mark are properties, so the same view can take a Material, macOS, or Fluent look. The label is any view. Part values are in [docs/checkbox.md](docs/checkbox.md).
+
+```csharp
+CheckboxView()
+    .Label("Terms")
+    .IsChecked(State.Terms)
+    .OnChanged(on => SetState(s => s.Terms = on));
+```
+
+#### Supported platforms
+
+- iOS 15+
+- Mac Catalyst 17+
+- Android 21+
+- Windows 10.0.17763+
+
 ## Handlers
 
 List of available handlers.
@@ -399,7 +418,7 @@ builder
 
 ## Samples
 
-`samples/KitTests` is a MauiReactor app for the controls. `AppShell` hosts `HomePage`, a content page, with the flyout disabled and the shell navigation bar hidden. It scrolls text behind a top bar, a round button, a button, cards, and entries, and it can switch the page between light and dark. Text, Markdown, Reading, Object, Model, Menu, Sheet, and Switch open with `PushModalAsync` and close with `PopModalAsync`. Model passes the packaged `industrial_microscope.glb` to `PackagedSource`. Sample shadows go through `ShadowElevation`. Level 1, the fallback, is offset `(0.3, 0.3)`, radius 4, opacity 0.28. Level 2 is offset `(0.5, 0.5)`, radius 5, opacity 0.30. Level 3 is offset `(0.7, 0.7)`, radius 6, opacity 0.32. The home buttons and the back chevron use level 1. The menu panel uses level 2.
+`samples/KitTests` is a MauiReactor app for the controls. `AppShell` hosts `HomePage`, a content page, with the flyout disabled and the shell navigation bar hidden. It scrolls text behind a top bar, a round button, a button, cards, and entries, and it can switch the page between light and dark. Text, Markdown, Reading, Object, Model, Menu, Sheet, Switch, and Checkbox open with `PushModalAsync` and close with `PopModalAsync`. Model passes the packaged `industrial_microscope.glb` to `PackagedSource`. Sample shadows go through `ShadowElevation`. Level 1, the fallback, is offset `(0.3, 0.3)`, radius 4, opacity 0.28. Level 2 is offset `(0.5, 0.5)`, radius 5, opacity 0.30. Level 3 is offset `(0.7, 0.7)`, radius 6, opacity 0.32. The home buttons and the back chevron use level 1. The menu panel uses level 2.
 
 ## Building
 

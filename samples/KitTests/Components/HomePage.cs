@@ -38,7 +38,8 @@ sealed class HomePage : Component
                 ModelButton(),
                 MenuButton(),
                 SheetButton(),
-                SwitchButton()
+                SwitchButton(),
+                CheckboxButton()
             )
         )
         .BackgroundColor(Theme.IsDarkTheme ? Night : Paper)
@@ -176,6 +177,21 @@ sealed class HomePage : Component
 
     void GotoSwitchTestPage()
         => _ = Navigation?.PushModalAsync<SwitchTestPage>(animated: false);
+
+    MauiReactor.Button CheckboxButton()
+        => Button("Checkbox", GotoCheckboxTestPage)
+            .TextColor(Paper)
+            .BackgroundColor(Ink)
+            .FontSize(15)
+            .CornerRadius(16)
+            .Height(36)
+            .Padding(14, 0)
+            .HEnd()
+            .VStart()
+            .Margin(16, 414);
+
+    void GotoCheckboxTestPage()
+        => _ = Navigation?.PushModalAsync<CheckboxTestPage>(animated: false);
 
     static VStack Samples()
         => VStack(

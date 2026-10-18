@@ -152,6 +152,12 @@ public static partial class Extensions
     public static SwitchView SwitchView()
         => new();
 
+    /// <summary>
+    /// A checkbox. Set the box, the corner radius, and the label to match the look you want.
+    /// </summary>
+    public static CheckboxView CheckboxView()
+        => new();
+
     static VisualNode? OneBody(VisualNode?[]? children)
     {
         if (children is not { Length: > 0 })
