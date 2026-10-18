@@ -31,7 +31,7 @@ The fill, the stroke, and the check change over `Duration` milliseconds (200). `
 
 ## Parts
 
-`Label` takes a view. `Label(string)` puts that string in a 17pt label and leaves the text color to the theme. One slot: a later call replaces the earlier one. `LabelSpacing` is 12. `LabelSide` is `Leading`, so the label is at the start and the box is at the end. `Trailing` puts the box first. With a width on the row, the label takes the remaining space. With no width, the row hugs the label, the gap, and the box.
+`Label` takes a view. `Label(string)` puts that string in a 17pt label and leaves the text color to the theme. One slot: a later call replaces the earlier one. `LabelSpacing` is 12. `LabelLeading` puts the label at the start and the box at the end. That is the default. `LabelTrailing` puts the box first. A later side call replaces an earlier one. With a width on the row, the label takes the remaining space. With no width, the row hugs the label, the gap, and the box.
 
 The box is a square. `BoxSize` is the side length. `BoxCornerRadius` rounds every corner by the same amount.
 
@@ -58,7 +58,7 @@ The unset view is a plain rounded square. It is not a copy of one platform.
 | `DisabledOpacity` | 0.38 | Opacity of the row while disabled. |
 | `Label` | none | Any view, or a string. |
 | `LabelSpacing` | 12 | Gap between the label and the box. |
-| `LabelSide` | Leading | Label at the start, box at the end. |
+| `LabelLeading` | the default | Label at the start, box at the end. |
 | `BoxSize` | 20 | Side length. |
 | `BoxCornerRadius` | 4 | Clamped to `0` ... `BoxSize / 2`. |
 | `BoxOnColor` | `#1C1C1E` | Fill when checked. |
@@ -166,13 +166,12 @@ CheckboxView()
 
 ## Files
 
-- `src/ReactorKit/CheckboxView.cs` is the public node. The constructor is internal.
-- `src/ReactorKit/CheckboxTokens/CheckboxLabelSide.cs` holds `Leading` and `Trailing`. Namespace `Reactor.Kit.CheckboxTokens`.
+- `src/ReactorKit/CheckboxView.cs` is the public node. The constructor is internal. `CheckboxLabelSide` is a private enum in that class.
 - `CheckboxView()` is the factory on `Reactor.Kit.Extensions`, next to `SwitchView`.
 - The box and the check are shared MAUI shapes. No platform folder. `UseReactorKit()` does not grow a flag.
 - The README gets a short Checkbox section: one sentence, one example, and the supported platforms. The part list stays in this document.
 
-Callers add `global using Reactor.Kit.CheckboxTokens` beside the other kit usings.
+Callers set the side with `LabelLeading` and `LabelTrailing`. They do not name `CheckboxLabelSide`.
 
 ## Sample
 

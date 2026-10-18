@@ -1,7 +1,6 @@
 using System.Globalization;
 using MauiReactor;
 using MauiReactor.Shapes;
-using Reactor.Kit.CheckboxTokens;
 
 namespace Reactor.Kit;
 
@@ -20,7 +19,7 @@ public sealed partial class CheckboxView : Component
     [Prop] private double _disabledOpacity = 0.38;
     [Prop] private VisualNode? _label;
     [Prop] private double _labelSpacing = 12;
-    [Prop] private CheckboxLabelSide _labelSide = CheckboxLabelSide.Leading;
+    CheckboxLabelSide _labelSide = CheckboxLabelSide.Leading;
     [Prop] private double _boxSize = 20;
     [Prop] private double _boxCornerRadius = 4;
     [Prop] private Color _boxOnColor = Color.FromArgb("#1C1C1E");
@@ -48,6 +47,26 @@ public sealed partial class CheckboxView : Component
     public CheckboxView Label(string text)
     {
         _label = new MauiReactor.Label(text).FontSize(17);
+        return this;
+    }
+
+    /// <summary>
+    /// Puts the label at the start and the box at the end. This is the default.
+    /// A later call replaces an earlier one.
+    /// </summary>
+    public CheckboxView LabelLeading()
+    {
+        _labelSide = CheckboxLabelSide.Leading;
+        return this;
+    }
+
+    /// <summary>
+    /// Puts the box at the start and the label at the end.
+    /// A later call replaces an earlier one.
+    /// </summary>
+    public CheckboxView LabelTrailing()
+    {
+        _labelSide = CheckboxLabelSide.Trailing;
         return this;
     }
 
@@ -281,6 +300,12 @@ public sealed partial class CheckboxView : Component
             from.Green + ((to.Green - from.Green) * u),
             from.Blue + ((to.Blue - from.Blue) * u),
             from.Alpha + ((to.Alpha - from.Alpha) * u));
+    }
+
+    enum CheckboxLabelSide
+    {
+        Leading,
+        Trailing,
     }
 
     sealed class Motion

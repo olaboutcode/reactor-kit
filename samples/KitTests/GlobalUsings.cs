@@ -10,5 +10,4 @@ global using Reactor.Kit.PopupMenuTokens;
 global using Reactor.Kit.RichTextViewTokens;
 global using Reactor.Kit.SheetTokens;
 global using Reactor.Kit.SwitchTokens;
-global using Reactor.Kit.CheckboxTokens;
 global using static Reactor.Kit.Extensions;
