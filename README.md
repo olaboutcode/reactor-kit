@@ -28,6 +28,15 @@ A library of custom controls for [MauiReactor](https://github.com/adospace/react
   - [Popup](#popup)
     - [Properties](#properties-4)
     - [Supported platforms](#supported-platforms-4)
+  - [Switch](#switch)
+    - [Properties](#properties-5)
+    - [Supported platforms](#supported-platforms-5)
+  - [Checkbox](#checkbox)
+    - [Properties](#properties-6)
+    - [Supported platforms](#supported-platforms-6)
+  - [Timeline](#timeline)
+    - [Properties](#properties-7)
+    - [Supported platforms](#supported-platforms-7)
 - [Handlers](#handlers)
   - [BorderlessEntry](#borderlessentry)
   - [BorderlessEditor](#borderlesseditor)
@@ -357,7 +366,46 @@ PopupMenu()
 
 ### Switch
 
-`SwitchView` is one on/off pill. The page owns `IsOn`. Track, thumb, stroke, hole, and thumb content are properties, so the same view can take a Material, Cupertino, or Fluent look. The label is any view. Part values are in [docs/switch.md](docs/switch.md).
+`SwitchView` is one on/off pill. The page owns `IsOn`. Track, thumb, stroke, hole, and thumb content are properties, so the same view can take a Material, Cupertino, or Fluent look. The label is any view. `LabelLeading` puts the label first. `LabelTrailing` puts the pill first. Part values are in [docs/switch.md](docs/switch.md).
+
+#### Properties
+
+| Member | Default | Role |
+|---|---|---|
+| `IsOn` | `false` | The page's value. Setting it does not raise `OnChanged`. |
+| `OnChanged` | none | Raised once when a person commits a new value. |
+| `IsEnabled` | `true` | False blocks input. |
+| `DisabledOpacity` | `0.38` | Opacity of the row while disabled. |
+| `Label` | none | Any view, or a string in a 17pt label. |
+| `LabelSpacing` | `12` | Gap between the label and the pill. |
+| `LabelLeading` | the default | Label at the start, pill at the end. |
+| `LabelTrailing` | | Pill first. A later side call replaces an earlier one. |
+| `TrackWidth` | `52` | Track width. |
+| `TrackHeight` | `32` | Track height. |
+| `TrackOnColor` | `#1C1C1E` | Fill while on. |
+| `TrackOffColor` | `#E9E9EB` | Fill while off. |
+| `TrackOnStroke` | `#1C1C1E` | Stroke while on. Unused while the thickness is zero. |
+| `TrackOffStroke` | `#C6C6C8` | Stroke while off. Unused while the thickness is zero. |
+| `TrackOnStrokeThickness` | `0` | |
+| `TrackOffStrokeThickness` | `0` | |
+| `TrackCornerRadius` | `16` | Half the track height. The track is a capsule. |
+| `ThumbOnSize` | `24` | Diameter while on. |
+| `ThumbOffSize` | `24` | Diameter while off. |
+| `ThumbPressedSize` | `24` | Diameter while a finger is down. |
+| `ThumbOnColor` | `#FFFFFF` | |
+| `ThumbOffColor` | `#FFFFFF` | |
+| `ThumbOnStroke` | `#FFFFFF` | Unused while the thickness is zero. |
+| `ThumbOffStroke` | `#C6C6C8` | Unused while the thickness is zero. |
+| `ThumbOnStrokeThickness` | `0` | |
+| `ThumbOffStrokeThickness` | `0` | |
+| `ThumbInset` | `(TrackHeight - thumbSize) / 2` | Gap from the track end to the thumb. |
+| `ThumbOnInnerSize` | `0` | Hole diameter while on. Zero is a solid disc. |
+| `ThumbOffInnerSize` | `0` | Hole diameter while off. |
+| `ThumbInnerColor` | the current track color | |
+| `ThumbOnContent` | none | View drawn in the on thumb. |
+| `ThumbOffContent` | none | View drawn in the off thumb. |
+| `Duration` | `200` | Milliseconds. |
+| `Easing` | `CubicOut` | |
 
 ```csharp
 SwitchView()
@@ -375,7 +423,33 @@ SwitchView()
 
 ### Checkbox
 
-`CheckboxView` is one box and one check. The page owns `IsChecked`. Size, corner radius, fill, stroke, and the mark are properties, so the same view can take a Material, macOS, or Fluent look. The label is any view. Part values are in [docs/checkbox.md](docs/checkbox.md).
+`CheckboxView` is one box and one check. The page owns `IsChecked`. Size, corner radius, fill, stroke, and the mark are properties, so the same view can take a Material, macOS, or Fluent look. The label is any view. `LabelLeading` puts the label first. `LabelTrailing` puts the box first. A corner radius of `0` is a square, and half `BoxSize` or more is a circle. Part values are in [docs/checkbox.md](docs/checkbox.md).
+
+#### Properties
+
+| Member | Default | Role |
+|---|---|---|
+| `IsChecked` | `false` | The page's value. Setting it does not raise `OnChanged`. |
+| `OnChanged` | none | Raised once when a person commits a new value. |
+| `IsEnabled` | `true` | False blocks input. |
+| `DisabledOpacity` | `0.38` | Opacity of the row while disabled. |
+| `Label` | none | Any view, or a string in a 17pt label. |
+| `LabelSpacing` | `12` | Gap between the label and the box. |
+| `LabelLeading` | the default | Label at the start, box at the end. |
+| `LabelTrailing` | | Box first. A later side call replaces an earlier one. |
+| `BoxSize` | `20` | Side length. |
+| `BoxCornerRadius` | `4` | Clamped to `0` ... `BoxSize / 2`. |
+| `BoxOnColor` | `#1C1C1E` | Fill when checked. |
+| `BoxOffColor` | transparent | Fill when unchecked. |
+| `BoxOnStroke` | `#1C1C1E` | Unused while the thickness is zero. |
+| `BoxOffStroke` | `#C6C6C8` | |
+| `BoxOnStrokeThickness` | `0` | |
+| `BoxOffStrokeThickness` | `1.5` | |
+| `CheckColor` | `#FFFFFF` | |
+| `CheckThickness` | `2` | |
+| `CheckedContent` | none | Replaces the kit check. |
+| `Duration` | `200` | Milliseconds. |
+| `Easing` | `CubicOut` | |
 
 ```csharp
 CheckboxView()
@@ -393,7 +467,38 @@ CheckboxView()
 
 ### Timeline
 
-`TimelineView` is one vertical list of steps. A label, the content, and a group header are each a string or any view, and a label can be left off. Content can cover several steps. The rail is a solid line, a dashed line, or a gap. Part values are in [docs/timeline.md](docs/timeline.md).
+`TimelineView` is one vertical list of steps. A label, the content, and a group header are each a string or any view, and a label can be left off. Content can cover several steps. The rail is a solid line, a dashed line, or a gap. String labels and string content wrap. Part values are in [docs/timeline.md](docs/timeline.md).
+
+#### Properties
+
+| Member | Default | Role |
+|---|---|---|
+| `LabelsLeading` | the default | Label, rail, content. |
+| `LabelsTrailing` | | Content, rail, label. |
+| `LabelsInside` | | Rail, label, content. |
+| `Line` | the default | Solid segments. |
+| `DashedLine` | | Dashed segments. `DashLength` and `DashGap` set the pattern. |
+| `NoLine` | | No segment. |
+| `LineColor` | `#C6C6C8` | |
+| `LineThickness` | `2` | A value of `0` draws no line. |
+| `DashLength` | `4` | Points. Shared by every dashed segment. |
+| `DashGap` | `4` | Points. A value of `0` draws a solid line. |
+| `MarkerFilled` | the default | A filled circle on each step. |
+| `MarkerRing` | | A ring. `MarkerStrokeThickness` is the stroke. |
+| `NoMarker` | | No marker. The rail still meets the marker point. |
+| `MarkerColor` | `#1C1C1E` | Fill, or the ring stroke. |
+| `MarkerSize` | `10` | Diameter. |
+| `MarkerStrokeThickness` | `2` | Ring only. |
+| `StepSpacing` | `32` | Gap between steps. Minimum row height. |
+| `LabelGap` | `12` | Between the label and the rail. |
+| `ContentGap` | `12` | Between the rail and the content. |
+| `LabelWidth` | none | Widest label. A value fixes the column and the string wraps inside it. |
+| `GroupSpacing` | `28` | Gap above every block after the first. |
+| `HeaderGap` | `12` | Between a header and its first step. |
+| `LabelFontSize` | `15` | String labels. A step can replace it. |
+| `ContentFontSize` | `16` | String content. A step can replace it. |
+| `HeaderFontSize` | `13` | String headers. A group can replace it. |
+| `Span` | `1` | Rows of content, including the step's own row. |
 
 ```csharp
 TimelineView(steps => steps
