@@ -37,7 +37,8 @@ sealed class HomePage : Component
                 ObjectButton(),
                 ModelButton(),
                 MenuButton(),
-                SheetButton()
+                SheetButton(),
+                SwitchButton()
             )
         )
         .BackgroundColor(Theme.IsDarkTheme ? Night : Paper)
@@ -160,6 +161,21 @@ sealed class HomePage : Component
 
     void GotoSheetTestPage()
         => _ = Navigation?.PushModalAsync<SheetTestPage>(animated: false);
+
+    MauiReactor.Button SwitchButton()
+        => Button("Switch", GotoSwitchTestPage)
+            .TextColor(Paper)
+            .BackgroundColor(Ink)
+            .FontSize(15)
+            .CornerRadius(16)
+            .Height(36)
+            .Padding(14, 0)
+            .HEnd()
+            .VStart()
+            .Margin(16, 370);
+
+    void GotoSwitchTestPage()
+        => _ = Navigation?.PushModalAsync<SwitchTestPage>(animated: false);
 
     static VStack Samples()
         => VStack(

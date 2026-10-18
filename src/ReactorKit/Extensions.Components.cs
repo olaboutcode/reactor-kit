@@ -146,6 +146,12 @@ public static partial class Extensions
         .PageSizing(propValue: false)
         .Content(OneBody(children));
 
+    /// <summary>
+    /// An on/off pill. Set the track, the thumb, and the label to match the look you want.
+    /// </summary>
+    public static SwitchView SwitchView()
+        => new();
+
     static VisualNode? OneBody(VisualNode?[]? children)
     {
         if (children is not { Length: > 0 })
