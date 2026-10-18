@@ -1,5 +1,6 @@
 using MauiReactor;
 using Reactor.Kit.SheetTokens;
+using Reactor.Kit.TimelineViewTokens;
 using MauiContentView = Microsoft.Maui.Controls.ContentView;
 using SKCanvasView = SkiaSharp.Views.Maui.Controls.SKCanvasView;
 
@@ -157,6 +158,12 @@ public static partial class Extensions
     /// </summary>
     public static CheckboxView CheckboxView()
         => new();
+
+    /// <summary>
+    /// A vertical timeline. The action appends the steps and the groups.
+    /// </summary>
+    public static TimelineView TimelineView(Action<TimelineSteps>? build = null)
+        => new(build);
 
     static VisualNode? OneBody(VisualNode?[]? children)
     {

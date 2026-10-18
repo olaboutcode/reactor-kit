@@ -79,13 +79,14 @@ GlazeView(panel => _panel = panel,
 
 ### Namespaces
 
-The namespace is `Reactor.Kit`. Rich text metrics and hits are in `Reactor.Kit.RichTextViewTokens`. Mesh and camera types are in `Reactor.Kit.Object3DViewTokens`. Add these lines to the app's global usings.
+The namespace is `Reactor.Kit`. Rich text metrics and hits are in `Reactor.Kit.RichTextViewTokens`. Mesh and camera types are in `Reactor.Kit.Object3DViewTokens`. Timeline steps and groups are in `Reactor.Kit.TimelineViewTokens`. Add these lines to the app's global usings.
 
 ```csharp
 global using Reactor.Kit;
 global using Reactor.Kit.Object3DViewTokens;
 global using Reactor.Kit.PopupMenuTokens;
 global using Reactor.Kit.RichTextViewTokens;
+global using Reactor.Kit.TimelineViewTokens;
 global using static Reactor.Kit.Extensions;
 ```
 
@@ -390,6 +391,29 @@ CheckboxView()
 - Android 21+
 - Windows 10.0.17763+
 
+### Timeline
+
+`TimelineView` is one vertical list of steps. A label, the content, and a group header are each a string or any view, and a label can be left off. Content can cover several steps. The rail is a solid line, a dashed line, or a gap. Part values are in [docs/timeline.md](docs/timeline.md).
+
+```csharp
+TimelineView(steps => steps
+    .Step(step => step
+        .Label("Start")
+        .Content("Thu, May 25th at 6:00AM"))
+    .Step(step => step
+        .Label("End")
+        .Content("Thu, May 25th at 7:00AM")
+        .MarkerRing()))
+    .LabelsInside();
+```
+
+#### Supported platforms
+
+- iOS 15+
+- Mac Catalyst 17+
+- Android 21+
+- Windows 10.0.17763+
+
 ## Handlers
 
 List of available handlers.
@@ -416,7 +440,7 @@ builder
 
 ## Samples
 
-`samples/KitTests` is a MauiReactor app for the controls. `AppShell` hosts `HomePage`, a content page, with the flyout disabled and the shell navigation bar hidden. It scrolls text behind a top bar, a round button, a button, cards, and entries, and it can switch the page between light and dark. Text, Markdown, Reading, Object, Model, Menu, Sheet, Switch, and Checkbox open with `PushModalAsync` and close with `PopModalAsync`. Model passes the packaged `industrial_microscope.glb` to `PackagedSource`. Sample shadows go through `ShadowElevation`. Level 1, the fallback, is offset `(0.3, 0.3)`, radius 4, opacity 0.28. Level 2 is offset `(0.5, 0.5)`, radius 5, opacity 0.30. Level 3 is offset `(0.7, 0.7)`, radius 6, opacity 0.32. The home buttons and the back chevron use level 1. The menu panel uses level 2.
+`samples/KitTests` is a MauiReactor app for the controls. `AppShell` hosts `HomePage`, a content page, with the flyout disabled and the shell navigation bar hidden. It scrolls text behind a top bar, a round button, a button, cards, and entries, and it can switch the page between light and dark. Text, Markdown, Reading, Object, Model, Menu, Sheet, Switch, Checkbox, and Timeline open with `PushModalAsync` and close with `PopModalAsync`. Model passes the packaged `industrial_microscope.glb` to `PackagedSource`. Sample shadows go through `ShadowElevation`. Level 1, the fallback, is offset `(0.3, 0.3)`, radius 4, opacity 0.28. Level 2 is offset `(0.5, 0.5)`, radius 5, opacity 0.30. Level 3 is offset `(0.7, 0.7)`, radius 6, opacity 0.32. The home buttons and the back chevron use level 1. The menu panel uses level 2.
 
 ## Building
 
