@@ -55,7 +55,22 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
     public static readonly BindableProperty HighlightedRangesProperty = BindableProperty.Create(
         nameof(HighlightedRanges), typeof(IReadOnlyList<TextRange>), typeof(RichTextCanvas), null, propertyChanged: OnHighlightsChanged);
 
+    public static readonly BindableProperty SplitColumnProperty = BindableProperty.Create(
+        nameof(SplitColumn), typeof(bool), typeof(RichTextCanvas), false, propertyChanged: OnLayoutPropertyChanged);
+
+    public static readonly BindableProperty ColumnGapProperty = BindableProperty.Create(
+        nameof(ColumnGap), typeof(double), typeof(RichTextCanvas), 24d, propertyChanged: OnLayoutPropertyChanged);
+
+    public static readonly BindableProperty SpreadProperty = BindableProperty.Create(
+        nameof(Spread), typeof(int), typeof(RichTextCanvas), 0, propertyChanged: OnSpreadPropertyChanged);
+
     const float HitSlop = 4f;
+
+    /// <summary>A horizontal move past this, and past the vertical move, starts a spread drag.</summary>
+    const float DragSlop = 8f;
+
+    /// <summary>Highlighted words farther apart than this are separate rectangles, so a column gap stays open.</summary>
+    const float HighlightJoin = 16f;
 
     /// <summary>Hold this long on highlighted text to raise <see cref="TokenLongPressed"/>.</summary>
     static readonly TimeSpan LongPressDuration = TimeSpan.FromMilliseconds(500);
@@ -84,6 +99,17 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
     bool _longPressFired;
     int _longPressWord = -1;
     IDispatcherTimer? _longPressTimer;
+    float _pageHeight = -1;
+    float _columnWidth;
+    float _columnGap = 24;
+    int _spreadCount = 1;
+    int _visibleSpread;
+    int _notifiedRequest = int.MinValue;
+    int _notifiedVisible;
+    bool _splitActive;
+    bool _dragging;
+    float _dragOffset;
+    SKPoint _dragAnchor;
 
     public RichTextCanvas()
     {
@@ -106,6 +132,12 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
     /// The hit matches a tap. That gesture does not also raise <see cref="TokenTapped"/>.
     /// </summary>
     public event EventHandler<TextTokenHitEventArgs>? TokenLongPressed;
+
+    /// <summary>
+    /// Raised with the spread now shown when a drag commits, or when <see cref="Spread"/> is clamped.
+    /// The stored value is left as the page set it.
+    /// </summary>
+    public event EventHandler<SpreadEventArgs>? SpreadChanged;
 
     public string Text
     {
@@ -200,6 +232,27 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
         set => SetValue(HighlightedRangesProperty, value);
     }
 
+    /// <summary>Two columns when true. False keeps the one continuous column.</summary>
+    public bool SplitColumn
+    {
+        get => (bool)GetValue(SplitColumnProperty);
+        set => SetValue(SplitColumnProperty, value);
+    }
+
+    /// <summary>Points between the two columns. A negative value is laid out as 0.</summary>
+    public double ColumnGap
+    {
+        get => (double)GetValue(ColumnGapProperty);
+        set => SetValue(ColumnGapProperty, value);
+    }
+
+    /// <summary>Zero-based spread the page owns. Layout clamps a value outside the document.</summary>
+    public int Spread
+    {
+        get => (int)GetValue(SpreadProperty);
+        set => SetValue(SpreadProperty, value);
+    }
+
     public void HighlightWord(int wordIndex)
         => SetHighlighted(wordIndex, true);
 
@@ -261,18 +314,32 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
     protected override Size MeasureOverride(double widthConstraint, double heightConstraint)
     {
         var width = double.IsFinite(widthConstraint) && widthConstraint > 0 ? widthConstraint : 10_000d;
-        LayoutIfNeeded((float)width);
+        var page = SplitColumn && double.IsFinite(heightConstraint) && heightConstraint > 0
+            ? (float)heightConstraint
+            : -1f;
+        LayoutIfNeeded((float)width, page);
         var measuredWidth = double.IsFinite(widthConstraint) ? width : Math.Max(1, _contentWidth);
-        return new Size(measuredWidth, Math.Max(1, _contentHeight));
+        var measuredHeight = _splitActive && page > 0 ? heightConstraint : Math.Max(1, _contentHeight);
+        return new Size(measuredWidth, measuredHeight);
     }
 
     protected override void OnSizeAllocated(double width, double height)
     {
         base.OnSizeAllocated(width, height);
-        if (width <= 0 || Math.Abs(width - _laidWidth) < 0.5)
+        if (width <= 0)
             return;
-        LayoutIfNeeded((float)width);
+        // The measure constraint decides a bounded page. The arranged height of a hugged column is not a page.
+        if (!_layoutDirty && Math.Abs(width - _laidWidth) < 0.5)
+            return;
+        LayoutIfNeeded((float)width, _pageHeight);
         InvalidateSurface();
+    }
+
+    protected override void OnPropertyChanged(string? propertyName = null)
+    {
+        base.OnPropertyChanged(propertyName);
+        if (string.Equals(propertyName, nameof(FlowDirection), StringComparison.Ordinal))
+            InvalidateText();
     }
 
     static void OnLayoutPropertyChanged(BindableObject bindable, object oldValue, object newValue)
@@ -280,6 +347,9 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
 
     static void OnPaintPropertyChanged(BindableObject bindable, object oldValue, object newValue)
         => ((RichTextCanvas)bindable).InvalidateSurface();
+
+    static void OnSpreadPropertyChanged(BindableObject bindable, object oldValue, object newValue)
+        => ((RichTextCanvas)bindable).PublishSpread();
 
     static void OnHighlightsChanged(BindableObject bindable, object oldValue, object newValue)
     {
@@ -310,16 +380,20 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
         InvalidateMeasure();
         var width = Width > 0 ? Width : _laidWidth;
         if (width > 0)
-            LayoutIfNeeded((float)width);
+            LayoutIfNeeded((float)width, _pageHeight);
         InvalidateSurface();
     }
 
-    void LayoutIfNeeded(float width)
+    void LayoutIfNeeded(float width, float pageHeight)
     {
-        if (!_layoutDirty && Math.Abs(width - _laidWidth) < 0.5f)
+        if (!_layoutDirty && Math.Abs(width - _laidWidth) < 0.5f && SamePage(_pageHeight, pageHeight))
             return;
+        _pageHeight = pageHeight;
         LayoutText(width);
     }
+
+    static bool SamePage(float laid, float next)
+        => (laid < 0 && next < 0) || Math.Abs(laid - next) < 0.5f;
 
     void LayoutText(float width)
     {
@@ -338,25 +412,244 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
         var em = Math.Max(1f, metrics.Descent - metrics.Ascent);
         var box = Math.Max(em, size * LineBoxScale);
         var pad = 2f;
+        var split = SplitColumn;
+        var gap = (float)Math.Max(0, ColumnGap);
+        var columnWidth = split ? Math.Max(1f, (width - gap) / 2f) : width;
+        var measureWidth = split ? columnWidth : width;
         var placed = Place(
             Split(text, preserve),
             appearance?.RunAt,
             size,
-            new LineMetrics(em, metrics.Ascent, box, spacing, font.MeasureText(" "), indent, pad, Math.Max(1, width - (pad * 2))));
+            new LineMetrics(em, metrics.Ascent, box, spacing, font.MeasureText(" "), indent, pad, Math.Max(1, measureWidth - (pad * 2))));
 
         _words = placed.Words;
         _sentences = placed.Sentences;
         _highlighted = new bool[placed.Words.Length];
         _laidWidth = width;
-        _contentWidth = placed.ContentWidth;
-        _contentHeight = placed.ContentHeight;
+        _splitActive = split;
+        _columnWidth = columnWidth;
+        _columnGap = gap;
+        if (split)
+        {
+            PackColumns(pad);
+        }
+        else
+        {
+            _spreadCount = 1;
+            _visibleSpread = 0;
+            _notifiedRequest = int.MinValue;
+            _notifiedVisible = 0;
+            _contentWidth = placed.ContentWidth;
+            _contentHeight = placed.ContentHeight;
+        }
+
         _layoutDirty = false;
         EndPress();
         PruneTags();
         ApplyDeclarativeHighlights(repaint: false);
-        var content = Math.Max(1d, _contentHeight);
-        if (Math.Abs(HeightRequest - content) > 0.5)
-            HeightRequest = content;
+        if (!split || _pageHeight < 0)
+        {
+            var content = Math.Max(1d, _contentHeight);
+            if (Math.Abs(HeightRequest - content) > 0.5)
+                HeightRequest = content;
+        }
+        else if (HeightRequest >= 0)
+        {
+            HeightRequest = -1;
+        }
+
+        PublishSpread();
+    }
+
+    void PackColumns(float pad)
+    {
+        var lines = CollectLines();
+        var bounded = _pageHeight > 0;
+        if (lines.Count == 0)
+        {
+            _spreadCount = 1;
+            _contentWidth = _laidWidth;
+            _contentHeight = bounded ? _pageHeight : pad * 2f;
+            return;
+        }
+
+        if (bounded)
+            PackBounded(lines, pad);
+        else
+            PackUnbounded(lines, pad);
+
+        _contentWidth = _laidWidth;
+    }
+
+    void PackUnbounded(List<TextLine> lines, float pad)
+    {
+        // The leading column takes about half the stacked line height, and at least one line.
+        var leading = LeadingCount(lines);
+        var left = Stack(lines, 0, leading, Origin(0), spread: 0, pad);
+        var right = Stack(lines, leading, lines.Count - leading, Origin(1), spread: 0, pad);
+        _spreadCount = 1;
+        _contentHeight = Math.Max(left, right);
+    }
+
+    void PackBounded(List<TextLine> lines, float pad)
+    {
+        var spread = 0;
+        var column = 0;
+        var y = pad;
+        var placed = false;
+        for (var i = 0; i < lines.Count; i++)
+        {
+            var line = lines[i];
+            var fits = y + line.Height <= _pageHeight - pad;
+            if (!fits && placed)
+            {
+                column++;
+                if (column > 1)
+                {
+                    column = 0;
+                    spread++;
+                }
+
+                y = pad;
+                placed = false;
+            }
+
+            // A line taller than the page still occupies the empty column.
+            StackLine(line, y, Origin(column), spread);
+            y += line.Height;
+            if (i + 1 < lines.Count)
+                y += line.GapAfter;
+            placed = true;
+        }
+
+        _spreadCount = spread + 1;
+        _contentHeight = _pageHeight;
+    }
+
+    static int LeadingCount(List<TextLine> lines)
+    {
+        if (lines.Count <= 1)
+            return lines.Count;
+
+        var stacked = 0f;
+        for (var i = 0; i < lines.Count; i++)
+            stacked += lines[i].Height + (i < lines.Count - 1 ? lines[i].GapAfter : 0f);
+
+        var target = stacked / 2f;
+        var used = 0f;
+        for (var i = 0; i < lines.Count; i++)
+        {
+            used += lines[i].Height + (i < lines.Count - 1 ? lines[i].GapAfter : 0f);
+            if (used >= target)
+                return i + 1;
+        }
+
+        return lines.Count;
+    }
+
+    float Stack(List<TextLine> lines, int start, int count, float origin, int spread, float pad)
+    {
+        if (count <= 0)
+            return pad * 2f;
+
+        var y = pad;
+        for (var i = 0; i < count; i++)
+        {
+            var line = lines[start + i];
+            StackLine(line, y, origin, spread);
+            y += line.Height;
+            if (i + 1 < count)
+                y += line.GapAfter;
+        }
+
+        return y + pad;
+    }
+
+    void StackLine(TextLine line, float y, float origin, int spread)
+    {
+        var shift = y - line.Top;
+        for (var i = 0; i < line.Count; i++)
+        {
+            var word = _words[line.First + i];
+            _words[line.First + i] = word with
+            {
+                X = word.X + origin,
+                LineTop = word.LineTop + shift,
+                Baseline = word.Baseline + shift,
+                Spread = spread,
+            };
+        }
+    }
+
+    float Origin(int column)
+    {
+        var onRight = column == 1;
+        if (FlowDirection == FlowDirection.RightToLeft)
+            onRight = column == 0;
+        return onRight ? _columnWidth + _columnGap : 0f;
+    }
+
+    List<TextLine> CollectLines()
+    {
+        var lines = new List<TextLine>();
+        var i = 0;
+        while (i < _words.Length)
+        {
+            var top = _words[i].LineTop;
+            var height = _words[i].LineHeight;
+            var first = i;
+            i++;
+            while (i < _words.Length && Math.Abs(_words[i].LineTop - top) < 0.5f)
+            {
+                height = Math.Max(height, _words[i].LineHeight);
+                i++;
+            }
+
+            var gap = 0f;
+            if (i < _words.Length)
+                gap = Math.Max(0f, _words[i].LineTop - (top + height));
+            lines.Add(new TextLine(first, i - first, top, height, gap));
+        }
+
+        return lines;
+    }
+
+    void PublishSpread()
+    {
+        if (!_splitActive || _laidWidth < 0)
+            return;
+
+        var requested = Spread;
+        var last = Math.Max(0, _spreadCount - 1);
+        var visible = Math.Clamp(requested, 0, last);
+        var visibleChanged = visible != _visibleSpread;
+        _visibleSpread = visible;
+        if (visibleChanged)
+        {
+            _dragging = false;
+            _dragOffset = 0;
+        }
+
+        if (requested == visible)
+        {
+            _notifiedRequest = requested;
+            _notifiedVisible = visible;
+            if (visibleChanged)
+                InvalidateSurface();
+            return;
+        }
+
+        if (requested == _notifiedRequest && visible == _notifiedVisible)
+        {
+            if (visibleChanged)
+                InvalidateSurface();
+            return;
+        }
+
+        _notifiedRequest = requested;
+        _notifiedVisible = visible;
+        SpreadChanged?.Invoke(this, new SpreadEventArgs(visible));
+        InvalidateSurface();
     }
 
     PlacedText Place(List<RawWord> raw, Func<int, int, RunMetrics>? runAt, float pageSize, LineMetrics line)
@@ -494,9 +787,19 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
         _textPaint ??= new SKPaint { IsAntialias = true };
         _highlightPaint.Color = ToSk(HighlightColor);
 
+        canvas.Save();
+        if (_dragOffset != 0)
+            canvas.Translate(_dragOffset, 0);
+
         DrawHighlights(canvas);
         for (var i = 0; i < _words.Length; i++)
+        {
+            if (_splitActive && _words[i].Spread != _visibleSpread)
+                continue;
             DrawWord(canvas, _words[i], _textPaint);
+        }
+
+        canvas.Restore();
     }
 
     void DrawWord(SKCanvas canvas, Word word, SKPaint paint)
@@ -540,12 +843,24 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
                 continue;
             }
 
+            if (_splitActive && _words[i].Spread != _visibleSpread)
+            {
+                i++;
+                continue;
+            }
+
             var top = _words[i].LineTop;
+            var spread = _words[i].Spread;
             var left = _words[i].X;
             var right = _words[i].Right;
             var bottom = _words[i].LineBottom;
             var j = i + 1;
-            while (j < _words.Length && _highlighted[j] && Math.Abs(_words[j].LineTop - top) < 0.5f)
+            while (j < _words.Length
+                && _highlighted[j]
+                && _words[j].Spread == spread
+                && Math.Abs(_words[j].LineTop - top) < 0.5f
+                && _words[j].X <= right + HighlightJoin
+                && _words[j].X >= left - HighlightJoin)
             {
                 right = _words[j].Right;
                 j++;
@@ -562,7 +877,15 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
         {
             _pressedWord = HitWord(e.Location);
             _pressPoint = e.Location;
+            _dragAnchor = e.Location;
             _longPressFired = false;
+            _dragging = false;
+            if (_dragOffset != 0)
+            {
+                _dragOffset = 0;
+                InvalidateSurface();
+            }
+
             // iOS ignores the rest of the touch unless the press is handled.
             e.Handled = _pressedWord >= 0;
             ArmLongPress(_pressedWord);
@@ -571,6 +894,22 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
 
         if (e.ActionType == SKTouchAction.Moved)
         {
+            var dx = e.Location.X - _dragAnchor.X;
+            var dy = e.Location.Y - _dragAnchor.Y;
+            if (!_dragging && CanTurn() && Math.Abs(dx) > DragSlop && Math.Abs(dx) > Math.Abs(dy))
+            {
+                _dragging = true;
+                CancelLongPress();
+            }
+
+            if (_dragging)
+            {
+                _dragOffset = dx;
+                e.Handled = true;
+                InvalidateSurface();
+                return;
+            }
+
             _pressPoint = e.Location;
             if (_pressedWord >= 0 && !Hits(_pressedWord, e.Location))
                 CancelLongPress();
@@ -580,12 +919,24 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
 
         if (e.ActionType is SKTouchAction.Cancelled or SKTouchAction.Exited)
         {
+            var dragged = _dragging;
             EndPress();
+            if (dragged)
+                InvalidateSurface();
             return;
         }
 
         if (e.ActionType != SKTouchAction.Released)
             return;
+
+        if (_dragging)
+        {
+            var dx = _dragOffset;
+            EndPress();
+            e.Handled = true;
+            SettleDrag(dx);
+            return;
+        }
 
         var pressed = _pressedWord;
         var longPressed = _longPressFired;
@@ -642,7 +993,40 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
     {
         _pressedWord = -1;
         _longPressFired = false;
+        _dragging = false;
+        _dragOffset = 0;
         CancelLongPress();
+    }
+
+    bool CanTurn()
+        => _splitActive && _spreadCount > 1;
+
+    void SettleDrag(float dx)
+    {
+        var forward = FlowDirection == FlowDirection.RightToLeft ? dx > 0 : dx < 0;
+        var next = _visibleSpread + (forward ? 1 : -1);
+        if (Math.Abs(dx) > _columnWidth / 2f && next >= 0 && next < _spreadCount)
+        {
+            CommitSpread(next);
+            return;
+        }
+
+        InvalidateSurface();
+    }
+
+    void CommitSpread(int spread)
+    {
+        if (spread == _visibleSpread)
+        {
+            InvalidateSurface();
+            return;
+        }
+
+        _visibleSpread = spread;
+        _notifiedRequest = spread;
+        _notifiedVisible = spread;
+        SpreadChanged?.Invoke(this, new SpreadEventArgs(spread));
+        InvalidateSurface();
     }
 
     void Activate(int wordIndex)
@@ -804,7 +1188,10 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
     bool Hits(int wordIndex, SKPoint point)
     {
         var word = _words[wordIndex];
-        return point.X >= word.X - HitSlop && point.X <= word.Right + HitSlop
+        if (_splitActive && word.Spread != _visibleSpread)
+            return false;
+        var x = point.X - _dragOffset;
+        return x >= word.X - HitSlop && x <= word.Right + HitSlop
             && point.Y >= word.LineTop - HitSlop && point.Y <= word.LineBottom + HitSlop;
     }
 
@@ -978,7 +1365,8 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
         SKColor? Color,
         bool Italic,
         bool Bold,
-        float Raise)
+        float Raise,
+        int Spread)
     {
         public float Right => X + Width;
 
@@ -1079,7 +1467,8 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
                 shaped.Color,
                 shaped.Italic,
                 shaped.Bold,
-                shaped.Raise);
+                shaped.Raise,
+                0);
             _lineBox = Math.Max(_lineBox, shaped.Box);
             _x += shaped.Width;
             _contentWidth = Math.Max(_contentWidth, _x + _pad);
@@ -1103,6 +1492,19 @@ internal sealed class RichTextCanvas : SKCanvasView, IDisposable
             }
         }
     }
+
+    internal sealed class SpreadEventArgs : EventArgs
+    {
+        public SpreadEventArgs(int spread)
+        {
+            Spread = spread;
+        }
+
+        public int Spread { get; }
+    }
+
+    [StructLayout(LayoutKind.Auto)]
+    readonly record struct TextLine(int First, int Count, float Top, float Height, float GapAfter);
 
     [StructLayout(LayoutKind.Auto)]
     readonly record struct Sentence(

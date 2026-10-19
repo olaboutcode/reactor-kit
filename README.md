@@ -170,6 +170,18 @@ GlazeView(Label("Title").Center())
 | `HighlightedRanges` | none | Character ranges. A word is highlighted when it overlaps a range. |
 | `OnTokenTapped` | none | Receives the tapped word, sentence, or range. |
 | `OnTokenLongPressed` | none | Receives highlighted text after a half-second hold. The tap does not also run. |
+| `SplitColumn` | off | Two columns. No call keeps one column. An omitted `when`, or a null function, is true. False keeps one column. |
+| `ColumnGap` | `24` | Points between the columns. A negative value is 0. |
+| `Spread` | `0` | The pair of columns on screen. 0 is the first pair. A fixed height keeps the rest on later pairs. |
+| `OnSpreadChanged` | none | Raised when a drag commits a new pair, or when a stored spread is clamped. |
+
+`SplitColumn` lays the same text out in two columns. A spread is that pair. The page owns `Spread`.
+
+```csharp
+RichTextView(chapter)
+    .SplitColumn(when: () => State.Wide)
+    .ColumnGap(32);
+```
 
 ```csharp
 RichTextView()

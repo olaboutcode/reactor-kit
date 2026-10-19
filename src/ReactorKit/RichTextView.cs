@@ -8,11 +8,13 @@ namespace Reactor.Kit;
 /// <summary>
 /// Skia text. Tap a word or sentence, and paint highlights behind the text.
 /// A long-press on highlighted text raises its own callback.
+/// <see cref="SplitColumn()"/> lays the text out as two columns.
 /// </summary>
 public sealed class RichTextView : View<SKCanvasView>
 {
     Action<TextTokenHitEventArgs>? _onTokenTapped;
     Action<TextTokenHitEventArgs>? _onTokenLongPressed;
+    Action<int>? _onSpreadChanged;
 
     internal RichTextView(Action<SKCanvasView?>? componentRefAction = null)
         : base(componentRefAction)
@@ -105,6 +107,54 @@ public sealed class RichTextView : View<SKCanvasView>
     public RichTextView HighlightedRanges(Func<IReadOnlyList<TextRange>> ranges, IComponentWithState? state = null)
         => this.Set(NativeRichText.HighlightedRangesProperty, new PropertyValue<IReadOnlyList<TextRange>>(ranges, state));
 
+    /// <summary>
+    /// Lays the text out as two columns. A later call replaces an earlier one.
+    /// </summary>
+    public RichTextView SplitColumn()
+        => this.Set(NativeRichText.SplitColumnProperty, true);
+
+    /// <summary>
+    /// Lays the text out as two columns when <paramref name="when"/> returns true.
+    /// A null function is true. False keeps the one continuous column.
+    /// </summary>
+    public RichTextView SplitColumn(Func<bool>? when, IComponentWithState? state = null)
+    {
+        if (when is null)
+            return SplitColumn();
+
+        // Set(object) would store the property value itself. The bool overload keeps the condition.
+        SetProperty(NativeRichText.SplitColumnProperty, new PropertyValue<bool>(when, state));
+        return this;
+    }
+
+    /// <summary>Space between the two columns, in points. The default is 24. A negative value is laid out as 0.</summary>
+    public RichTextView ColumnGap(double gap)
+        => this.Set(NativeRichText.ColumnGapProperty, gap);
+
+    /// <summary>Space between the two columns, in points. The default is 24. A negative value is laid out as 0.</summary>
+    public RichTextView ColumnGap(Func<double> gap, IComponentWithState? state = null)
+    {
+        SetProperty(NativeRichText.ColumnGapProperty, new PropertyValue<double>(gap, state));
+        return this;
+    }
+
+    /// <summary>
+    /// Zero-based spread the page owns. The default is 0.
+    /// A value outside the document is clamped, and that clamp calls <see cref="OnSpreadChanged"/>.
+    /// </summary>
+    public RichTextView Spread(int spread)
+        => this.Set(NativeRichText.SpreadProperty, spread);
+
+    /// <summary>
+    /// Zero-based spread the page owns. The default is 0.
+    /// A value outside the document is clamped, and that clamp calls <see cref="OnSpreadChanged"/>.
+    /// </summary>
+    public RichTextView Spread(Func<int> spread, IComponentWithState? state = null)
+    {
+        SetProperty(NativeRichText.SpreadProperty, new PropertyValue<int>(spread, state));
+        return this;
+    }
+
     public RichTextView OnTokenTapped(Action<TextTokenHitEventArgs> callback)
     {
         _onTokenTapped = callback;
@@ -121,6 +171,17 @@ public sealed class RichTextView : View<SKCanvasView>
         return this;
     }
 
+    /// <summary>
+    /// Called with the spread now shown when a drag commits, or when a stored spread is clamped.
+    /// Setting <see cref="Spread(int)"/> to the value already shown does not call this.
+    /// A false <see cref="SplitColumn()"/> condition does not call this.
+    /// </summary>
+    public RichTextView OnSpreadChanged(Action<int> callback)
+    {
+        _onSpreadChanged = callback;
+        return this;
+    }
+
     protected override void OnAttachNativeEvents()
     {
         if (NativeControl is NativeRichText canvas)
@@ -132,6 +193,10 @@ public sealed class RichTextView : View<SKCanvasView>
             canvas.TokenLongPressed -= OnNativeTokenLongPressed;
             if (_onTokenLongPressed is not null)
                 canvas.TokenLongPressed += OnNativeTokenLongPressed;
+
+            canvas.SpreadChanged -= OnNativeSpreadChanged;
+            if (_onSpreadChanged is not null)
+                canvas.SpreadChanged += OnNativeSpreadChanged;
         }
 
         base.OnAttachNativeEvents();
@@ -143,6 +208,7 @@ public sealed class RichTextView : View<SKCanvasView>
         {
             canvas.TokenTapped -= OnNativeTokenTapped;
             canvas.TokenLongPressed -= OnNativeTokenLongPressed;
+            canvas.SpreadChanged -= OnNativeSpreadChanged;
         }
 
         base.OnDetachNativeEvents();
@@ -153,4 +219,7 @@ public sealed class RichTextView : View<SKCanvasView>
 
     void OnNativeTokenLongPressed(object? sender, TextTokenHitEventArgs hit)
         => _onTokenLongPressed?.Invoke(hit);
+
+    void OnNativeSpreadChanged(object? sender, NativeRichText.SpreadEventArgs spread)
+        => _onSpreadChanged?.Invoke(spread.Spread);
 }
