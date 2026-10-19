@@ -12,7 +12,7 @@
     <PackageId>Reactor.Kit</PackageId>
     <Description>Custom controls for MauiReactor.</Description>
     <IsPackable>true</IsPackable>
-    <Version>0.1.0-alpha.5</Version>
+    <Version>0.1.0-alpha.6</Version>
     <Authors>olaboutcode</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/olaboutcode/reactor-kit</PackageProjectUrl>
