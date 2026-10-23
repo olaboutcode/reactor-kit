@@ -6,7 +6,7 @@ using MauiScrollView = Microsoft.Maui.Controls.ScrollView;
 
 namespace Reactor.Kit.Internals.Sheet;
 
-/// <summary>Mounts the sheet body without becoming a child of the page layout.</summary>
+/// <summary>Mounts the sheet body without becoming a child of the page layout. The anchor keeps it as a logical child.</summary>
 sealed class SheetPanelHost : MauiReactor.ContentView
 {
     VisualNode? _root;

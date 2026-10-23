@@ -17,6 +17,8 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
 
         public bool PlayerOpen { get; set; }
 
+        public bool MenuOpen { get; set; }
+
         public string Detent { get; set; } = SheetIds.Medium;
     }
 
@@ -48,14 +50,17 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
     SheetView PageSheetExample() =>
         PageSheet(
             Grid("auto,*,auto","*",
-                Grid(
+                Grid("*", "auto,*,auto",
                     CloseButton(ClosePage)
-                        .HStart(),
+                        .GridColumn(0),
                     Label("Event Page")
                         .FontSize(17)
                         .TextTransform(TextTransform.Uppercase)
                         .TextColor(Ink)
                         .Center()
+                        .GridColumn(1),
+                    SheetMenu()
+                        .GridColumn(2)
                 ),
 
                 ScrollView(
@@ -241,6 +246,34 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
         .RowSpacing(16)
         .Padding(16);
 
+    PopupMenu SheetMenu()
+        => PopupMenu()
+            .Anchor(MenuButton())
+            .Items(menu => menu
+                .Item("Switch Order")
+                .Rule()
+                .Item("Verse Selection"))
+            .IsOpen(State.MenuOpen)
+            .OnDismiss(CloseMenu)
+            .TitleColor(Ink)
+            .Panel(panel => panel
+                .Padding(8)
+                .Shadow(ShadowElevation.For(2)))
+            .Stack(stack => stack.Spacing(4))
+            .Popup(popup => popup
+                .OpenScaleX(0.85)
+                .OpenScaleY(0.5))
+            .DisableAnchorWhenOpen();
+
+    MauiReactor.Button MenuButton()
+        => new MauiReactor.Button("Menu", OpenMenu)
+            .TextColor(Paper)
+            .BackgroundColor(Ink)
+            .FontSize(15)
+            .CornerRadius(16)
+            .Height(36)
+            .Padding(14, 0);
+
     static MauiReactor.Button OpenButton(string title, Action onClick)
         => new MauiReactor.Button(title, onClick)
             .TextColor(Paper)
@@ -281,6 +314,7 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
             s.PageOpen = true;
             s.FormOpen = false;
             s.PlayerOpen = false;
+            s.MenuOpen = false;
         });
 
     void OpenForm()
@@ -289,6 +323,7 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
             s.PageOpen = false;
             s.FormOpen = true;
             s.PlayerOpen = false;
+            s.MenuOpen = false;
         });
 
     void OpenFormOnPage()
@@ -297,6 +332,7 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
             s.PageOpen = true;
             s.FormOpen = true;
             s.PlayerOpen = false;
+            s.MenuOpen = false;
         });
 
     void OpenPlayer()
@@ -306,9 +342,21 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
             s.FormOpen = false;
             s.PlayerOpen = true;
             s.Detent = SheetIds.Medium;
+            s.MenuOpen = false;
         });
 
-    void ClosePage() => SetState(s => s.PageOpen = false);
+    void OpenMenu()
+        => SetState(s => s.MenuOpen = true);
+
+    void CloseMenu()
+        => SetState(s => s.MenuOpen = false);
+
+    void ClosePage()
+        => SetState(s =>
+        {
+            s.PageOpen = false;
+            s.MenuOpen = false;
+        });
     void CloseForm() => SetState(s => s.FormOpen = false);
     void ClosePlayer() => SetState(s => s.PlayerOpen = false);
 

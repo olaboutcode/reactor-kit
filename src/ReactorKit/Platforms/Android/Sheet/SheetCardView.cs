@@ -16,6 +16,7 @@ sealed class SheetCardView : AViewGroup
     readonly int[] _screen = new int[2];
     bool _down;
     bool _grabberHit;
+    float _downX;
     float _downY;
 
     public SheetCardView(Android.Content.Context context)
@@ -106,8 +107,10 @@ sealed class SheetCardView : AViewGroup
         if (ev.Action == MotionEventActions.Down)
         {
             _down = true;
+            _downX = ev.GetX();
             _downY = ev.GetY();
-            _grabberHit = _downY <= 44 * Density();
+            // Header buttons sit in this band. A finger moves a few pixels, and taking that move cancels the click.
+            _grabberHit = _downY <= 44 * Density() && !OverControl(ev.GetX(), ev.GetY());
             _samples.Clear();
             Remember(ev);
             Emit(ev, down: true, up: false);
@@ -117,7 +120,7 @@ sealed class SheetCardView : AViewGroup
         if (!_down)
             return false;
 
-        if (ev.Action is MotionEventActions.Move && _grabberHit)
+        if (ev.Action is MotionEventActions.Move && _grabberHit && PastSlop(ev))
             return true;
 
         return false;
@@ -181,6 +184,16 @@ sealed class SheetCardView : AViewGroup
 
         BringChildToFront(_scrim);
         BringChildToFront(_grabber);
+        // A popup inside the card sets its own elevation. Keep it above the grabber.
+        for (var i = 0; i < ChildCount; i++)
+        {
+            var child = GetChildAt(i);
+            if (child == null || IsChrome(child) || child.Elevation <= 0)
+                continue;
+
+            BringChildToFront(child);
+            break;
+        }
     }
 
     void Emit(MotionEvent ev, bool down, bool up)
@@ -291,6 +304,34 @@ sealed class SheetCardView : AViewGroup
         }
 
         return group;
+    }
+
+    bool PastSlop(MotionEvent ev)
+    {
+        var dx = ev.GetX() - _downX;
+        var dy = ev.GetY() - _downY;
+        var slop = TouchSlop();
+        return dx * dx + dy * dy > slop * slop;
+    }
+
+    int TouchSlop()
+    {
+        var slop = ViewConfiguration.Get(Context!)?.ScaledTouchSlop ?? 0;
+        return slop > 0 ? slop : (int)(8 * Density());
+    }
+
+    bool OverControl(float x, float y)
+    {
+        var current = Hit(x, y);
+        while (current != null && !ReferenceEquals(current, this))
+        {
+            if (current.Clickable || current.LongClickable)
+                return true;
+
+            current = current.Parent as AView;
+        }
+
+        return false;
     }
 
     bool IsChrome(AView child)

@@ -142,7 +142,7 @@ internal sealed class PopupSession
 
         if (!_inserted)
         {
-            _layer.Insert(page, _overlay);
+            _layer.Insert(page, _overlay, _surface);
             _layer.CaptureBack(RequestDismiss);
             _layer.CaptureEscape(RequestDismiss);
             Watch();
@@ -188,14 +188,14 @@ internal sealed class PopupSession
     bool TryFrame(Page page, out PopupFrame frame, out Rect window)
     {
         frame = default;
-        window = _layer.PageBounds(page);
+        window = _layer.PageBounds(page, _surface);
         if (window.Width <= 0 || window.Height <= 0)
         {
             Schedule();
             return false;
         }
 
-        var safe = _layer.SafeInsets(page);
+        var safe = _layer.SafeInsets(page, _surface);
         var gap = PopupPlacement.AtLeastZero(_surface.Gap);
         var maxWidth = Math.Max(0, window.Width - safe.Left - safe.Right - (gap * 2));
         var desired = MeasurePanel(maxWidth);

@@ -1,4 +1,7 @@
+using AndroidX.AppCompat.App;
+using AndroidX.Fragment.App;
 using Microsoft.Maui.Platform;
+using Reactor.Kit.Internals.Sheet;
 using AView = Android.Views.View;
 using AViewGroup = Android.Views.ViewGroup;
 
@@ -11,15 +14,19 @@ sealed class AndroidPopupLayer : IPopupLayer, IDisposable
     AndroidBackStop? _back;
     Action? _onEscape;
 
-    public void Insert(Page page, View overlay)
+    public void Insert(Page page, View overlay, VisualElement anchor)
     {
         var context = Context(page);
-        _pageView = page.ToPlatform(context) as AViewGroup
-            ?? throw new InvalidOperationException("The page has no native view.");
+        _pageView = Host(page, anchor);
         _overlayView = overlay.ToPlatform(context);
+        (_overlayView.Parent as AViewGroup)?.RemoveView(_overlayView);
         _overlayView.LayoutParameters = new AViewGroup.LayoutParams(
             AViewGroup.LayoutParams.MatchParent,
             AViewGroup.LayoutParams.MatchParent);
+        // The card brings its grabber to the front on every layout. Elevation keeps the panel above that.
+        var lift = 24 * (float)Density(_pageView);
+        _overlayView.Elevation = lift;
+        _overlayView.TranslationZ = lift;
         _pageView.AddView(_overlayView);
         _overlayView.BringToFront();
     }
@@ -43,6 +50,8 @@ sealed class AndroidPopupLayer : IPopupLayer, IDisposable
 
         _overlayView.Layout(0, 0, _pageView.Width, _pageView.Height);
         _overlayView.BringToFront();
+        _overlayView.Elevation = 24 * (float)Density(_pageView);
+        _overlayView.TranslationZ = _overlayView.Elevation;
         _ = page;
         _ = overlay;
     }
@@ -87,9 +96,9 @@ sealed class AndroidPopupLayer : IPopupLayer, IDisposable
         native.Invalidate();
     }
 
-    public Rect PageBounds(Page page)
+    public Rect PageBounds(Page page, VisualElement anchor)
     {
-        var view = page.ToPlatform(Context(page));
+        var view = _pageView ?? Host(page, anchor);
         var density = Density(view);
         return new Rect(0, 0, view.Width / density, view.Height / density);
     }
@@ -97,26 +106,43 @@ sealed class AndroidPopupLayer : IPopupLayer, IDisposable
     public Rect AnchorBounds(VisualElement anchor, Page page)
     {
         var context = Context(page);
-        var anchorView = anchor.ToPlatform(context);
-        var pageView = page.ToPlatform(context);
-        if (!anchorView.IsAttachedToWindow || !pageView.IsAttachedToWindow)
+        var anchorView = PlacedAnchor(anchor, context);
+        var host = _pageView ?? Host(page, anchor);
+        if (!anchorView.IsAttachedToWindow || !host.IsAttachedToWindow)
             return Rect.Zero;
 
-        var density = Density(pageView);
+        var density = Density(host);
         var anchorLocation = new int[2];
-        var pageLocation = new int[2];
+        var hostLocation = new int[2];
         anchorView.GetLocationOnScreen(anchorLocation);
-        pageView.GetLocationOnScreen(pageLocation);
+        host.GetLocationOnScreen(hostLocation);
         return new Rect(
-            (anchorLocation[0] - pageLocation[0]) / density,
-            (anchorLocation[1] - pageLocation[1]) / density,
+            (anchorLocation[0] - hostLocation[0]) / density,
+            (anchorLocation[1] - hostLocation[1]) / density,
             anchorView.Width / density,
             anchorView.Height / density);
     }
 
-    public Thickness SafeInsets(Page page)
+    /// <summary>
+    /// Dimming the anchor sets <see cref="VisualElement.InputTransparent"/>, and Android wraps the
+    /// view for that. The wrap has no size yet: the sheet card laid out the view, and the page will
+    /// not lay the wrap out. The view underneath still has the button's size and position.
+    /// </summary>
+    static AView PlacedAnchor(VisualElement anchor, IMauiContext context)
     {
-        var pageView = page.ToPlatform(Context(page));
+        var presented = anchor.ToPlatform(context);
+        if (presented.Width > 0 && presented.Height > 0)
+            return presented;
+
+        if (anchor.Handler?.PlatformView is AView platform && platform.Width > 0 && platform.Height > 0)
+            return platform;
+
+        return presented;
+    }
+
+    public Thickness SafeInsets(Page page, VisualElement anchor)
+    {
+        var host = _pageView ?? Host(page, anchor);
         var decor = Platform.CurrentActivity?.Window?.DecorView;
         if (decor == null)
             return new Thickness(0);
@@ -124,13 +150,80 @@ sealed class AndroidPopupLayer : IPopupLayer, IDisposable
         var visible = new Android.Graphics.Rect();
         decor.GetWindowVisibleDisplayFrame(visible);
         var location = new int[2];
-        pageView.GetLocationOnScreen(location);
-        var density = Density(pageView);
+        host.GetLocationOnScreen(location);
+        var density = Density(host);
         var top = Math.Max(0, visible.Top - location[1]) / density;
         var left = Math.Max(0, visible.Left - location[0]) / density;
-        var bottom = Math.Max(0, location[1] + pageView.Height - visible.Bottom) / density;
-        var right = Math.Max(0, location[0] + pageView.Width - visible.Right) / density;
+        var bottom = Math.Max(0, location[1] + host.Height - visible.Bottom) / density;
+        var right = Math.Max(0, location[0] + host.Width - visible.Right) / density;
         return new Thickness(left, top, right, bottom);
+    }
+
+    /// <summary>
+    /// The sheet card that contains the anchor, or the activity content root when there is no sheet.
+    /// A card is drawn above the page, so a layer on the page or on the content root stays behind it.
+    /// </summary>
+    static AViewGroup Host(Page page, VisualElement anchor)
+    {
+        if (anchor.Handler != null)
+        {
+            var current = anchor.ToPlatform(Context(page)).Parent as AView;
+            while (current != null)
+            {
+                if (current is SheetCardView card)
+                    return card;
+
+                current = current.Parent as AView;
+            }
+        }
+
+        return WindowRoot(page);
+    }
+
+    static AViewGroup WindowRoot(Page page)
+    {
+        var platform = page.ToPlatform(Context(page));
+        var activity = platform.Context as AppCompatActivity
+            ?? Platform.CurrentActivity as AppCompatActivity;
+        if (activity != null)
+        {
+            foreach (var fragment in activity.SupportFragmentManager.Fragments)
+            {
+                if (fragment is not DialogFragment shown || !shown.IsAdded || shown.Dialog is not { IsShowing: true })
+                    continue;
+
+                var content = shown.Dialog.Window?.DecorView.FindViewById(Android.Resource.Id.Content) as AViewGroup;
+                if (content != null && Contains(content, platform))
+                    return content;
+            }
+
+            if (activity.FindViewById(Android.Resource.Id.Content) is AViewGroup root)
+                return root;
+        }
+
+        return platform as AViewGroup
+            ?? throw new InvalidOperationException("The page has no native view.");
+    }
+
+    static bool Contains(AViewGroup root, AView target)
+    {
+        if (ReferenceEquals(root, target))
+            return true;
+
+        for (var i = 0; i < root.ChildCount; i++)
+        {
+            var child = root.GetChildAt(i);
+            if (child == null)
+                continue;
+
+            if (ReferenceEquals(child, target))
+                return true;
+
+            if (child is AViewGroup group && Contains(group, target))
+                return true;
+        }
+
+        return false;
     }
 
     public void CaptureBack(Action onBack)

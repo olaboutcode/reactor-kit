@@ -4,7 +4,7 @@ using Reactor.Kit.SheetTokens;
 namespace Reactor.Kit.Internals.Sheet;
 
 /// <summary>
-/// A zero-size host in the page. The sheet body is mounted beside it and presented by <see cref="SheetSession"/>.
+/// A zero-size host in the page. The sheet body is a logical child of this anchor, so it stays out of the page layout. <see cref="SheetSession"/> presents it.
 /// </summary>
 sealed class SheetAnchor : MauiReactor.ContentView
 {
@@ -38,7 +38,8 @@ sealed class SheetAnchor : MauiReactor.ContentView
         this.MinimumWidthRequest(0);
         this.MinimumHeightRequest(0);
         this.InputTransparent(true);
-        this.CascadeInputTransparent(true);
+        // The body is a logical child. Cascading would make the whole sheet ignore taps.
+        this.CascadeInputTransparent(false);
         this.BackgroundColor(Colors.Transparent);
     }
 
@@ -183,7 +184,7 @@ sealed class SheetAnchor : MauiReactor.ContentView
             view.MinimumWidthRequest = 0;
             view.MinimumHeightRequest = 0;
             view.InputTransparent = true;
-            view.CascadeInputTransparent = true;
+            view.CascadeInputTransparent = false;
             view.BackgroundColor = Colors.Transparent;
         }
 
@@ -219,10 +220,28 @@ sealed class SheetAnchor : MauiReactor.ContentView
 
     protected override void OnAddChild(VisualNode widget, BindableObject childControl)
     {
-        if (widget is SheetPanelHost)
+        // The body is not the anchor's content, so the page layout does not measure it.
+        // It still needs a parent. A popup walks Parent to find the page, and stops when this body has none.
+        if (widget is SheetPanelHost && childControl is Element element && NativeControl != null)
+        {
+            if (!ReferenceEquals(element.Parent, NativeControl))
+                NativeControl.AddLogicalChild(element);
+
             return;
+        }
 
         base.OnAddChild(widget, childControl);
+    }
+
+    protected override void OnRemoveChild(VisualNode widget, BindableObject childControl)
+    {
+        if (widget is SheetPanelHost && childControl is Element element && NativeControl != null)
+        {
+            NativeControl.RemoveLogicalChild(element);
+            return;
+        }
+
+        base.OnRemoveChild(widget, childControl);
     }
 
     protected override IEnumerable<VisualNode> RenderChildren()

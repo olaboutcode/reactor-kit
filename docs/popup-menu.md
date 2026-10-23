@@ -48,18 +48,18 @@ While the panel is open it tracks the anchor. A scroll that moves the anchor mov
 
 ### Presentation
 
-The panel is parented above the current page, including a modal page, so a `ScrollView`, a glaze corner, or another parent cannot clip it. A clear layer covers that page and takes the outside tap. The page behind does not dim.
+The panel is parented above the current page, including a modal page, so a `ScrollView`, a glaze corner, or another parent cannot clip it. A page sheet is not a subview of the page, so a layer on the page stays behind the card. On iOS the panel is parented to the presented sheet's view. On Android it is parented to the sheet card that contains the anchor, above the card's grabber. A clear layer covers the host and takes the outside tap. The page behind does not dim.
 
 The open animation is a fade plus a scale to 1 over `Duration` milliseconds (180), originating at the anchor edge the panel grows away from. `OpenScaleX` and `OpenScaleY` are the starting scales, both 0.96. `OpenScale` sets both. The curve is `Easing`, and the default is `CubicOut`. Close fades the panel out and returns each axis to its starting scale, then removes the layer.
 
 Hit testing belongs to the clear layer and the panel. Touches on the anchor while the panel is open dismiss it, the same way a second tap on an iOS menu button closes the menu.
 
-Shared code decides the rectangle. Each platform only inserts the layer into the page's native root and reports the anchor's window location:
+Shared code decides the rectangle. Each platform inserts the layer into the host that contains the anchor and reports the anchor in that host's coordinates:
 
 | Platform | Where the layer is added |
 |---|---|
-| iOS 15+ and Mac Catalyst 17+ | The current page's `UIView` |
-| Android 21+ | The current activity content root |
+| iOS 15+ and Mac Catalyst 17+ | The current page's `UIView`, or the presented sheet's view when the anchor is inside that sheet |
+| Android 21+ | The sheet card that contains the anchor, or the activity content root when there is no sheet |
 | Windows 10.0.17763+ | The current page's native root, in the tree, not compiled on the Mac |
 
 No new package. Android's `PopupWindow` and Apple's `UIMenu` stay unused.
@@ -131,7 +131,7 @@ Nested submenus and the trailing chevron. Multi-select. Long-press context menus
 
 ## Done when
 
-- [ ] `PopupView` shows caller content above the current page, including a modal page, and a parent `ScrollView` does not clip it.
+- [ ] `PopupView` shows caller content above the current page, including a modal page, and a parent `ScrollView` does not clip it. An anchor inside a page sheet shows the panel above that sheet.
 - [ ] The panel opens below the anchor, flips above when the space is short, and stays inside the safe area.
 - [ ] An outside tap, a second tap on the anchor, and the Android back gesture dismiss it and raise `OnDismiss` once.
 - [ ] `PopupMenu` shows title rows and custom views, and a tap closes the menu and runs the row callback.
