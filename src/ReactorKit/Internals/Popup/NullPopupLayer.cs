@@ -6,8 +6,11 @@ namespace Reactor.Kit.Internals.Popup;
 /// </summary>
 sealed class NullPopupLayer : IPopupLayer
 {
-    public void Insert(Page page, View overlay)
+    public void Insert(Page page, View overlay, VisualElement anchor)
     {
+        _ = page;
+        _ = overlay;
+        _ = anchor;
     }
 
     public void Remove(View overlay)
@@ -26,8 +29,11 @@ sealed class NullPopupLayer : IPopupLayer
     {
     }
 
-    public Rect PageBounds(Page page)
-        => new(0, 0, Math.Max(0, page.Width), Math.Max(0, page.Height));
+    public Rect PageBounds(Page page, VisualElement anchor)
+    {
+        _ = anchor;
+        return new Rect(0, 0, Math.Max(0, page.Width), Math.Max(0, page.Height));
+    }
 
     public Rect AnchorBounds(VisualElement anchor, Page page)
     {
@@ -50,8 +56,11 @@ sealed class NullPopupLayer : IPopupLayer
         return new Rect(x, y, anchor.Width, anchor.Height);
     }
 
-    public Thickness SafeInsets(Page page)
-        => page.Padding;
+    public Thickness SafeInsets(Page page, VisualElement anchor)
+    {
+        _ = anchor;
+        return page.Padding;
+    }
 
     public void CaptureBack(Action onBack)
     {

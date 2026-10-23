@@ -1,11 +1,12 @@
 namespace Reactor.Kit.Internals.Popup;
 
 /// <summary>
-/// Inserts the layer into the current page and reports rectangles in that page's coordinates.
+/// Inserts the layer into the view that holds the anchor and reports rectangles in that view's coordinates.
+/// A normal page uses the page. A presented sheet uses the sheet, so the page underneath does not cover the panel.
 /// </summary>
 internal interface IPopupLayer
 {
-    void Insert(Page page, View overlay);
+    void Insert(Page page, View overlay, VisualElement anchor);
 
     void Remove(View overlay);
 
@@ -21,11 +22,11 @@ internal interface IPopupLayer
     /// </summary>
     void ReleaseShadowClip(View panel);
 
-    Rect PageBounds(Page page);
+    Rect PageBounds(Page page, VisualElement anchor);
 
     Rect AnchorBounds(VisualElement anchor, Page page);
 
-    Thickness SafeInsets(Page page);
+    Thickness SafeInsets(Page page, VisualElement anchor);
 
     void CaptureBack(Action onBack);
 

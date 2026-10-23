@@ -11,8 +11,9 @@ sealed class WindowsPopupLayer : IPopupLayer
     FrameworkElement? _overlayView;
     Action? _onEscape;
 
-    public void Insert(Page page, View overlay)
+    public void Insert(Page page, View overlay, VisualElement anchor)
     {
+        _ = anchor;
         var context = Context(page);
         var nativePage = page.ToPlatform(context);
         _pageView = nativePage as Panel
@@ -58,8 +59,9 @@ sealed class WindowsPopupLayer : IPopupLayer
     {
     }
 
-    public Rect PageBounds(Page page)
+    public Rect PageBounds(Page page, VisualElement anchor)
     {
+        _ = anchor;
         var view = ViewOf(page);
         return new Rect(0, 0, view.ActualWidth, view.ActualHeight);
     }
@@ -80,8 +82,9 @@ sealed class WindowsPopupLayer : IPopupLayer
         return new Rect(point.X, point.Y, anchorView.ActualWidth, anchorView.ActualHeight);
     }
 
-    public Thickness SafeInsets(Page page)
+    public Thickness SafeInsets(Page page, VisualElement anchor)
     {
+        _ = anchor;
         _ = page;
         return new Thickness(0);
     }

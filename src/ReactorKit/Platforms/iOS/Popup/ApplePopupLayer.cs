@@ -9,11 +9,10 @@ sealed class ApplePopupLayer : IPopupLayer, IDisposable
     UIView? _overlayView;
     EscapeMonitor? _escape;
 
-    public void Insert(Page page, View overlay)
+    public void Insert(Page page, View overlay, VisualElement anchor)
     {
-        var context = page.Handler?.MauiContext
-            ?? throw new InvalidOperationException("The page is not mounted.");
-        _pageView = page.ToPlatform(context);
+        var context = Context(page);
+        _pageView = Host(page, anchor);
         _overlayView = overlay.ToPlatform(context);
         _overlayView.Frame = _pageView.Bounds;
         _overlayView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
@@ -51,25 +50,76 @@ sealed class ApplePopupLayer : IPopupLayer, IDisposable
     {
     }
 
-    public Rect PageBounds(Page page)
+    public Rect PageBounds(Page page, VisualElement anchor)
     {
-        var view = page.ToPlatform(Context(page));
+        var view = _pageView ?? Host(page, anchor);
         return new Rect(0, 0, view.Bounds.Width, view.Bounds.Height);
     }
 
     public Rect AnchorBounds(VisualElement anchor, Page page)
     {
-        var context = Context(page);
-        var anchorView = anchor.ToPlatform(context);
-        var pageView = page.ToPlatform(context);
-        var rect = anchorView.ConvertRectToView(anchorView.Bounds, pageView);
+        var anchorView = anchor.ToPlatform(Context(page));
+        var host = _pageView ?? Host(page, anchor);
+        var rect = anchorView.ConvertRectToView(anchorView.Bounds, host);
         return new Rect(rect.X, rect.Y, rect.Width, rect.Height);
     }
 
-    public Thickness SafeInsets(Page page)
+    public Thickness SafeInsets(Page page, VisualElement anchor)
     {
-        var insets = page.ToPlatform(Context(page)).SafeAreaInsets;
+        var view = _pageView ?? Host(page, anchor);
+        var insets = view.SafeAreaInsets;
         return new Thickness(insets.Left, insets.Top, insets.Right, insets.Bottom);
+    }
+
+    /// <summary>
+    /// The page view, or the presented sheet view when the anchor lives in that sheet.
+    /// A sheet is not a subview of the page, so a layer on the page stays behind the card.
+    /// </summary>
+    static UIView Host(Page page, VisualElement anchor)
+    {
+        var context = Context(page);
+        var pageView = page.ToPlatform(context);
+        if (anchor.Handler == null)
+            return pageView;
+
+        var anchorView = anchor.ToPlatform(context);
+        var sheet = PresentedHost(anchorView, pageView);
+        return sheet ?? pageView;
+    }
+
+    /// <summary>
+    /// The root view of the presented controller that contains <paramref name="anchorView"/>.
+    /// A child of the page stays on the page.
+    /// </summary>
+    static UIView? PresentedHost(UIView anchorView, UIView pageView)
+    {
+        var anchorController = Controller(anchorView);
+        var pageController = Controller(pageView);
+        if (anchorController?.View == null || anchorController == pageController)
+            return null;
+
+        var presented = anchorController;
+        while (presented.ParentViewController is { } parent && parent != pageController)
+            presented = parent;
+
+        if (presented.ParentViewController != null || presented.PresentingViewController == null)
+            return null;
+
+        return presented.View is { Window: not null } host ? host : null;
+    }
+
+    static UIViewController? Controller(UIView view)
+    {
+        UIResponder? next = view;
+        while (next != null)
+        {
+            if (next is UIViewController found)
+                return found;
+
+            next = next.NextResponder;
+        }
+
+        return null;
     }
 
     public void CaptureBack(Action onBack)
