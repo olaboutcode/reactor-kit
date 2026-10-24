@@ -11,6 +11,7 @@ sealed class AndroidPopupLayer : IPopupLayer, IDisposable
 {
     AViewGroup? _pageView;
     AView? _overlayView;
+    OutsideRelay? _relay;
     AndroidBackStop? _back;
     Action? _onEscape;
 
@@ -25,19 +26,33 @@ sealed class AndroidPopupLayer : IPopupLayer, IDisposable
             AViewGroup.LayoutParams.MatchParent);
         // The card brings its grabber to the front on every layout. Elevation keeps the panel above that.
         var lift = 24 * (float)Density(_pageView);
+        _relay = new OutsideRelay(_pageView.Context!);
+        _relay.LayoutParameters = new AViewGroup.LayoutParams(
+            AViewGroup.LayoutParams.MatchParent,
+            AViewGroup.LayoutParams.MatchParent);
+        _relay.Elevation = lift;
+        _relay.TranslationZ = lift;
+        _relay.Panel = PanelView(overlay, context);
         _overlayView.Elevation = lift;
         _overlayView.TranslationZ = lift;
-        _pageView.AddView(_overlayView);
-        _overlayView.BringToFront();
+        _relay.AddView(_overlayView);
+        _pageView.AddView(_relay);
+        _relay.BringToFront();
     }
 
     public void Remove(View overlay)
     {
+        ReleaseOutside();
         ReleaseBack();
         ReleaseEscape();
-        if (_pageView != null && _overlayView != null)
-            _pageView.RemoveView(_overlayView);
+        if (_relay != null && _overlayView != null)
+            _relay.RemoveView(_overlayView);
 
+        if (_pageView != null && _relay != null)
+            _pageView.RemoveView(_relay);
+
+        _relay?.Dispose();
+        _relay = null;
         _overlayView = null;
         _pageView = null;
         _ = overlay;
@@ -45,15 +60,19 @@ sealed class AndroidPopupLayer : IPopupLayer, IDisposable
 
     public void Sync(Page page, View overlay)
     {
-        if (_pageView == null || _overlayView == null)
+        if (_pageView == null || _overlayView == null || _relay == null)
             return;
 
+        var lift = 24 * (float)Density(_pageView);
+        _relay.Layout(0, 0, _pageView.Width, _pageView.Height);
         _overlayView.Layout(0, 0, _pageView.Width, _pageView.Height);
-        _overlayView.BringToFront();
-        _overlayView.Elevation = 24 * (float)Density(_pageView);
-        _overlayView.TranslationZ = _overlayView.Elevation;
+        _relay.BringToFront();
+        _relay.Elevation = lift;
+        _relay.TranslationZ = lift;
+        _relay.Panel = PanelView(overlay, Context(page));
+        _overlayView.Elevation = lift;
+        _overlayView.TranslationZ = lift;
         _ = page;
-        _ = overlay;
     }
 
     public void SetClip(View view, bool clip)
@@ -247,8 +266,33 @@ sealed class AndroidPopupLayer : IPopupLayer, IDisposable
         back.Dispose();
     }
 
+    public void CaptureOutside(Action onOutside)
+    {
+        if (_relay == null)
+            return;
+
+        _relay.Outside = onOutside;
+    }
+
+    public void ReleaseOutside()
+    {
+        if (_relay != null)
+            _relay.Outside = null;
+    }
+
     public void Dispose()
-        => ReleaseBack();
+    {
+        ReleaseOutside();
+        ReleaseBack();
+    }
+
+    static AView? PanelView(View overlay, IMauiContext context)
+    {
+        if (overlay is not Layout layout || layout.Children.Count < 2 || layout.Children[1] is not View shell)
+            return null;
+
+        return shell.ToPlatform(context);
+    }
 
     public void CaptureEscape(Action onEscape)
     {

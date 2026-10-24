@@ -115,6 +115,14 @@ sealed class WindowsPopupLayer : IPopupLayer
         _onEscape = null;
     }
 
+    public void CaptureOutside(Action onOutside)
+    {
+    }
+
+    public void ReleaseOutside()
+    {
+    }
+
     void OnKeyDown(object sender, KeyRoutedEventArgs e)
     {
         if (e.Key != Windows.System.VirtualKey.Escape)

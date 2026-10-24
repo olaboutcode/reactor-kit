@@ -28,7 +28,7 @@ PopupView(Button("Repeat"))
     .OnDismiss(() => SetState(s => s.Open = false));
 ```
 
-The page owns `IsOpen`. A tap on the anchor does not open the panel by itself. The page opens it. `OnDismiss` runs when the page taps outside the panel, or when the platform back gesture or the Escape key closes it. The kit does not call `SetState`.
+The page owns `IsOpen`. A tap on the anchor does not open the panel by itself. The page opens it. `OnDismiss` runs when the page taps, presses, or scrolls outside the panel, or when the platform back gesture or the Escape key closes it. The kit does not call `SetState`.
 
 `Content` accepts any MauiReactor node. An empty content still shows the open chrome, so the shell can be tried before a menu exists.
 
@@ -44,15 +44,15 @@ PopupView(Button("Open")).Gap(12)
 
 The panel width is the measured content width. `MinWidth` raises that width, and the default is 220. `MinWidth(0)` leaves the measured width, so the panel hugs the content. Either way the width stops at the window minus the insets. The height hugs the content, down to `MinHeight` (44pt). Past the space that remains on screen, the content scrolls and the panel stays inside the insets.
 
-While the panel is open it tracks the anchor. A scroll that moves the anchor moves the panel. If the anchor is no longer on screen, the panel dismisses and `OnDismiss` runs.
+While the panel is open it tracks the anchor. A scroll of the page or sheet underneath closes the panel, and that same gesture scrolls the content. If the anchor is no longer on screen, the panel dismisses and `OnDismiss` runs.
 
 ### Presentation
 
-The panel is parented above the current page, including a modal page, so a `ScrollView`, a glaze corner, or another parent cannot clip it. A page sheet is not a subview of the page, so a layer on the page stays behind the card. On iOS the panel is parented to the presented sheet's view. On Android it is parented to the sheet card that contains the anchor, above the card's grabber. A clear layer covers the host and takes the outside tap. The page behind does not dim.
+The panel is parented above the current page, including a modal page, so a `ScrollView`, a glaze corner, or another parent cannot clip it. A page sheet is not a subview of the page, so a layer on the page stays behind the card. On iOS the panel is parented to the presented sheet's view. On Android it is parented to the sheet card that contains the anchor, above the card's grabber. A clear layer covers the host. An outside tap, press, or scroll closes the panel, and the page or sheet underneath still receives that gesture. The page behind does not dim.
 
 The open animation is a fade plus a scale to 1 over `Duration` milliseconds (180), originating at the anchor edge the panel grows away from. `OpenScaleX` and `OpenScaleY` are the starting scales, both 0.96. `OpenScale` sets both. The curve is `Easing`, and the default is `CubicOut`. Close fades the panel out and returns each axis to its starting scale, then removes the layer.
 
-Hit testing belongs to the clear layer and the panel. Touches on the anchor while the panel is open dismiss it, the same way a second tap on an iOS menu button closes the menu.
+Hit testing on the panel belongs to the panel, including a scroll inside a tall menu. A touch outside the panel dismisses it and continues to the content underneath. Touches on the anchor while the panel is open dismiss it, the same way a second tap on an iOS menu button closes the menu. The anchor does not take that tap.
 
 Shared code decides the rectangle. Each platform inserts the layer into the host that contains the anchor and reports the anchor in that host's coordinates:
 
@@ -134,6 +134,7 @@ Nested submenus and the trailing chevron. Multi-select. Long-press context menus
 - [ ] `PopupView` shows caller content above the current page, including a modal page, and a parent `ScrollView` does not clip it. An anchor inside a page sheet shows the panel above that sheet.
 - [ ] The panel opens below the anchor, flips above when the space is short, and stays inside the safe area.
 - [ ] An outside tap, a second tap on the anchor, and the Android back gesture dismiss it and raise `OnDismiss` once.
+- [ ] An outside press or scroll on a page sheet dismisses it, raises `OnDismiss` once, and the sheet content scrolls with that gesture.
 - [ ] `PopupMenu` shows title rows and custom views, and a tap closes the menu and runs the row callback.
 - [ ] A parent render that does not change the items leaves an open menu open.
 - [ ] `MenuTestPage` shows the pop-up menu and one free-form `PopupView`.

@@ -77,5 +77,13 @@ sealed class NullPopupLayer : IPopupLayer
     public void ReleaseEscape()
     {
     }
+
+    public void CaptureOutside(Action onOutside)
+    {
+    }
+
+    public void ReleaseOutside()
+    {
+    }
 }
 #endif
