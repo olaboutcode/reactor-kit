@@ -321,7 +321,7 @@ Object3DView(view => _view = view)
 
 ### Popup
 
-`PopupView` floats a panel from an anchor. The panel can hold any content. The page sets `IsOpen`. A tap outside the panel, a second tap on the anchor, or the platform back or Escape key runs `OnDismiss`. Placement is described in [docs/popup-menu.md](docs/popup-menu.md).
+`PopupView` floats a panel from an anchor. The panel can hold any content. The page sets `IsOpen`. A tap, press, or scroll outside the panel, a second tap on the anchor, or the platform back or Escape key runs `OnDismiss`. The outside gesture still reaches the page or sheet underneath. Placement is described in [docs/popup-menu.md](docs/popup-menu.md).
 
 #### Properties
 

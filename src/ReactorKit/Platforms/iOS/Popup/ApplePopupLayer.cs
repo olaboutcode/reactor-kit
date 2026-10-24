@@ -7,6 +7,8 @@ sealed class ApplePopupLayer : IPopupLayer, IDisposable
 {
     UIView? _pageView;
     UIView? _overlayView;
+    OutsideRelay? _relay;
+    OutsideMonitor? _monitor;
     EscapeMonitor? _escape;
 
     public void Insert(Page page, View overlay, VisualElement anchor)
@@ -16,14 +18,25 @@ sealed class ApplePopupLayer : IPopupLayer, IDisposable
         _overlayView = overlay.ToPlatform(context);
         _overlayView.Frame = _pageView.Bounds;
         _overlayView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
-        _pageView.AddSubview(_overlayView);
-        _pageView.BringSubviewToFront(_overlayView);
+        _relay = new OutsideRelay
+        {
+            Frame = _pageView.Bounds,
+            AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight,
+            Panel = PanelView(overlay, context),
+        };
+        _relay.AddSubview(_overlayView);
+        _pageView.AddSubview(_relay);
+        _pageView.BringSubviewToFront(_relay);
     }
 
     public void Remove(View overlay)
     {
+        ReleaseOutside();
         ReleaseEscape();
         _overlayView?.RemoveFromSuperview();
+        _relay?.RemoveFromSuperview();
+        _relay?.Dispose();
+        _relay = null;
         _overlayView = null;
         _pageView = null;
         _ = overlay;
@@ -31,13 +44,18 @@ sealed class ApplePopupLayer : IPopupLayer, IDisposable
 
     public void Sync(Page page, View overlay)
     {
-        if (_pageView == null || _overlayView == null)
+        if (_pageView == null || _overlayView == null || _relay == null)
             return;
 
-        _overlayView.Frame = _pageView.Bounds;
-        _pageView.BringSubviewToFront(_overlayView);
+        _relay.Frame = _pageView.Bounds;
+        _overlayView.Frame = _relay.Bounds;
+        _pageView.BringSubviewToFront(_relay);
+        var panel = PanelView(overlay, Context(page));
+        _relay.Panel = panel;
+        if (_monitor != null)
+            _monitor.Panel = panel;
+
         _ = page;
-        _ = overlay;
     }
 
     public void SetClip(View view, bool clip)
@@ -154,8 +172,48 @@ sealed class ApplePopupLayer : IPopupLayer, IDisposable
         escape.Dispose();
     }
 
+    public void CaptureOutside(Action onOutside)
+    {
+        ReleaseOutside();
+        if (_pageView == null || _relay == null)
+            return;
+
+        _monitor = new OutsideMonitor
+        {
+            Outside = onOutside,
+            Panel = _relay.Panel,
+        };
+        _pageView.AddGestureRecognizer(_monitor);
+    }
+
+    public void ReleaseOutside()
+    {
+        if (_pageView != null && _monitor != null)
+            _pageView.RemoveGestureRecognizer(_monitor);
+
+        if (_monitor != null)
+        {
+            _monitor.Outside = null;
+            _monitor.Panel = null;
+            _monitor.Dispose();
+        }
+
+        _monitor = null;
+    }
+
     public void Dispose()
-        => ReleaseEscape();
+    {
+        ReleaseOutside();
+        ReleaseEscape();
+    }
+
+    static UIView? PanelView(View overlay, IMauiContext context)
+    {
+        if (overlay is not Layout layout || layout.Children.Count < 2 || layout.Children[1] is not View shell)
+            return null;
+
+        return shell.ToPlatform(context);
+    }
 
     static IMauiContext Context(Page page)
         => page.Handler?.MauiContext ?? throw new InvalidOperationException("The page is not mounted.");

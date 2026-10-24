@@ -32,6 +32,13 @@ internal interface IPopupLayer
 
     void ReleaseBack();
 
+    /// <summary>
+    /// Closes the panel when a touch lands outside it. The page or sheet underneath still receives that touch.
+    /// </summary>
+    void CaptureOutside(Action onOutside);
+
+    void ReleaseOutside();
+
     void CaptureEscape(Action onEscape);
 
     void ReleaseEscape();

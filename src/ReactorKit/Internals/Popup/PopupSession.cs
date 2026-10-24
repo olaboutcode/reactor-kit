@@ -145,6 +145,7 @@ internal sealed class PopupSession
             _layer.Insert(page, _overlay, _surface);
             _layer.CaptureBack(RequestDismiss);
             _layer.CaptureEscape(RequestDismiss);
+            _layer.CaptureOutside(RequestDismiss);
             Watch();
             _inserted = true;
         }
@@ -311,6 +312,12 @@ internal sealed class PopupSession
         var tap = new TapGestureRecognizer();
         tap.Tapped += OnOutsideTapped;
         _dismiss.GestureRecognizers.Add(tap);
+        var press = new PointerGestureRecognizer();
+        press.PointerPressed += OnOutsidePressed;
+        _dismiss.GestureRecognizers.Add(press);
+        var pan = new PanGestureRecognizer();
+        pan.PanUpdated += OnOutsidePanned;
+        _dismiss.GestureRecognizers.Add(pan);
 
         _scroll = new ScrollView
         {
@@ -443,6 +450,7 @@ internal sealed class PopupSession
     void TearDown()
     {
         Unwatch();
+        _layer.ReleaseOutside();
         _layer.ReleaseBack();
         _layer.ReleaseEscape();
         if (_scroll != null)
@@ -516,6 +524,15 @@ internal sealed class PopupSession
 
     void OnOutsideTapped(object? sender, TappedEventArgs e)
         => RequestDismiss();
+
+    void OnOutsidePressed(object? sender, PointerEventArgs e)
+        => RequestDismiss();
+
+    void OnOutsidePanned(object? sender, PanUpdatedEventArgs e)
+    {
+        if (e.StatusType is GestureStatus.Started or GestureStatus.Running)
+            RequestDismiss();
+    }
 
     void Schedule()
     {
