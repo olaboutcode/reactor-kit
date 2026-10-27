@@ -4,7 +4,7 @@ This document describes `SheetView`, and the `PageSheet` and `FormSheet` factori
 
 iOS does not have a separate bottom-sheet type. `UISheetPresentationController` is the sheet behind both `UIModalPresentationStyle.pageSheet` and `UIModalPresentationStyle.formSheet`. A bottom sheet is that same sheet with more than one detent and, usually, a grabber. SwiftUI's `.sheet` is the page sheet. `.presentationDetents` and `.presentationDragIndicator` turn it into a bottom sheet. The guide is [Sheets](https://developer.apple.com/design/human-interface-guidelines/sheets).
 
-The kit draws the sheet itself, on iOS, Mac Catalyst, Android, and Windows, so the same MAUI content is what every platform shows. Apple's `UISheetPresentationController` and Android's `BottomSheetBehavior` stay unused.
+On iOS and Mac Catalyst the kit presents that controller. Android and Windows draw the card. The same MAUI content is what every platform shows. Android's `BottomSheetBehavior` stays unused.
 
 ## Pieces
 
@@ -46,7 +46,7 @@ The page owns `IsOpen` and `SelectedDetent`. The kit does not call `SetState`. `
 
 `Style` is `SheetStyle.Page` or `SheetStyle.Form`.
 
-A page sheet on a phone is a card attached to the bottom edge. The large detent leaves the status bar visible. On a regular width, such as an iPad, the page style is an inset page: it uses a readable width (`PageSizing` true) and the large detent.
+A page sheet on a phone is a card attached to the bottom edge. The large detent leaves the status bar visible. On iOS 26 that controller insets the card off the bottom edge, so the page shows through under the home indicator. The kit turns that inset off and extends the card to the screen bottom, with square bottom corners, for a bottom card: a page sheet on a phone, and a form sheet that has adapted to one. The card then covers the bottom edge. On a regular width, such as an iPad, the page style is an inset page: it uses a readable width (`PageSizing` true) and the large detent. That inset page keeps the system margin.
 
 A form sheet on a regular width is a centered card. It uses `PreferredWidth` and `PreferredHeight`, default 540 by 620 points, and it is not attached to the bottom edge. On a compact width it adapts to the page sheet, which is what UIKit does with `formSheet` on an iPhone. Setting `Detents` on a form sheet keeps it edge-attached on that compact width and uses those detents.
 
@@ -147,11 +147,12 @@ Callers add `global using Reactor.Kit.SheetTokens` beside the other kit usings.
 
 `HomePage` opens `SheetTestPage` with `PushModalAsync(animated: false)`. The page closes with `PopModalAsync(animated: false)` through the shared bar. The sheets themselves are overlays on that page. They do not push.
 
-The page has three buttons.
+The page has four buttons.
 
 - "Page" opens a `PageSheet` whose content is a short form. One large detent, no grabber, dimmed page.
 - "Form" opens a `FormSheet` at 540 by 620 on a regular width, and the adapted page sheet on a phone.
 - "Player" opens a `PageSheet` with detents `Fraction("peek", 0.3)`, `Medium`, and `Large`, the grabber visible, and `UndimmedDetent("medium")`.
+- "Edge" opens a large `PageSheet` filled to the card edges. On a phone the dark card meets the bottom of the screen, including the home indicator. The page color does not show through that edge.
 
 ## Out of scope
 
@@ -166,5 +167,6 @@ A popover. A full-screen cover, which is `PushModalAsync`. Replacing MAUI modal 
 - [ ] `Grabber(true)` draws the pill. `UndimmedDetent` leaves the page behind interactive at that detent and below, and dims it above.
 - [ ] `ScrollingExpands(false)` scrolls the content instead of growing the sheet. Dragging the grabber still changes detents.
 - [ ] The page can set `SelectedDetent` and the sheet animates there. A user drag raises `OnDetentChanged` and does not call `SetState`.
-- [ ] `SheetTestPage` shows the page sheet, the form sheet, and the player sheet.
+- [ ] `SheetTestPage` shows the page sheet, the form sheet, the player sheet, and the edge sheet.
+- [x] On iOS 26, "Edge" opens a large page sheet whose card meets the bottom of the screen. The page underneath does not show through that edge.
 - [ ] The library and KitTests build for `net10.0` with no warnings. iOS and Android compile. Windows is not required for the first compile on the Mac.

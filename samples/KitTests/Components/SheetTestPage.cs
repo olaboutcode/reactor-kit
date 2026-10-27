@@ -17,6 +17,8 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
 
         public bool PlayerOpen { get; set; }
 
+        public bool EdgeOpen { get; set; }
+
         public bool MenuOpen { get; set; }
 
         public string Detent { get; set; } = SheetIds.Medium;
@@ -30,6 +32,7 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
                     OpenButton("Page", OpenPage),
                     OpenButton("Form", OpenForm),
                     OpenButton("Player", OpenPlayer),
+                    OpenButton("Edge", OpenEdge),
                     Label($"Detent {State.Detent}")
                         .TextColor(Ink)
                         .HCenter()
@@ -40,7 +43,8 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
 
                 PageSheetExample(),
                 FormSheetExample(),
-                MultipleDetentsExample()
+                MultipleDetentsExample(),
+                EdgeSheetExample()
             )
             .Padding(16)
         )
@@ -246,6 +250,40 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
         .RowSpacing(16)
         .Padding(16);
 
+    SheetView EdgeSheetExample() =>
+        PageSheet(
+            Grid("auto,*", "*",
+                Grid("*", "auto,*,auto",
+                    CloseButton(CloseEdge)
+                        .GridColumn(0),
+                    Label("Bottom edge")
+                        .FontSize(17)
+                        .TextTransform(TextTransform.Uppercase)
+                        .TextColor(Paper)
+                        .Center()
+                        .GridColumn(1)
+                ),
+
+                Label("This card covers the bottom edge.")
+                    .FontSize(15)
+                    .TextColor(Paper)
+                    .HCenter()
+                    .VEnd()
+                    .GridRow(1)
+            )
+            .Padding(16)
+            .BackgroundColor(Ink)
+            .SafeAreaEdges(new SafeAreaEdges(
+                SafeAreaRegions.None,
+                SafeAreaRegions.None,
+                SafeAreaRegions.None,
+                SafeAreaRegions.Container))
+        )
+        .Grabber(propValue: true)
+        .CornerRadius(36)
+        .IsOpen(State.EdgeOpen)
+        .OnDismiss(CloseEdge);
+
     PopupMenu SheetMenu()
         => PopupMenu()
             .Anchor(MenuButton())
@@ -314,6 +352,7 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
             s.PageOpen = true;
             s.FormOpen = false;
             s.PlayerOpen = false;
+            s.EdgeOpen = false;
             s.MenuOpen = false;
         });
 
@@ -323,6 +362,7 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
             s.PageOpen = false;
             s.FormOpen = true;
             s.PlayerOpen = false;
+            s.EdgeOpen = false;
             s.MenuOpen = false;
         });
 
@@ -332,6 +372,7 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
             s.PageOpen = true;
             s.FormOpen = true;
             s.PlayerOpen = false;
+            s.EdgeOpen = false;
             s.MenuOpen = false;
         });
 
@@ -341,7 +382,18 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
             s.PageOpen = false;
             s.FormOpen = false;
             s.PlayerOpen = true;
+            s.EdgeOpen = false;
             s.Detent = SheetIds.Medium;
+            s.MenuOpen = false;
+        });
+
+    void OpenEdge()
+        => SetState(s =>
+        {
+            s.PageOpen = false;
+            s.FormOpen = false;
+            s.PlayerOpen = false;
+            s.EdgeOpen = true;
             s.MenuOpen = false;
         });
 
@@ -359,6 +411,7 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
         });
     void CloseForm() => SetState(s => s.FormOpen = false);
     void ClosePlayer() => SetState(s => s.PlayerOpen = false);
+    void CloseEdge() => SetState(s => s.EdgeOpen = false);
 
     private string EventDescription { get; } = 
     @"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed mattis ex sit amet velit gravida, sed suscipit arcu egestas. Curabitur feugiat euismod pharetra. Donec ultrices odio tempor venenatis efficitur. Donec euismod sem vitae erat ultricies varius. Mauris libero risus, rutrum ac iaculis in, semper vitae ligula. Curabitur non metus eu metus accumsan porttitor. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed pulvinar, velit non consectetur bibendum, velit lacus iaculis urna, eget gravida quam nunc quis felis. Duis nec odio nec arcu venenatis blandit ac at lorem. Praesent efficitur, risus nec pharetra maximus, urna nunc laoreet nunc, in ornare quam velit quis odio. Suspendisse tempor nulla sit amet malesuada pulvinar. Integer pretium sapien et tellus dictum, porta dictum lacus laoreet.
