@@ -280,7 +280,7 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
                 SafeAreaRegions.Container))
         )
         .Grabber(propValue: true)
-        .CornerRadius(36)
+        .CornerRadius(DeviceInfo.Current.Platform == DevicePlatform.Android ? 24 : 36)
         .IsOpen(State.EdgeOpen)
         .OnDismiss(CloseEdge);
 
