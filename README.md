@@ -147,6 +147,49 @@ GlazeView(Label("Title").Center())
 - Android 21+
 - Windows 10.0.17763+
 
+### Mica
+
+`MicaView` paints a mica background with SkiaSharp. Content is a sibling, and the layer does not take the tap. The fill reaches the edge of the view. The edge is a hairline. A shadow goes on the container around the layer. The same paint runs on every platform. It does not blur the backdrop. Part values are in [docs/mica.md](docs/mica.md).
+
+#### Properties
+
+| Member | Default | Role |
+|---|---|---|
+| `TintColor` | `#F3F3F3` | Top stop. |
+| `TintOpacity` | `0.5` | Top alpha. The layer stays translucent. |
+| `ShadeColor` | unset | Bottom stop. Unset darkens the top RGB by 6%. |
+| `ShadeOpacity` | unset | Bottom alpha. Unset uses 88% of `TintOpacity`. A negative value stays unset. |
+| `NoiseOpacity` | `0.015` | Fine dusting. `0` draws none. |
+| `Stroke` | white at 18% | Hairline color. |
+| `StrokeThickness` | one physical pixel | `1 / density` dp. @2x is `0.5`, @3x is about `0.33`. The same on iOS and Android. A positive value is dp. `0` draws none. |
+| `CornerRadius` | `0` | Corner of the view, in dp. |
+
+```csharp
+Grid(
+    MicaView()
+        .HFill()
+        .VFill()
+        .TintColor(Color.FromArgb("#2E2E32"))
+        .TintOpacity(0.78)
+        .ShadeColor(Color.FromArgb("#1A1A1D"))
+        .ShadeOpacity(0.69)
+        .CornerRadius(28),
+    Label("+")
+        .TextColor(Colors.White)
+        .Center()
+        .InputTransparent(true))
+.WidthRequest(56)
+.HeightRequest(56)
+.OnTapped(action);
+```
+
+#### Supported platforms
+
+- iOS 15+
+- Mac Catalyst 17+
+- Android 21+
+- Windows 10.0.17763+
+
 ### Rich text
 
 `RichTextView` draws paragraph text with SkiaSharp. A tap hits a word, a sentence, or a character range you supply. A long-press on text that is already highlighted raises its own callback and leaves the highlight in place. Highlights are rectangles behind the text. Characters the body font does not contain, including emoji and other writing systems, are taken from the system fonts. Each word is shaped, so connected scripts stay connected.

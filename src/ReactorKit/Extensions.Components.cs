@@ -36,6 +36,19 @@ public static partial class Extensions
     }
 
     /// <summary>
+    /// Painted mica background. The layer has no children and does not take the tap.
+    /// </summary>
+    public static MicaView MicaView()
+        => new(componentRefAction: null);
+
+    /// <summary>
+    /// Same layer as <see cref="MicaView()"/>.
+    /// The callback receives the mounted canvas, and null when it unmounts.
+    /// </summary>
+    public static MicaView MicaView(Action<SKCanvasView?> refAction)
+        => new(refAction);
+
+    /// <summary>
     /// Skia text with word and sentence highlights.
     /// </summary>
     public static RichTextView RichTextView()
