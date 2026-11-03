@@ -44,6 +44,9 @@ dotnet_diagnostic.CA1711.severity = none
 [src/ReactorKit/GlazeView.cs]
 dotnet_diagnostic.CA1010.severity = none
 
+[src/ReactorKit/MicaView.cs]
+dotnet_diagnostic.CA1010.severity = none
+
 [src/ReactorKit/RichTextView.cs]
 dotnet_diagnostic.CA1010.severity = none
 

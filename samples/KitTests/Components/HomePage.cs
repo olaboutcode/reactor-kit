@@ -40,7 +40,8 @@ sealed class HomePage : Component
                 SheetButton(),
                 SwitchButton(),
                 CheckboxButton(),
-                TimelineButton()
+                TimelineButton(),
+                MicaButton()
             )
         )
         .BackgroundColor(Theme.IsDarkTheme ? Night : Paper)
@@ -209,10 +210,27 @@ sealed class HomePage : Component
     void GotoTimelineTestPage()
         => _ = Navigation?.PushModalAsync<TimelineTestPage>(animated: false);
 
+    MauiReactor.Button MicaButton()
+        => Button("Mica", GotoMicaTestPage)
+            .TextColor(Paper)
+            .BackgroundColor(Ink)
+            .FontSize(15)
+            .CornerRadius(16)
+            .Height(36)
+            .Padding(14, 0)
+            .HEnd()
+            .VStart()
+            .Margin(16, 502);
+
+    void GotoMicaTestPage()
+        => _ = Navigation?.PushModalAsync<MicaTestPage>(animated: false);
+
     static VStack Samples()
         => VStack(
                 RoundButton(),
-                MochaButton(),
+                MicaPlusButton(),
+                GlazeTextButton(),
+                MicaTextButton(),
                 GlazeView(
                     VStack(
                         Entry()
@@ -257,13 +275,62 @@ sealed class HomePage : Component
         .HCenter()
         .Shadow(ShadowElevation.For(1));
 
-    static GlazeView MochaButton()
+    static MauiReactor.Border MicaPlusButton()
+        => Border(
+            Grid(
+                MicaView()
+                    .HFill()
+                    .VFill()
+                    .TintOpacity(0.78)
+                    .ShadeOpacity(0.69),
+
+                new MauiReactor.Shapes.Path()
+                    .Data("M 12 4.5 V 19.5 M 19.5 12 H 4.5")
+                    .Stroke(Ink)
+                    .StrokeThickness(1.5)
+                    .StrokeLineCap(MauiControls.Shapes.PenLineCap.Round)
+                    .Width(24)
+                    .Height(24)
+                    .HCenter()
+                    .VCenter()
+            )
+            .BackgroundColor(Colors.Transparent)
+        )
+        .Width(44)
+        .Height(44)
+        .StrokeCornerRadius(22)
+        .Stroke(Colors.Transparent)
+        .BackgroundColor(Colors.Transparent)
+        .Shadow(ShadowElevation.For(1));
+
+    static MauiReactor.Border MicaTextButton()
+        => Border(
+            Grid(
+                MicaView()
+                    .HFill()
+                    .VFill()
+                    .TintOpacity(0.94),
+
+                Label("Mica Button!")
+                    .TextColor(Ink)
+                    .FontSize(16)
+                    .Center()
+            )
+            .BackgroundColor(Colors.Transparent)
+        )
+        .Height(44)
+        .StrokeCornerRadius(12)
+        .Stroke(Colors.Transparent)
+        .BackgroundColor(Colors.Transparent)
+        .Shadow(ShadowElevation.For(1));
+
+    static GlazeView GlazeTextButton()
         => GlazeView(
             Grid(
                 Button()
                     .Height(44)
                     .BackgroundColor(Colors.Transparent),
-                Label("Mica Button!")
+                Label("Glaze Button!")
                     .TextColor(Ink)
                     .FontSize(16)
                     .Center()

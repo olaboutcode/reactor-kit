@@ -6,7 +6,7 @@ This document describes `MicaView`.
 
 `MicaView` paints one mica material with SkiaSharp. iOS, Mac Catalyst, Android, and Windows run that same paint. The view is a background layer. The page stacks its own content on top and owns the tap.
 
-The recipe follows glaze: tint, noise, hairline, and a soft shadow. The fill is a vertical gradient. There is no backdrop sample, so the layer stays the same over a photo and over a flat page.
+The recipe follows glaze: tint, noise, and a hairline. The fill is a vertical gradient. The fill reaches the edge of the view. There is no backdrop sample, so the layer stays the same over a photo and over a flat page. A shadow belongs on the container around the layer, such as a `Border`.
 
 `UIVisualEffectView`, Android `RenderEffect`, and `AcrylicBrush` stay unused.
 
@@ -32,8 +32,7 @@ Grid(
         .TintOpacity(0.78)
         .ShadeColor(Color.FromArgb("#1A1A1D"))
         .ShadeOpacity(0.69)
-        .CornerRadius(28)
-        .StrokeThickness(1.2),
+        .CornerRadius(28),
     Label("+")
         .FontSize(28)
         .FontAttributes(FontAttributes.Bold)
@@ -46,7 +45,7 @@ Grid(
 .OnTapped(action);
 ```
 
-The grid is 56 by 56. The layer fills it. `CornerRadius` 28 rounds the inset shape into a circle. The label sits in the same cell and does not take the tap. `OnTapped` is on the grid.
+The grid is 56 by 56. The layer fills it. `CornerRadius` 28 rounds that box into a circle. The fill reaches the edge. The label sits in the same cell and does not take the tap. `OnTapped` is on the grid.
 
 The canvas sets `InputTransparent` to true in its constructor and at the start of every paint. The layer does not take the tap. Content that should let the tap through, such as the label, still sets `InputTransparent` on itself.
 
@@ -63,38 +62,36 @@ MicaView(canvas => _canvas = canvas)
 
 The canvas clears to transparent. Lengths on the public API are dp. The paint multiplies them by `info.Width / Width` when `Width` is greater than 0. `IgnorePixelScaling` stays false.
 
-The shape is a round rect inset by 4 dp on every side, so the shadow blur has room inside the view. The view clips to its bounds. A glow past that inset is cut. A width or height of 0, or an inset rect that is empty, clears and returns.
+The shape is a round rect of the canvas bounds. The fill reaches the edge of the view. A width or height of 0 clears and returns.
 
-`CornerRadius` is the corner of that inset rect, in dp. The paint clamps it to half the shorter side. A square view whose radius meets that clamp is a circle. The paint uses a round rect for every radius, including the circle.
+`CornerRadius` is the corner of that rect, in dp. The paint clamps it to half the shorter side. A square view whose radius meets that clamp is a circle. The paint uses a round rect for every radius, including the circle.
 
 Draw order:
 
-1. Shadow. The same round rect, filled, no offset. Black at `ShadowOpacity`. Blur sigma is 10 dp. `ShadowOpacity` 0 skips this step.
-2. Fill. A vertical linear gradient from the top of the rect to the bottom, tile mode clamp. The top stop is `TintColor`'s RGB at `TintOpacity`. The bottom stop is the shade RGB at the shade opacity. Color alpha on `TintColor` and `ShadeColor` is ignored.
-3. Noise. Glaze's `NoiseTile`, 128 by 128, tiled. Drawn in the round rect at `NoiseOpacity`. `NoiseOpacity` 0 skips this step.
-4. Stroke. The same round rect. `Stroke` at `StrokeThickness` dp. A thickness of 0 skips this step.
+1. Fill. A vertical linear gradient from the top of the rect to the bottom, tile mode clamp. The top stop is `TintColor`'s RGB at `TintOpacity`. The bottom stop is the shade RGB at the shade opacity. Color alpha on `TintColor` and `ShadeColor` is ignored.
+2. Noise. Glaze's `NoiseTile`, 128 by 128, tiled. Drawn in the round rect at `NoiseOpacity`. `NoiseOpacity` 0 skips this step.
+3. Stroke. The hairline. The default width is one physical pixel, `1 / density` dp, on iOS and Android. @2x is 0.5 dp. @3x is about 0.33 dp. A set `StrokeThickness` is dp. The path is inset by half that thickness, so the outer edge of the stroke is the view edge and the whole stroke stays inside. A thickness of 0 skips this step.
 
-Antialiasing is on for the shadow, the fill, and the stroke.
+Antialiasing is on for the fill and the stroke.
 
-When `ShadeColor` is null, the bottom RGB is the top RGB multiplied by 0.94. When `ShadeOpacity` is null, the bottom alpha is `TintOpacity * 0.88`. The dark plus button sets both, so the stops are `#2E2E32` at 0.78 and `#1A1A1D` at 0.69.
+When `ShadeColor` is null, the bottom RGB is the top RGB multiplied by 0.94. When `ShadeOpacity` is negative, including the default, the bottom alpha is `TintOpacity * 0.88`. The property is a `double` so it can animate. The dark plus button sets both stops, so they are `#2E2E32` at 0.78 and `#1A1A1D` at 0.69.
 
 ## Defaults
 
-The unset layer is a light mica panel. It uses glaze's base, glaze's hairline, and glaze's dusting. The wash is stronger than glaze's 0.28 because nothing behind the view supplies the milk.
+The unset layer is a light translucent panel. It uses glaze's base, glaze's hairline, and glaze's dusting. The wash is `0.5`, so content behind the layer shows through.
 
 | Member | Default | Role |
 |---|---|---|
 | `TintColor` | `#F3F3F3` | Top stop. Glaze's light mica base. |
-| `TintOpacity` | `0.76` | Top alpha. Glaze's no-blur fallback. |
+| `TintOpacity` | `0.5` | Top alpha. The layer stays translucent. |
 | `ShadeColor` | null | Bottom stop. Null uses 94% of the top RGB. |
-| `ShadeOpacity` | null | Bottom alpha. Null uses `TintOpacity * 0.88`. |
+| `ShadeOpacity` | negative | Bottom alpha. A negative value uses `TintOpacity * 0.88`. |
 | `NoiseOpacity` | `0.015` | Fine dusting. The plus-button sketch left this at the default. |
 | `Stroke` | white, alpha 46 | Hairline color. Same as glaze. |
-| `StrokeThickness` | `1` | Hairline width, in dp. The plus-button sketch uses `1.2`. |
-| `CornerRadius` | `0` | Corner of the inset shape, in dp. |
-| `ShadowOpacity` | `60 / 255` | Black glow. `0` draws no shadow. |
+| `StrokeThickness` | one physical pixel | `1 / density` dp. The same hairline on iOS and Android. A positive value is dp. |
+| `CornerRadius` | `0` | Corner of the view, in dp. |
 
-There is no `BlurRadius`. The view does not blur the backdrop.
+There is no `BlurRadius` and no shadow. The view does not blur the backdrop. The edge is the hairline. A page that wants a shadow wraps the layer in a `Border` or another container and sets `Shadow` on that container. The container corner matches `CornerRadius`.
 
 ## Files
 
@@ -115,21 +112,22 @@ No files under `Platforms/`. No handler registration.
 
 `HomePage` gains a Mica button under the timeline button, same chrome, margin `(16, 502)`. It opens `MicaTestPage` with `PushModalAsync(animated: false)`. The page closes through `NavigationBar` with `PopModalAsync(animated: false)`.
 
-The page shows two layers on a flat background:
+The page scrolls lines behind the mica, the same arrangement as the glaze samples on Home. The lines move. The mica stays.
 
-- The plus button from the call above. A tap adds one to a count the page owns. The count is a label under the button.
-- A light rounded rect, 240 by 72, default tint, `CornerRadius` 22, with a label centered on top of it.
+- A bar at the top of the content is 64 tall, uses the default mica, and reads "Text scrolls behind".
+- The plus button from the call above stays centered, inside a `Border` with the same corner and `ShadowElevation` level 1. A tap adds one to a count the page owns. The count is a label under the button.
+- A light rounded rect, 240 by 72, default tint, `CornerRadius` 22, sits under the count with a label centered on top of it.
 
 ## Out of scope
 
-Replacing `GlazeView`, or routing glaze through this canvas. Sampling the views behind the layer. A public button, chip, or card. Hosting a child inside `MicaView`. A platform handler. Liquid glass. A package version bump.
+Replacing `GlazeView`, or routing glaze through this canvas. Sampling the views behind the layer. A shadow painted by this view. A public button, chip, or card. Hosting a child inside `MicaView`. A platform handler. Liquid glass. A package version bump.
 
 ## Done when
 
 - [ ] `MicaView()` builds from a MauiReactor page and fills the cell the page gives it.
-- [ ] The plus button draws a circle, a dark vertical wash, a soft shadow, and a 1.2 dp hairline. The label stays sharp. A tap reaches the grid.
+- [ ] The plus button draws a circle that fills the 56 box, a dark vertical wash, and a one-pixel hairline. The label stays sharp. A tap reaches the grid.
 - [ ] The light panel uses the defaults and reads as the same family as glaze's light tint, noise, and hairline.
 - [ ] iOS and Android draw that same circle and that same panel. Neither blurs the page behind the layer.
-- [ ] `ShadeColor` null darkens the top RGB by 6%. `ShadeOpacity` null uses 88% of `TintOpacity`.
-- [ ] `ShadowOpacity` 0 and `NoiseOpacity` 0 skip those steps. `StrokeThickness` 0 skips the hairline.
-- [ ] `net10.0`, `net10.0-ios`, and `net10.0-android` build with 0 warnings.
+- [ ] `ShadeColor` null darkens the top RGB by 6%. A negative `ShadeOpacity` uses 88% of `TintOpacity`.
+- [ ] `NoiseOpacity` 0 skips the dusting. `StrokeThickness` 0 skips the hairline.
+- [x] `net10.0`, `net10.0-ios`, and `net10.0-android` build with 0 warnings.
