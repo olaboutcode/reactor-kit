@@ -22,8 +22,8 @@ sealed class MicaTestPage : Component<MicaTestPage.PageState>
                 Grid(
                     ScrollView(
                         VStack(Lines())
-                        .Padding(18)
-                        .Spacing(0))
+                        .Spacing(0)
+                    )
                     .VerticalScrollBarVisibility(ScrollBarVisibility.Never)
                     .Margin(0, 0, 0, 16),
                     Bar(),
@@ -36,7 +36,9 @@ sealed class MicaTestPage : Component<MicaTestPage.PageState>
                         LightPanel())
                     .Spacing(24)
                     .Center())
-                .GridRow(1))
+                .GridRow(1)
+            )
+            .Padding(16)
         )
         .BackgroundColor(Paper)
         .HasNavigationBar(hasNavigationBar: false);

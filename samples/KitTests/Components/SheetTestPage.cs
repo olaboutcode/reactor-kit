@@ -54,18 +54,9 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
     SheetView PageSheetExample() =>
         PageSheet(
             Grid("auto,*,auto","*",
-                Grid("*", "auto,*,auto",
-                    CloseButton(ClosePage)
-                        .GridColumn(0),
-                    Label("Event Page")
-                        .FontSize(17)
-                        .TextTransform(TextTransform.Uppercase)
-                        .TextColor(Ink)
-                        .Center()
-                        .GridColumn(1),
-                    SheetMenu()
-                        .GridColumn(2)
-                ),
+                NavigationBar.Create("Event Page")
+                    .OnClose(ClosePage)
+                    .Trailing(SheetMenu()),
 
                 ScrollView(
                     VStack(
@@ -132,15 +123,8 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
     SheetView FormSheetExample() =>
         FormSheet(
             Grid("auto,*,auto","*",
-                Grid(
-                    CloseButton(CloseForm)
-                        .HStart(),
-                    Label("New Event")
-                        .FontSize(17)
-                        .TextTransform(TextTransform.Uppercase)
-                        .TextColor(Ink)
-                        .Center()
-                ),
+                NavigationBar.Create("New Event")
+                    .OnClose(CloseForm),
 
                 ScrollView(
                     VStack(
@@ -228,15 +212,8 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
 
     MauiReactor.Grid Player()
         => Grid("auto,*","*",
-            Grid(
-                CloseButton(ClosePlayer)
-                    .HStart(),
-                Label("Multiple Detents")
-                    .FontSize(17)
-                    .TextTransform(TextTransform.Uppercase)
-                    .TextColor(Ink)
-                    .Center()
-            ),
+            NavigationBar.Create("Multiple Detents")
+                .OnClose(ClosePlayer),
             ScrollView(
                 VStack(
                     Label("Drag the grabber. Medium leaves this page interactive.")
@@ -253,16 +230,9 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
     SheetView EdgeSheetExample() =>
         PageSheet(
             Grid("auto,*", "*",
-                Grid("*", "auto,*,auto",
-                    CloseButton(CloseEdge)
-                        .GridColumn(0),
-                    Label("Bottom edge")
-                        .FontSize(17)
-                        .TextTransform(TextTransform.Uppercase)
-                        .TextColor(Paper)
-                        .Center()
-                        .GridColumn(1)
-                ),
+                NavigationBar.Create("Bottom edge")
+                    .TextColor(Paper)
+                    .OnClose(CloseEdge),
 
                 Label("This card covers the bottom edge.")
                     .FontSize(15)
@@ -320,21 +290,6 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
             .CornerRadius(16)
             .Height(36)
             .Padding(14, 0);
-
-    static GlazeView CloseButton(Action onClick)
-        => GlazeView(
-                Image(HeroIcons.XMark)
-                .Aspect(Aspect.AspectFill)
-                .Height(24)
-                .Width(24)
-                .Center()
-            )
-            .OnTapped(onClick)
-            .TintColor(Colors.WhiteSmoke)
-            .Width(44)
-            .Height(44)
-            .CornerRadius(22)
-            .Shadow(ShadowElevation.For(1));
 
     static MauiReactor.Button DoneButton(Action onClick)
         => new MauiReactor.Button("Done", onClick)
