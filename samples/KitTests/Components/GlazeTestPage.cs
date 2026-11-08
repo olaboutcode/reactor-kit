@@ -22,7 +22,6 @@ sealed class GlazeTestPage : Component
                 )
                 .Padding(16, 16, 16, 0),
                 Grid("auto,*", "*",
-                    CoveredBar(),
                     Grid(
                         ScrollView(
                             VStack(Lines(ink))
@@ -31,15 +30,6 @@ sealed class GlazeTestPage : Component
                         )
                         .VerticalScrollBarVisibility(ScrollBarVisibility.Never)
                         .Margin(0, 0, 0, 16),
-                        GlazeView(
-                            Label("Text scrolls behind")
-                            .FontSize(17)
-                            .TextColor(Ink)
-                            .HCenter()
-                            .VCenter()
-                        )
-                        .Height(64)
-                        .VStart(),
                         Samples()
                     )
                     .GridRow(1)
@@ -53,6 +43,7 @@ sealed class GlazeTestPage : Component
 
     static VStack Samples()
         => VStack(
+                CoveredBar(),
                 RoundButton(),
                 GlazeTextButton(),
                 GlazeView(

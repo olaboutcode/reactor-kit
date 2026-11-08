@@ -24,7 +24,7 @@ public sealed partial class NavigationBar : Component
                 .Center()
                 .GridColumn(1),
             End()
-        );
+        ).Padding(0,8);
 
     GlazeView CloseButton()
         => GlazeView(
