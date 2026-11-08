@@ -82,6 +82,6 @@ The centered samples stay: the round plus, the glaze text button, the entry pane
 
 - [x] On Android, a `GlazeView` on an opaque bar above a `ScrollView` stays the bar color while the scroll moves. The scrolled text does not show inside the glass.
 - [x] On Android, a `GlazeView` that overlaps scrolling content, with no opaque view between them, still shows that content.
-- [ ] On iOS, both of those layouts match the behavior they have today.
+- [x] On iOS, both of those layouts match the behavior they have today.
 - [x] The child of the panel is sharp. Tint, noise, stroke, and corner are unchanged.
 - [x] The library and KitTests build for `net10.0` with no warnings. Android compiles. iOS compiles when the shared glaze files change. Windows is not required on the Mac.
