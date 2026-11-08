@@ -68,7 +68,7 @@ A shadow is the caller's `Shadow`. This view does not add one.
 
 ## Sample
 
-`HomePage` is the glaze sample. It stays on `AppShell` and is not opened with `PushAsync`.
+`GlazeTestPage` is the glaze sample. `HomePage` opens it with `PushModalAsync(animated: false)`. The page closes with `PopModalAsync(animated: false)` through `NavigationBar`. It is not opened with `PushAsync`.
 
 The page scrolls colored lines. A glaze banner at the top overlaps that scroll and has no opaque plate of its own, so the lines stay visible in the banner while they move. An opaque bar, the page background color, sits above the scroll and does not overlap it. A fully rounded `GlazeView` sits on that bar. Scrolling the lines does not paint them into that circle. The circle stays the bar color, plus the wash, the noise, and the hairline.
 

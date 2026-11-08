@@ -2,369 +2,98 @@ using MauiReactor.Shapes;
 
 namespace KitTests.Components;
 
+/// <summary>
+/// A list of the component pages, and a last row that switches the theme.
+/// </summary>
 sealed class HomePage : Component
 {
     static readonly Color Ink = Color.FromArgb("#1C1C1E");
     static readonly Color Paper = Color.FromArgb("#F7F5F2");
     static readonly Color Night = Color.FromArgb("#111110");
+    static readonly Color Muted = Color.FromArgb("#8E8E93");
 
     public override VisualNode Render()
     {
         var ink = Theme.IsDarkTheme ? Paper : Ink;
-        return ContentPage("Glaze",
-            Grid("auto,*", "*",
-                CoveredBar().GridRow(0),
-                Grid(
-                    ScrollView(
-                        VStack(Lines(ink))
-                        .Padding(18)
+        return ContentPage("KitTests",
+            ScrollView(
+                VStack(
+                    Label("KitTests")
+                        .FontSize(22)
+                        .TextColor(ink),
+                    Label("Glaze, mica, menu, sheet, switch, checkbox, timeline, rich text, reading, markdown, object, and model.")
+                        .FontSize(16)
+                        .TextColor(Muted)
+                        .Margin(0, 8, 0, 0),
+                    VStack(Rows(ink))
                         .Spacing(0)
+                        .Margin(0, 24, 0, 0),
+                    Appearance(ink)
+                        .Margin(0, 24, 0, 0)
                 )
-                .VerticalScrollBarVisibility(ScrollBarVisibility.Never)
-                .Margin(0,0,0,16),
-                GlazeView(
-                    Label("Text scrolls behind")
-                    .FontSize(17)
-                    .TextColor(Ink)
-                    .HCenter()
-                    .VCenter()
-                )
-                .Height(64)
-                .VStart(),
-                Samples(),
-                HomePage.ThemeButton(),
-                TextButton(),
-                MarkdownButton(),
-                ReadingButton(),
-                ObjectButton(),
-                ModelButton(),
-                MenuButton(),
-                SheetButton(),
-                SwitchButton(),
-                CheckboxButton(),
-                TimelineButton(),
-                MicaButton()
-                )
-                .GridRow(1)
+                .Spacing(0)
+                .Padding(16)
             )
+            .VerticalScrollBarVisibility(ScrollBarVisibility.Never)
         )
         .BackgroundColor(Theme.IsDarkTheme ? Night : Paper)
         .Set(Microsoft.Maui.Controls.Shell.NavBarIsVisibleProperty, false);
     }
 
-    static MauiReactor.Button ThemeButton()
-        => Button(Theme.IsDarkTheme ? "Light" : "Dark", AppTheme.ToggleCurrentAppTheme)
-            .TextColor(Paper)
-            .BackgroundColor(Ink)
-            .FontSize(15)
-            .CornerRadius(16)
-            .Height(36)
-            .Padding(14, 0)
-            .HEnd()
-            .VStart()
-            .Margin(16, 18);
+    VisualNode[] Rows(Color ink) =>
+    [
+        Row("Glaze", () => Open<GlazeTestPage>(), ink),
+        Row("Mica", () => Open<MicaTestPage>(), ink),
+        Row("Menu", () => Open<MenuTestPage>(), ink),
+        Row("Sheet", () => Open<SheetTestPage>(), ink),
+        Row("Switch", () => Open<SwitchTestPage>(), ink),
+        Row("Checkbox", () => Open<CheckboxTestPage>(), ink),
+        Row("Timeline", () => Open<TimelineTestPage>(), ink),
+        Row("Rich text", () => Open<RichTextTestPage>(), ink),
+        Row("Reading", () => Open<ReadingTestPage>(), ink),
+        Row("Markdown", () => Open<MarkdownTestPage>(), ink),
+        Row("Object", () => Open<ObjectTestPage>(), ink),
+        Row("Model", () => Open<ModelTestPage>(), ink),
+    ];
 
-    MauiReactor.Button TextButton()
-        => Button("Text", OpenText)
-            .TextColor(Paper)
-            .BackgroundColor(Ink)
-            .FontSize(15)
-            .CornerRadius(16)
-            .Height(36)
-            .Padding(14, 0)
-            .HEnd()
-            .VStart()
-            .Margin(16, 62);
+    void Open<T>() where T : Component, new()
+        => _ = Navigation?.PushModalAsync<T>(animated: false);
 
-    void OpenText()
-        => _ = Navigation?.PushModalAsync<RichTextTestPage>(animated: false);
-
-    MauiReactor.Button MarkdownButton()
-        => Button("Markdown", OpenMarkdown)
-            .TextColor(Paper)
-            .BackgroundColor(Ink)
-            .FontSize(15)
-            .CornerRadius(16)
-            .Height(36)
-            .Padding(14, 0)
-            .HEnd()
-            .VStart()
-            .Margin(16, 106);
-
-    void OpenMarkdown()
-        => _ = Navigation?.PushModalAsync<MarkdownTestPage>(animated: false);
-
-    MauiReactor.Button ReadingButton()
-        => Button("Reading", OpenReading)
-            .TextColor(Paper)
-            .BackgroundColor(Ink)
-            .FontSize(15)
-            .CornerRadius(16)
-            .Height(36)
-            .Padding(14, 0)
-            .HEnd()
-            .VStart()
-            .Margin(16, 150);
-
-    void OpenReading()
-        => _ = Navigation?.PushModalAsync<ReadingTestPage>(animated: false);
-
-    MauiReactor.Button ObjectButton()
-        => Button("Object", OpenObject)
-            .TextColor(Paper)
-            .BackgroundColor(Ink)
-            .FontSize(15)
-            .CornerRadius(16)
-            .Height(36)
-            .Padding(14, 0)
-            .HEnd()
-            .VStart()
-            .Margin(16, 194);
-
-    void OpenObject()
-        => _ = Navigation?.PushModalAsync<ObjectTestPage>(animated: false);
-
-    MauiReactor.Button ModelButton()
-        => Button("Model", OpenModelTestPage)
-            .TextColor(Paper)
-            .BackgroundColor(Ink)
-            .FontSize(15)
-            .CornerRadius(16)
-            .Height(36)
-            .Padding(14, 0)
-            .HEnd()
-            .VStart()
-            .Margin(16, 238);
-
-    void OpenModelTestPage()
-        => _ = Navigation?.PushModalAsync<ModelTestPage>(animated: false);
-
-    MauiReactor.Button MenuButton()
-        => Button("Menu", GotoMenuTestPage)
-            .TextColor(Paper)
-            .BackgroundColor(Ink)
-            .FontSize(15)
-            .CornerRadius(16)
-            .Height(36)
-            .Padding(14, 0)
-            .HEnd()
-            .VStart()
-            .Margin(16, 282);
-
-    void GotoMenuTestPage()
-        => _ = Navigation?.PushModalAsync<MenuTestPage>(animated: false);
-
-    MauiReactor.Button SheetButton()
-        => Button("Sheet", GotoSheetTestPage)
-            .TextColor(Paper)
-            .BackgroundColor(Ink)
-            .FontSize(15)
-            .CornerRadius(16)
-            .Height(36)
-            .Padding(14, 0)
-            .HEnd()
-            .VStart()
-            .Margin(16, 326);
-
-    void GotoSheetTestPage()
-        => _ = Navigation?.PushModalAsync<SheetTestPage>(animated: false);
-
-    MauiReactor.Button SwitchButton()
-        => Button("Switch", GotoSwitchTestPage)
-            .TextColor(Paper)
-            .BackgroundColor(Ink)
-            .FontSize(15)
-            .CornerRadius(16)
-            .Height(36)
-            .Padding(14, 0)
-            .HEnd()
-            .VStart()
-            .Margin(16, 370);
-
-    void GotoSwitchTestPage()
-        => _ = Navigation?.PushModalAsync<SwitchTestPage>(animated: false);
-
-    MauiReactor.Button CheckboxButton()
-        => Button("Checkbox", GotoCheckboxTestPage)
-            .TextColor(Paper)
-            .BackgroundColor(Ink)
-            .FontSize(15)
-            .CornerRadius(16)
-            .Height(36)
-            .Padding(14, 0)
-            .HEnd()
-            .VStart()
-            .Margin(16, 414);
-
-    void GotoCheckboxTestPage()
-        => _ = Navigation?.PushModalAsync<CheckboxTestPage>(animated: false);
-
-    MauiReactor.Button TimelineButton()
-        => Button("Timeline", GotoTimelineTestPage)
-            .TextColor(Paper)
-            .BackgroundColor(Ink)
-            .FontSize(15)
-            .CornerRadius(16)
-            .Height(36)
-            .Padding(14, 0)
-            .HEnd()
-            .VStart()
-            .Margin(16, 458);
-
-    void GotoTimelineTestPage()
-        => _ = Navigation?.PushModalAsync<TimelineTestPage>(animated: false);
-
-    MauiReactor.Button MicaButton()
-        => Button("Mica", GotoMicaTestPage)
-            .TextColor(Paper)
-            .BackgroundColor(Ink)
-            .FontSize(15)
-            .CornerRadius(16)
-            .Height(36)
-            .Padding(14, 0)
-            .HEnd()
-            .VStart()
-            .Margin(16, 502);
-
-    void GotoMicaTestPage()
-        => _ = Navigation?.PushModalAsync<MicaTestPage>(animated: false);
-
-    static VStack Samples()
-        => VStack(
-                RoundButton(),
-                MicaPlusButton(),
-                GlazeTextButton(),
-                MicaTextButton(),
-                GlazeView(
-                    VStack(
-                        Entry()
-                            .Placeholder("Enter text")
-                            .TextColor(Ink)
-                            .PlaceholderColor(Colors.Grey.WithAlpha(0.7f))
-                            .BackgroundColor(Colors.Transparent),
-                        Button("Test Button")
-                            .TextColor(Ink)
-                            .BackgroundColor(Colors.White))
-                    .Spacing(16))
-                .Padding(16)
-                .CornerRadius(22),
-                GlazeView(
-                    VStack(
-                        Label("Title").FontSize(20).TextColor(Colors.White),
-                        Label("Two children, one grid.").TextColor(Colors.White))
-                    .Padding(4)
-                    .Spacing(16))
-                .Padding(16)
-                .CornerRadius(22)
-                .TintColor(Color.FromArgb("#1C1C1E")))
-            .Spacing(16)
-            .Padding(8)
-            .Center();
-
-    // The page color, above the scroll, so a round glaze here must not pick up the lines.
-    // An auto row sizes to the button. A star row inside the page's auto row collapses.
-    static MauiReactor.Grid CoveredBar()
-        => Grid("auto", "*", RoundButton().HStart().VCenter())
-            .BackgroundColor(Theme.IsDarkTheme ? Night : Paper)
-            .Padding(16, 8);
-
-    static GlazeView RoundButton()
-        => GlazeView(
-            new MauiReactor.Shapes.Path()
-            .Data("M 12 4.5 V 19.5 M 19.5 12 H 4.5")
-            .Stroke(Ink)
-            .StrokeThickness(1.5)
-            .StrokeLineCap(MauiControls.Shapes.PenLineCap.Round)
-            .Width(24)
-            .Height(24)
-            .HCenter()
-            .VCenter()
-        )
-        .Width(44)
-        .Height(44)
-        .CornerRadius(22)
-        .HCenter()
-        .Shadow(ShadowElevation.For(1));
-
-    static MauiReactor.Border MicaPlusButton()
-        => Border(
-            Grid(
-                MicaView()
-                    .HFill()
-                    .VFill()
-                    .TintOpacity(0.78)
-                    .ShadeOpacity(0.69),
-
-                new MauiReactor.Shapes.Path()
-                    .Data("M 12 4.5 V 19.5 M 19.5 12 H 4.5")
-                    .Stroke(Ink)
-                    .StrokeThickness(1.5)
-                    .StrokeLineCap(MauiControls.Shapes.PenLineCap.Round)
-                    .Width(24)
-                    .Height(24)
-                    .HCenter()
+    static MauiReactor.Grid Row(string title, Action open, Color ink)
+        => Grid("44", "*,auto",
+                Label(title)
+                    .FontSize(16)
+                    .TextColor(ink)
+                    .VCenter(),
+                Chevron()
+                    .GridColumn(1)
                     .VCenter()
             )
+            .HFill()
             .BackgroundColor(Colors.Transparent)
-        )
-        .Width(44)
-        .Height(44)
-        .StrokeCornerRadius(22)
-        .Stroke(Colors.Transparent)
-        .BackgroundColor(Colors.Transparent)
-        .Shadow(ShadowElevation.For(1));
+            .OnTapped(open);
 
-    static MauiReactor.Border MicaTextButton()
-        => Border(
-            Grid(
-                MicaView()
-                    .HFill()
-                    .VFill()
-                    .TintOpacity(0.94),
-
-                Label("Mica Button!")
-                    .TextColor(Ink)
+    static MauiReactor.Grid Appearance(Color ink)
+        => Grid("44", "*",
+                Label(Theme.IsDarkTheme ? "Light" : "Dark")
                     .FontSize(16)
-                    .Center()
+                    .TextColor(ink)
+                    .VCenter()
             )
+            .HFill()
             .BackgroundColor(Colors.Transparent)
-        )
-        .Height(44)
-        .StrokeCornerRadius(12)
-        .Stroke(Colors.Transparent)
-        .BackgroundColor(Colors.Transparent)
-        .Shadow(ShadowElevation.For(1));
+            .OnTapped(AppTheme.ToggleCurrentAppTheme);
 
-    static GlazeView GlazeTextButton()
-        => GlazeView(
-            Grid(
-                Button()
-                    .Height(44)
-                    .BackgroundColor(Colors.Transparent),
-                Label("Glaze Button!")
-                    .TextColor(Ink)
-                    .FontSize(16)
-                    .Center()
-            )
-        )
-        .CornerRadius(12)
-        .Shadow(ShadowElevation.For(1));
-
-    static VisualNode[] Lines(Color ink)
-    {
-        var bands = new[] { "#E85D4C", "#3D7EFF", "#1FA971", "#F0B429" };
-        var lines = new VisualNode[32];
-        for (var i = 0; i < lines.Length; i++)
-        {
-            var band = i % 6 == 0;
-            var label = Label($"Line {i + 1} The glass stays put while this text moves underneath.")
-                .TextColor(band ? Ink : ink)
-                .Padding(10);
-            lines[i] = band
-                ? label.BackgroundColor(Color.FromArgb(bands[(i / 6) % bands.Length]))
-                : label;
-        }
-
-        return lines;
-    }
+    // Heroicons chevron, scaled from the 24 point box into 20. The image is a fixed #0F172A.
+    static MauiReactor.Shapes.Path Chevron()
+        => new MauiReactor.Shapes.Path()
+            .Data("M 6.875 3.75 L 13.125 10 L 6.875 16.25")
+            .Stroke(Muted)
+            .StrokeThickness(1.25)
+            .StrokeLineCap(MauiControls.Shapes.PenLineCap.Round)
+            .StrokeLineJoin(MauiControls.Shapes.PenLineJoin.Round)
+            .Width(20)
+            .Height(20)
+            .Set(MauiControls.Shapes.Shape.AspectProperty, MauiControls.Stretch.None)
+            .InputTransparent(true);
 }
