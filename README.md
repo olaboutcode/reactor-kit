@@ -118,7 +118,7 @@ List of available components.
 `GlazeView` blurs what is behind the panel. The child is a normal MAUI view and is never blurred.
 
 > [!IMPORTANT]
-> On Android the glass is a snapshot of the page behind it, so that page has to stay attached. `PushModalAsync` leaves it in place. A `NavigationPage`, or a Shell `PushAsync`, takes the page down, and the panel draws flat for a frame when the page comes back.
+> On Android the glass is a snapshot of the composited page behind it. An opaque view, or a scroll clip, keeps covered content out of that snapshot. The page has to stay attached. `PushModalAsync` leaves it in place. A `NavigationPage`, or a Shell `PushAsync`, takes the page down, and the panel draws flat for a frame when the page comes back.
 
 #### Properties
 

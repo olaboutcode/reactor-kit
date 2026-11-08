@@ -12,11 +12,13 @@ sealed class HomePage : Component
     {
         var ink = Theme.IsDarkTheme ? Paper : Ink;
         return ContentPage("Glaze",
-            Grid(
-                ScrollView(
-                    VStack(Lines(ink))
-                    .Padding(18)
-                    .Spacing(0)
+            Grid("auto,*", "*",
+                CoveredBar().GridRow(0),
+                Grid(
+                    ScrollView(
+                        VStack(Lines(ink))
+                        .Padding(18)
+                        .Spacing(0)
                 )
                 .VerticalScrollBarVisibility(ScrollBarVisibility.Never)
                 .Margin(0,0,0,16),
@@ -42,6 +44,8 @@ sealed class HomePage : Component
                 CheckboxButton(),
                 TimelineButton(),
                 MicaButton()
+                )
+                .GridRow(1)
             )
         )
         .BackgroundColor(Theme.IsDarkTheme ? Night : Paper)
@@ -256,6 +260,13 @@ sealed class HomePage : Component
             .Spacing(16)
             .Padding(8)
             .Center();
+
+    // The page color, above the scroll, so a round glaze here must not pick up the lines.
+    // An auto row sizes to the button. A star row inside the page's auto row collapses.
+    static MauiReactor.Grid CoveredBar()
+        => Grid("auto", "*", RoundButton().HStart().VCenter())
+            .BackgroundColor(Theme.IsDarkTheme ? Night : Paper)
+            .Padding(16, 8);
 
     static GlazeView RoundButton()
         => GlazeView(

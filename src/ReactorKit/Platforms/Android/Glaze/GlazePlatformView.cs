@@ -18,6 +18,7 @@ namespace Reactor.Kit.Internals.Glaze;
 sealed class GlazePlatformView : FrameLayout
 {
     const int Sample = 4;
+    static int _drawDepth;
 
     readonly ImageView _backdrop;
     readonly View _material;
@@ -25,11 +26,18 @@ sealed class GlazePlatformView : FrameLayout
     readonly ImageView _noise;
     readonly StrokeView _stroke;
     readonly BackdropListener _listener;
+    readonly List<BackdropLayer> _layers = new();
+    readonly Android.Graphics.Rect _glazeRect = new();
+    readonly Android.Graphics.Rect _viewRect = new();
+    readonly int[] _screen = new int[2];
+    readonly Paint _layerPaint = new();
     View? _content;
     Bitmap? _captured;
     ViewTreeObserver? _observer;
     long _lastCapture;
+    int _contentStamp;
     bool _capturing;
+    bool _skipNextCapture;
     bool _canBlur;
     readonly Paint _shadowMask = new() { AntiAlias = true, Color = Android.Graphics.Color.Black };
     float _radius;
@@ -118,15 +126,29 @@ sealed class GlazePlatformView : FrameLayout
 
     public void CaptureBackdrop()
     {
-        if (_capturing || !_canBlur || _radius <= 0 || Width <= 0 || Height <= 0 || !IsShown)
+        // A draw started from here must not re-enter. Nested software draws share
+        // one child list, and a second pass throws while the first is still reading it.
+        if (_drawDepth > 0 || _capturing || !_canBlur || _radius <= 0 || Width <= 0 || Height <= 0 || !IsShown)
             return;
+
+        ScreenRect(this, _glazeRect);
+        var plate = Parent is WrapperView wrapper ? wrapper : (View)this;
+        _layers.Clear();
+        // The wrapper is the shadow plate. It is not a layer behind the glass.
+        CollectBackdrop(plate, 0);
+        var stamp = BackdropStamp();
+
+        // Setting the backdrop bitmap schedules another frame. Skip that frame
+        // when nothing behind the glass moved, so an idle page does not recapture.
+        if (_skipNextCapture)
+        {
+            _skipNextCapture = false;
+            if (stamp == _contentStamp)
+                return;
+        }
 
         var now = SystemClock.UptimeMillis();
         if (now - _lastCapture < 32)
-            return;
-
-        var root = RootView;
-        if (root is null)
             return;
 
         _lastCapture = now;
@@ -138,33 +160,220 @@ sealed class GlazePlatformView : FrameLayout
             return;
 
         _capturing = true;
-        // The shadow is drawn by the MAUI wrapper behind this view. Hiding only
-        // this view leaves that shadow in the snapshot, and the blur turns it into a dark fill.
-        var plate = Parent is WrapperView wrapper ? wrapper : (View)this;
-        var visibility = plate.Visibility;
+        var captured = _captured;
         try
         {
-            var canvas = new Canvas(_captured);
-            var location = new int[2];
-            var rootLocation = new int[2];
-            GetLocationOnScreen(location);
-            root.GetLocationOnScreen(rootLocation);
+            captured.EraseColor(Android.Graphics.Color.Transparent);
+            var canvas = new Canvas(captured);
             canvas.Save();
             canvas.Scale(1f / Sample, 1f / Sample);
-            canvas.Translate(rootLocation[0] - location[0], rootLocation[1] - location[1]);
-            plate.Visibility = ViewStates.Invisible;
-            root.Draw(canvas);
+            PaintBackdrop(canvas);
             canvas.Restore();
         }
         finally
         {
-            plate.Visibility = visibility;
             _capturing = false;
         }
 
+        _contentStamp = stamp;
+        _skipNextCapture = true;
         _backdrop.SetImageBitmap(_captured);
         ApplyBlurEffect();
     }
+
+    // Walk from this view toward the root. Earlier siblings are in front of the
+    // parent fill. An opaque fill that covers the glass ends the walk, so a bar
+    // keeps the scroll view out. A sibling that does not cover is drawn whole,
+    // clipped to its own bounds, which is what drops scrolled-away lines.
+    void CollectBackdrop(View self, int depth)
+    {
+        if (depth > 32 || self.Parent is not ViewGroup parent)
+            return;
+
+        var behind = new List<OrderedChild>();
+        var selfIndex = parent.IndexOfChild(self);
+        var selfZ = self.GetZ();
+        for (var i = 0; i < parent.ChildCount; i++)
+        {
+            var child = parent.GetChildAt(i);
+            if (child is null || !Paints(child))
+                continue;
+
+            var childZ = child.GetZ();
+            var isBehind = childZ < selfZ || (childZ == selfZ && i < selfIndex);
+            if (!isBehind || !IntersectsGlaze(child))
+                continue;
+
+            behind.Add(new OrderedChild(child, i));
+        }
+
+        behind.Sort(static (a, b) =>
+        {
+            var z = a.View.GetZ().CompareTo(b.View.GetZ());
+            return z != 0 ? z : a.Index.CompareTo(b.Index);
+        });
+
+        var cover = -1;
+        for (var i = behind.Count - 1; i >= 0; i--)
+        {
+            if (CoversGlaze(behind[i].View))
+            {
+                cover = i;
+                break;
+            }
+        }
+
+        if (cover >= 0)
+        {
+            for (var i = cover; i < behind.Count; i++)
+                _layers.Add(new BackdropLayer(behind[i].View, false));
+
+            return;
+        }
+
+        var parentCovers = CoversGlaze(parent);
+        if (!parentCovers)
+            CollectBackdrop(parent, depth + 1);
+
+        if (parentCovers || PaintsBackground(parent))
+            _layers.Add(new BackdropLayer(parent, true));
+
+        foreach (var child in behind)
+            _layers.Add(new BackdropLayer(child.View, false));
+    }
+
+    void PaintBackdrop(Canvas canvas)
+    {
+        var glazeX = _glazeRect.Left;
+        var glazeY = _glazeRect.Top;
+        foreach (var layer in _layers)
+        {
+            if (layer.BackgroundOnly)
+                PaintBackground(canvas, layer.View, glazeX, glazeY);
+            else
+                PaintView(canvas, layer.View, glazeX, glazeY);
+        }
+    }
+
+    void PaintView(Canvas canvas, View view, int glazeX, int glazeY)
+    {
+        ScreenRect(view, _viewRect);
+        var scrollX = view.ScrollX;
+        var scrollY = view.ScrollY;
+        var checkpoint = canvas.Save();
+        // The parent applies the scroll before draw(). draw() itself keeps
+        // children in content coordinates and shifts the fill back by the scroll.
+        canvas.Translate(_viewRect.Left - glazeX - scrollX, _viewRect.Top - glazeY - scrollY);
+        canvas.ClipRect(scrollX, scrollY, scrollX + view.Width, scrollY + view.Height);
+        ApplyLayerAlpha(canvas, view, scrollX, scrollY, scrollX + view.Width, scrollY + view.Height);
+        _drawDepth++;
+        try
+        {
+            view.Draw(canvas);
+        }
+        finally
+        {
+            _drawDepth--;
+            canvas.RestoreToCount(checkpoint);
+        }
+    }
+
+    void PaintBackground(Canvas canvas, View view, int glazeX, int glazeY)
+    {
+        var background = view.Background;
+        if (background is null)
+            return;
+
+        ScreenRect(view, _viewRect);
+        var bounds = background.Bounds;
+        var left = bounds.Left;
+        var top = bounds.Top;
+        var right = bounds.Right;
+        var bottom = bounds.Bottom;
+        var checkpoint = canvas.Save();
+        try
+        {
+            canvas.Translate(_viewRect.Left - glazeX, _viewRect.Top - glazeY);
+            canvas.ClipRect(0, 0, view.Width, view.Height);
+            ApplyLayerAlpha(canvas, view, 0, 0, view.Width, view.Height);
+            background.SetBounds(0, 0, view.Width, view.Height);
+            background.Draw(canvas);
+        }
+        finally
+        {
+            background.SetBounds(left, top, right, bottom);
+            canvas.RestoreToCount(checkpoint);
+        }
+    }
+
+    void ApplyLayerAlpha(Canvas canvas, View view, int left, int top, int right, int bottom)
+    {
+        if (view.Alpha >= 0.99f)
+            return;
+
+        _layerPaint.Alpha = (int)(view.Alpha * 255f);
+        canvas.SaveLayer(left, top, right, bottom, _layerPaint);
+    }
+
+    int BackdropStamp()
+    {
+        unchecked
+        {
+            var stamp = _layers.Count;
+            foreach (var layer in _layers)
+            {
+                var view = layer.View;
+                ScreenRect(view, _viewRect);
+                stamp = (stamp * 31) + _viewRect.Left;
+                stamp = (stamp * 31) + _viewRect.Top;
+                stamp = (stamp * 31) + _viewRect.Right;
+                stamp = (stamp * 31) + _viewRect.Bottom;
+                stamp = (stamp * 31) + view.ScrollX;
+                stamp = (stamp * 31) + view.ScrollY;
+                stamp = (stamp * 31) + (int)(view.Alpha * 255f);
+                stamp = (stamp * 31) + (layer.BackgroundOnly ? 1 : 2);
+                if (view.Background is ColorDrawable color)
+                    stamp = (stamp * 31) + color.Color.ToArgb();
+
+                if (view is ViewGroup group)
+                    stamp = (stamp * 31) + group.ChildCount;
+            }
+
+            return stamp;
+        }
+    }
+
+    void ScreenRect(View view, Android.Graphics.Rect dest)
+    {
+        view.GetLocationOnScreen(_screen);
+        dest.Set(_screen[0], _screen[1], _screen[0] + view.Width, _screen[1] + view.Height);
+    }
+
+    bool IntersectsGlaze(View view)
+    {
+        ScreenRect(view, _viewRect);
+        return Android.Graphics.Rect.Intersects(_viewRect, _glazeRect);
+    }
+
+    bool CoversGlaze(View view)
+    {
+        if (!Paints(view) || view.Alpha < 0.99f || view.Background is not ColorDrawable color || color.Alpha != 255)
+            return false;
+
+        ScreenRect(view, _viewRect);
+        return _viewRect.Contains(_glazeRect);
+    }
+
+    bool PaintsBackground(View view)
+    {
+        if (!Paints(view) || view.Background is null)
+            return false;
+
+        return IntersectsGlaze(view);
+    }
+
+    static bool Paints(View view)
+        => view.Visibility == ViewStates.Visible && view.Alpha > 0f && view.Width > 0 && view.Height > 0;
 
     protected override void OnAttachedToWindow()
     {
@@ -321,6 +530,18 @@ sealed class GlazePlatformView : FrameLayout
 
         bitmap.SetPixels(pixels, 0, NoiseTile.Size, 0, 0, NoiseTile.Size, NoiseTile.Size);
         return bitmap;
+    }
+
+    readonly struct BackdropLayer(View view, bool backgroundOnly)
+    {
+        public View View { get; } = view;
+        public bool BackgroundOnly { get; } = backgroundOnly;
+    }
+
+    readonly struct OrderedChild(View view, int index)
+    {
+        public View View { get; } = view;
+        public int Index { get; } = index;
     }
 
     sealed class BackdropListener(GlazePlatformView owner) : Java.Lang.Object, ViewTreeObserver.IOnPreDrawListener
