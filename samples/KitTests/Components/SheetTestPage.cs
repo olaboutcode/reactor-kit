@@ -1,7 +1,7 @@
 namespace KitTests.Components;
 
 /// <summary>
-/// A page sheet, a form sheet, and a player sheet on this page.
+/// A page sheet, a form sheet, a player sheet, and a dismiss-below sheet on this page.
 /// Form sheet inside the page sheet stacks on top of it.
 /// </summary>
 sealed class SheetTestPage : Component<SheetTestPage.PageState>
@@ -19,6 +19,8 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
 
         public bool EdgeOpen { get; set; }
 
+        public bool BelowOpen { get; set; }
+
         public bool MenuOpen { get; set; }
 
         public string Detent { get; set; } = SheetIds.Medium;
@@ -33,6 +35,7 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
                     OpenButton("Form", OpenForm),
                     OpenButton("Player", OpenPlayer),
                     OpenButton("Edge", OpenEdge),
+                    OpenButton("Below", OpenBelow),
                     Label($"Detent {State.Detent}")
                         .TextColor(Ink)
                         .HCenter()
@@ -44,7 +47,8 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
                 PageSheetExample(),
                 FormSheetExample(),
                 MultipleDetentsExample(),
-                EdgeSheetExample()
+                EdgeSheetExample(),
+                BelowSheetExample()
             )
             .Padding(16)
         )
@@ -254,6 +258,28 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
         .IsOpen(State.EdgeOpen)
         .OnDismiss(CloseEdge);
 
+    SheetView BelowSheetExample() =>
+        PageSheet(
+            Grid("auto,*", "*",
+                NavigationBar.Create("Dismiss below")
+                    .OnClose(CloseBelow),
+
+                Label("Drag below 35% of the large height. The sheet closes while the finger is down.")
+                    .FontSize(15)
+                    .TextColor(Ink)
+                    .HorizontalTextAlignment(TextAlignment.Center)
+                    .VCenter()
+                    .GridRow(1)
+            )
+            .RowSpacing(16)
+            .Padding(16)
+        )
+        .Grabber(propValue: true)
+        .CornerRadius(44)
+        .DismissBelow(0.35)
+        .IsOpen(State.BelowOpen)
+        .OnDismiss(CloseBelow);
+
     PopupMenu SheetMenu()
         => PopupMenu()
             .Anchor(MenuButton())
@@ -308,6 +334,7 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
             s.FormOpen = false;
             s.PlayerOpen = false;
             s.EdgeOpen = false;
+            s.BelowOpen = false;
             s.MenuOpen = false;
         });
 
@@ -318,6 +345,7 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
             s.FormOpen = true;
             s.PlayerOpen = false;
             s.EdgeOpen = false;
+            s.BelowOpen = false;
             s.MenuOpen = false;
         });
 
@@ -328,6 +356,7 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
             s.FormOpen = true;
             s.PlayerOpen = false;
             s.EdgeOpen = false;
+            s.BelowOpen = false;
             s.MenuOpen = false;
         });
 
@@ -338,6 +367,7 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
             s.FormOpen = false;
             s.PlayerOpen = true;
             s.EdgeOpen = false;
+            s.BelowOpen = false;
             s.Detent = SheetIds.Medium;
             s.MenuOpen = false;
         });
@@ -349,6 +379,18 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
             s.FormOpen = false;
             s.PlayerOpen = false;
             s.EdgeOpen = true;
+            s.BelowOpen = false;
+            s.MenuOpen = false;
+        });
+
+    void OpenBelow()
+        => SetState(s =>
+        {
+            s.PageOpen = false;
+            s.FormOpen = false;
+            s.PlayerOpen = false;
+            s.EdgeOpen = false;
+            s.BelowOpen = true;
             s.MenuOpen = false;
         });
 
@@ -367,6 +409,7 @@ sealed class SheetTestPage : Component<SheetTestPage.PageState>
     void CloseForm() => SetState(s => s.FormOpen = false);
     void ClosePlayer() => SetState(s => s.PlayerOpen = false);
     void CloseEdge() => SetState(s => s.EdgeOpen = false);
+    void CloseBelow() => SetState(s => s.BelowOpen = false);
 
     private string EventDescription { get; } = 
     @"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed mattis ex sit amet velit gravida, sed suscipit arcu egestas. Curabitur feugiat euismod pharetra. Donec ultrices odio tempor venenatis efficitur. Donec euismod sem vitae erat ultricies varius. Mauris libero risus, rutrum ac iaculis in, semper vitae ligula. Curabitur non metus eu metus accumsan porttitor. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed pulvinar, velit non consectetur bibendum, velit lacus iaculis urna, eget gravida quam nunc quis felis. Duis nec odio nec arcu venenatis blandit ac at lorem. Praesent efficitur, risus nec pharetra maximus, urna nunc laoreet nunc, in ornare quam velit quis odio. Suspendisse tempor nulla sit amet malesuada pulvinar. Integer pretium sapien et tellus dictum, porta dictum lacus laoreet.

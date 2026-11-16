@@ -69,6 +69,8 @@ static class SheetGeometry
         double height,
         double velocityY,
         bool dismissDisabled,
+        double? dismissBelow,
+        double fullHeight,
         out bool dismiss)
     {
         dismiss = false;
@@ -76,9 +78,11 @@ static class SheetGeometry
             return null;
 
         var smallest = rests[0].Height;
-        var belowHalf = height < smallest / 2;
+        var below = dismissBelow is { } fraction
+            ? BelowDismissLine(height, fullHeight, fraction)
+            : height < smallest / 2;
         var flung = velocityY > 1000 && height < smallest;
-        if (!dismissDisabled && (belowHalf || flung))
+        if (!dismissDisabled && (below || flung))
         {
             dismiss = true;
             return null;
@@ -379,6 +383,22 @@ static class SheetGeometry
         }
 
         return null;
+    }
+
+    /// <summary>Clamps a fraction the same way as <see cref="SheetDetent.Fraction"/>.</summary>
+    public static double ClampUnit(double value)
+        => Unit(value);
+
+    /// <summary>
+    /// True when <paramref name="height"/> is under <paramref name="fraction"/> of <paramref name="full"/>.
+    /// Zero matches a collapsed sheet. Any other fraction keeps a release that lands on the line.
+    /// </summary>
+    public static bool BelowDismissLine(double height, double full, double fraction)
+    {
+        if (fraction == 0)
+            return height <= 0;
+
+        return height < fraction * full;
     }
 
     static double Unit(double value)

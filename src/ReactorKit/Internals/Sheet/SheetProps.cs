@@ -23,6 +23,8 @@ sealed class SheetProps
 
     public bool DismissDisabled { get; init; }
 
+    public double? DismissBelow { get; init; }
+
     public bool ScrollingExpands { get; init; } = true;
 
     public bool EdgeAttachedInCompactHeight { get; init; } = true;

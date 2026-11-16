@@ -20,6 +20,7 @@ sealed class SheetAnchor : MauiReactor.ContentView
     string? _undimmedDetent;
     bool _backdropDismiss;
     bool _dismissDisabled;
+    double? _dismissBelow;
     bool _scrollingExpands = true;
     bool _edgeAttached = true;
     bool _widthFollows;
@@ -94,6 +95,12 @@ sealed class SheetAnchor : MauiReactor.ContentView
     public SheetAnchor DismissDisabled(bool disabled)
     {
         _dismissDisabled = disabled;
+        return this;
+    }
+
+    public SheetAnchor DismissBelow(double? fraction)
+    {
+        _dismissBelow = fraction is { } value ? SheetGeometry.ClampUnit(value) : null;
         return this;
     }
 
@@ -261,6 +268,7 @@ sealed class SheetAnchor : MauiReactor.ContentView
             UndimmedDetent = _undimmedDetent,
             BackdropDismiss = _backdropDismiss,
             DismissDisabled = _dismissDisabled,
+            DismissBelow = _dismissBelow,
             ScrollingExpands = _scrollingExpands,
             EdgeAttachedInCompactHeight = _edgeAttached,
             WidthFollowsPreferredSize = _widthFollows,

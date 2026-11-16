@@ -67,7 +67,7 @@ A detent is a height where the sheet rests. The list is smallest to largest. It 
 
 `SelectedDetent` is the id. When it is null or missing from the list, the sheet opens at the largest detent. When the page removes the selected detent, the sheet animates to the nearest remaining one and raises `OnDetentChanged`.
 
-The user can drag the sheet between detents. The drag tracks the finger, and the release snaps to the nearest detent. Pulling down past the smallest detent dismisses the sheet unless `DismissDisabled(true)`.
+The user can drag the sheet between detents. The drag tracks the finger, and the release snaps to the nearest detent. The dismiss line is below. `DismissDisabled(true)` wins over it.
 
 ### Grabber, corner, and width
 
@@ -90,6 +90,20 @@ Set it to a detent id and every detent at or below that height leaves the page b
 `BackdropDismiss` is false. A tap on the dim does not close the sheet, which matches UIKit. True closes it and raises `OnDismiss`. A backdrop tap does nothing while that detent is undimmed, because the tap belongs to the page behind.
 
 `DismissDisabled(true)` ignores the swipe, the backdrop, the platform back gesture, and Escape. The page closes the sheet by setting `IsOpen` false.
+
+`DismissBelow` is null. Null keeps today's release rule. On an edge-attached sheet, a release below half the shortest detent dismisses. On a centered form card, a downward drag of more than half the card height dismisses. A downward flick still dismisses. The flick is a velocity above 1000 points per second. On an edge-attached sheet the card must already be below the shortest detent. On a centered card the drag must already be downward.
+
+```csharp
+PageSheet(body)
+    .DismissBelow(0.35)
+    .OnDismiss(Close);
+```
+
+A value is a fraction of the sheet's full height, in the same 0 to 1 unit as `SheetDetent.Fraction`. For an edge-attached sheet, full height is the large detent. For a centered form card, full height is the card height. The sheet dismisses during the drag, as soon as the height goes below that fraction. The finger does not have to lift. On the centered card, that height is the card height minus the downward travel.
+
+`0` dismisses only when the height is 0. Any other fraction uses a strict less-than, so holding exactly on the line stays. `1` dismisses as soon as the height is below the full height. A number below 0, and a non-finite number, become 0. A number above 1 becomes 1. That is the same clamp as `SheetDetent.Fraction`.
+
+The fraction is not a detent. The sheet does not rest there, and `OnDetentChanged` does not report it. The flick is unchanged. `OnDismiss` still runs once. `DismissDisabled(true)` still ignores the drag.
 
 ### Scrolling
 
@@ -126,6 +140,7 @@ The move between detents and the present and dismiss animations use a spring. `D
 | Undimmed detent | none | none |
 | Backdrop dismiss | false | false |
 | Dismiss disabled | false | false |
+| Dismiss below | null, half the shortest detent | null, half the card height |
 | Scrolling expands | true | true |
 | Edge attached in compact height | true | true |
 | Width follows preferred size | false | the centered card always uses the preferred size |
@@ -147,16 +162,17 @@ Callers add `global using Reactor.Kit.SheetTokens` beside the other kit usings.
 
 `HomePage` opens `SheetTestPage` with `PushModalAsync(animated: false)`. The page closes with `PopModalAsync(animated: false)` through the shared bar. The sheets themselves are overlays on that page. They do not push.
 
-The page has four buttons.
+The page has five buttons.
 
 - "Page" opens a `PageSheet` whose content is a short form. One large detent, no grabber, dimmed page.
 - "Form" opens a `FormSheet` at 540 by 620 on a regular width, and the adapted page sheet on a phone.
 - "Player" opens a `PageSheet` with detents `Fraction("peek", 0.3)`, `Medium`, and `Large`, the grabber visible, and `UndimmedDetent("medium")`.
 - "Edge" opens a large `PageSheet` filled to the card edges. On a phone the dark card meets the bottom of the screen, including the home indicator. The page color does not show through that edge.
+- "Below" opens its own page sheet. One large detent. `DismissBelow(0.35)` closes it during the drag, once the height goes below 35% of the large height. It does not rest at that line.
 
 ## Out of scope
 
-A popover. A full-screen cover, which is `PushModalAsync`. Replacing MAUI modal presentation. A `UISheetPresentationController` or `BottomSheetBehavior` backend. A navigation bar supplied by the sheet. A package version bump until the control merges.
+A popover. A full-screen cover, which is `PushModalAsync`. Replacing MAUI modal presentation. A `UISheetPresentationController` or `BottomSheetBehavior` backend. A navigation bar supplied by the sheet. Changing the default dismiss line. Wiring the expanded player in Inema. A package version bump until the control merges.
 
 ## Done when
 
@@ -170,3 +186,8 @@ A popover. A full-screen cover, which is `PushModalAsync`. Replacing MAUI modal 
 - [ ] `SheetTestPage` shows the page sheet, the form sheet, the player sheet, and the edge sheet.
 - [x] On iOS 26, "Edge" opens a large page sheet whose card meets the bottom of the screen. The page underneath does not show through that edge.
 - [ ] The library and KitTests build for `net10.0` with no warnings. iOS and Android compile. Windows is not required for the first compile on the Mac.
+- [ ] `DismissBelow` null still dismisses an edge-attached sheet below half the shortest detent, and a centered card after a drag of more than half its height. The flick is unchanged.
+- [ ] "Below" uses `DismissBelow(0.35)`. The sheet dismisses during the drag once the height goes below 35% of the large height. It does not rest at that height, and `OnDetentChanged` does not report it.
+- [ ] `DismissDisabled(true)` still ignores that drag.
+- [ ] `DismissBelow(0)` dismisses only when the height is fully collapsed. A value above 1 is clamped to 1.
+- [ ] The library and KitTests build for `net10.0` with no warnings. iOS and Android compile. Windows is not required on the Mac.

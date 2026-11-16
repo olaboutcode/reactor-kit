@@ -18,6 +18,7 @@ public sealed partial class SheetView : Component
     [Prop] private string? _undimmedDetent;
     [Prop] private bool _backdropDismiss;
     [Prop] private bool _dismissDisabled;
+    [Prop] private double? _dismissBelow;
     [Prop] private bool _scrollingExpands = true;
     [Prop] private bool _edgeAttachedInCompactHeight = true;
     [Prop] private bool _widthFollowsPreferredSize;
@@ -58,6 +59,7 @@ public sealed partial class SheetView : Component
             .UndimmedDetent(_undimmedDetent)
             .BackdropDismiss(_backdropDismiss)
             .DismissDisabled(_dismissDisabled)
+            .DismissBelow(_dismissBelow)
             .ScrollingExpands(_scrollingExpands)
             .EdgeAttachedInCompactHeight(_edgeAttachedInCompactHeight)
             .WidthFollowsPreferredSize(_widthFollowsPreferredSize)

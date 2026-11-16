@@ -409,32 +409,57 @@ sealed class SheetSession
 
     void Track(double dy)
     {
-        if (_layout == null)
+        if (_layout == null || _closing)
             return;
 
         if (_layout.Frame.Centered)
         {
             _dragY += dy;
             var card = _layout.Frame.Card;
+            var height = card.Height - Math.Max(0, _dragY - card.Y);
+            if (DragDismisses(height, card.Height))
+            {
+                BeginClose(raise: true);
+                return;
+            }
+
             PresentFrame(Stamp(Copy(_layout.Frame, new Rect(card.X, _dragY, card.Width, card.Height), _layout.Frame.DimOpacity)));
             return;
         }
 
         var largest = _layout.Rests[^1].Height;
         _dragHeight = Math.Clamp(_dragHeight - dy, 0, largest);
+        if (DragDismisses(_dragHeight, _layout.Large))
+        {
+            BeginClose(raise: true);
+            return;
+        }
+
         PresentFrame(CardAt(_dragHeight));
+    }
+
+    bool DragDismisses(double height, double full)
+    {
+        if (_props.DismissDisabled || _props.DismissBelow is not { } fraction)
+            return false;
+
+        return SheetGeometry.BelowDismissLine(height, full, fraction);
     }
 
     void Release(double velocityY)
     {
-        if (_layout == null)
+        if (_layout == null || _closing)
             return;
 
         if (_layout.Frame.Centered)
         {
             var travel = _dragY - _layout.Frame.Card.Y;
             var flung = velocityY > 1000 && travel > 0;
-            if (!_props.DismissDisabled && (travel > _layout.Frame.Card.Height / 2 || flung))
+            var cardHeight = _layout.Frame.Card.Height;
+            var below = _props.DismissBelow is { } fraction
+                ? SheetGeometry.BelowDismissLine(cardHeight - Math.Max(0, travel), cardHeight, fraction)
+                : travel > cardHeight / 2;
+            if (!_props.DismissDisabled && (below || flung))
             {
                 BeginClose(raise: true);
                 return;
@@ -444,7 +469,14 @@ sealed class SheetSession
             return;
         }
 
-        var id = SheetGeometry.Snap(_layout.Rests, _dragHeight, velocityY, _props.DismissDisabled, out var dismiss);
+        var id = SheetGeometry.Snap(
+            _layout.Rests,
+            _dragHeight,
+            velocityY,
+            _props.DismissDisabled,
+            _props.DismissBelow,
+            _layout.Large,
+            out var dismiss);
         if (dismiss)
         {
             BeginClose(raise: true);

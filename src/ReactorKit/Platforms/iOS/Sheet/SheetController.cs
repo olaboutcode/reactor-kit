@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using CoreAnimation;
 using CoreGraphics;
 using Foundation;
 using Microsoft.Maui.Platform;
@@ -28,12 +29,17 @@ sealed class SheetController : UIViewController
     bool _covering;
     bool _edgeArmed;
     int _edgePasses;
+    CADisplayLink? _line;
+    bool _lineClosing;
+    double _restY;
+    double _restHeight;
+    bool _restKnown;
 
     public SheetController()
     {
         _callbacks.Changed = OnDetent;
         _callbacks.Dismissed = OnDismissed;
-        _callbacks.Allow = () => _native?.Props.DismissDisabled != true;
+        _callbacks.Allow = AllowsDismiss;
     }
 
     public void Configure(SheetNative native)
@@ -58,6 +64,7 @@ sealed class SheetController : UIViewController
             ?? throw new InvalidOperationException("The sheet controller is missing.");
         sheet.Delegate = _callbacks;
         Apply(sheet, native);
+        WatchLine();
     }
 
     public void Show(UIViewController presenter)
@@ -117,7 +124,10 @@ sealed class SheetController : UIViewController
             sheet.PrefersGrabberVisible = _native.Props.Grabber;
         }
 
+        RememberRest();
+        ArmDrag();
         _reportDetent = true;
+        WatchLine();
         if (_native?.Props.BackdropDismiss != true || _tap != null)
             return;
 
@@ -412,13 +422,16 @@ sealed class SheetController : UIViewController
     }
 
     static UIView? MessageView(NSObject target, string name)
+        => Message(target, name) as UIView;
+
+    static NSObject? Message(NSObject target, string name)
     {
         var selector = new Selector(name);
         if (!target.RespondsToSelector(selector))
             return null;
 
         var pointer = Objc.SendView(target.Handle, selector.Handle);
-        return pointer == IntPtr.Zero ? null : Runtime.GetNSObject<UIView>(pointer);
+        return pointer == IntPtr.Zero ? null : Runtime.GetNSObject(pointer);
     }
 
     /// <summary>
@@ -623,6 +636,7 @@ sealed class SheetController : UIViewController
         if (_programmatic || !_reportDetent)
             return;
 
+        RememberRest();
         _native?.DetentSettled?.Invoke(id ?? "");
     }
 
@@ -637,6 +651,9 @@ sealed class SheetController : UIViewController
         _appliedSelected = null;
         _appliedUndimmed = null;
         _reportDetent = false;
+        _restKnown = false;
+        _lineClosing = false;
+        StopLine();
         if (_tap != null)
         {
             _tap.View?.RemoveGestureRecognizer(_tap);
@@ -644,6 +661,157 @@ sealed class SheetController : UIViewController
         }
 
         _native?.Dismissed?.Invoke();
+    }
+
+    bool AllowsDismiss()
+    {
+        if (_native == null || _native.Props.DismissDisabled)
+            return false;
+
+        // UIKit asks before the card moves. Refusing here cancels the drag.
+        // The fraction closes the sheet from the drag itself.
+        return true;
+    }
+
+    void WatchLine()
+    {
+        if (_native?.Props.DismissBelow is null || _dismissNotified)
+        {
+            StopLine();
+            return;
+        }
+
+        if (_line != null)
+            return;
+
+        _line = CADisplayLink.Create(OnLine);
+        _line.AddToRunLoop(NSRunLoop.Main, NSRunLoopMode.Common);
+    }
+
+    void StopLine()
+    {
+        _line?.Invalidate();
+        _line = null;
+    }
+
+    void OnLine()
+    {
+        if (_lineClosing || _dismissNotified || !_reportDetent)
+            return;
+
+        if (_native?.Props.DismissBelow is not { } fraction || _native.Props.DismissDisabled)
+            return;
+
+        if (SheetPresentationController is not UISheetPresentationController sheet || !ReadBool(sheet, "_isDragging"))
+            return;
+
+        if (!TryMeasure(out var height, out var full, out _, out _))
+            return;
+
+        if (!SheetGeometry.BelowDismissLine(height, full, fraction))
+            return;
+
+        FinishDrag(sheet);
+    }
+
+    void FinishDrag(UISheetPresentationController sheet)
+    {
+        _lineClosing = true;
+        // DismissViewController leaves this gesture in charge until the finger lifts.
+        var transition = Message(sheet, "_interactionController") as UIPercentDrivenInteractiveTransition;
+        transition?.FinishInteractiveTransition();
+        var drag = Message(sheet, "_sheetInteraction");
+        if (drag != null)
+            SendBool(drag, "setEnabled:", false);
+
+        if (transition != null)
+        {
+            this.GetTransitionCoordinator()?.AnimateAlongsideTransition(static _ => { }, EndDrag);
+            return;
+        }
+
+        DismissViewController(true, OnDismissed);
+    }
+
+    void EndDrag(IUIViewControllerTransitionCoordinatorContext context)
+    {
+        if (context.IsCancelled)
+        {
+            _lineClosing = false;
+            ArmDrag();
+            return;
+        }
+
+        OnDismissed();
+    }
+
+    void ArmDrag()
+    {
+        if (SheetPresentationController is not UISheetPresentationController sheet)
+            return;
+
+        var drag = Message(sheet, "_sheetInteraction");
+        if (drag != null)
+            SendBool(drag, "setEnabled:", true);
+    }
+
+    void RememberRest()
+    {
+        if (!TryBox(out var box, out _))
+            return;
+
+        _restY = box.Y;
+        _restHeight = box.Height;
+        _restKnown = _restHeight > 0;
+    }
+
+    bool TryMeasure(out double height, out double full, out double travel, out bool centered)
+    {
+        height = 0;
+        full = 0;
+        travel = 0;
+        centered = _native?.Layout.Frame.Centered == true;
+        if (_native == null || !TryBox(out var box, out var container))
+            return false;
+
+        if (centered)
+        {
+            if (!_restKnown || _restHeight <= 0)
+                return false;
+
+            full = _restHeight;
+            travel = box.Y - _restY;
+            height = _restHeight - Math.Max(0, travel);
+            return true;
+        }
+
+        full = _native.Layout.Large;
+        if (full <= 0 || box.Height <= 1)
+            return false;
+
+        var visible = Math.Max(0, container.Bounds.Height - box.Y);
+        height = Math.Min(box.Height, visible);
+        return true;
+    }
+
+    bool TryBox(out CGRect box, out UIView container)
+    {
+        box = CGRect.Empty;
+        container = null!;
+        var host = PresentationController?.ContainerView;
+        if (host == null)
+            return false;
+
+        container = host;
+        // The drop shadow is the view UIKit moves. Its presentation layer lags that frame.
+        var presented = PresentationController?.PresentedView;
+        var shadow = SheetPresentationController is UISheetPresentationController sheet ? DropShadow(sheet) : null;
+        var view = shadow ?? presented;
+        if (view == null)
+            return false;
+
+        box = view.ConvertRectToView(view.Bounds, host);
+        return box.Height > 1;
     }
 
     sealed class SheetCallbacks : UISheetPresentationControllerDelegate
