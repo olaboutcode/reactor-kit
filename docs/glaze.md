@@ -45,13 +45,43 @@ The page has to stay attached. `PushModalAsync` leaves it in place. A `Navigatio
 | `TintOpacity` | `0.28` | Requested wash. A light color is eased down, so `#F3F3F3` lands near 6% where a material already veils the backlight. A dark color stays near 25%. |
 | `BlurRadius` | `8`, or `32` on Android | On iOS and Mac Catalyst, any value above 0 turns the system material on. On Android this is the blur in dp. |
 | `NoiseOpacity` | `0.015` | Fine dusting over the wash. |
-| `Stroke` | white, alpha 46 | Hairline color. |
+| `Stroke` | white, alpha 46 | Solid hairline. A linear gradient replaces that color. |
 | `StrokeThickness` | `1` | Hairline width, in dp. `0` draws nothing. |
 | `CornerRadius` | `0` | Rounds the panel. The caller's shadow follows this corner. |
 
 On Android the material fill, in addition to the wash, is `#F3F3F3` at 44% in light mode and `#1C1C1E` at 55% in dark mode. The fallback wash, when blur is unavailable, is at least 76%.
 
 A shadow is the caller's `Shadow`. This view does not add one.
+
+### Stroke
+
+`Stroke(Color)` stays. It stores that color as a solid brush and paints the hairline that platform paints today. `Stroke(Func<Color>)` stays. `Stroke(Brush)` accepts a `LinearGradientBrush`. `Stroke(Func<Brush>)` sits beside it. Both `Func` methods take `IComponentWithState? state = null`.
+
+The native stroke is a `Brush`. The default is a solid brush of white at alpha 46. A null brush paints that default. A `SolidColorBrush` paints its color as that same solid hairline. A radial gradient, or any other brush, paints the default solid hairline.
+
+A `StrokeThickness` of `0` draws nothing, for a solid color and for a gradient.
+
+A linear gradient draws that same hairline. The path is inset by half `StrokeThickness` and follows `CornerRadius`. The gradient is mapped across the panel. `(0, 0)` is the top left of the panel. `(1, 1)` is the bottom right. Offset `0` sits on `StartPoint`. Offset `1` sits on `EndPoint`. Stops between are placed by their offset. Stop colors keep their alpha. `TintOpacity` does not scale the stroke.
+
+A `LinearGradientBrush` that omits the points uses the MAUI defaults, `StartPoint` `(0, 0)` and `EndPoint` `(1, 1)`. A brush with fewer than two stops draws nothing. The paint pads: the end stops hold past the segment. Reflect and repeat are out of scope and still pad.
+
+iOS, Mac Catalyst, Android, and Windows all paint the gradient. A solid color keeps the path that platform already uses.
+
+```csharp
+.Stroke(new LinearGradientBrush
+{
+    StartPoint = new Point(0, 0.5),
+    EndPoint = new Point(1, 0.5),
+    GradientStops =
+    {
+        new GradientStop(Color.FromRgba(255, 255, 255, 46), 0),
+        new GradientStop(Color.FromArgb("#3D7EFF"), 1),
+    },
+})
+.StrokeThickness(2)
+```
+
+The README `Stroke` row keeps the default, white at 18%. Its role says a color is a solid line, and a linear gradient runs from `StartPoint` to `EndPoint`.
 
 ## Files
 
@@ -70,13 +100,13 @@ A shadow is the caller's `Shadow`. This view does not add one.
 
 `GlazeTestPage` is the glaze sample. `HomePage` opens it with `PushModalAsync(animated: false)`. The page closes with `PopModalAsync(animated: false)` through `NavigationBar`. It is not opened with `PushAsync`.
 
-The page scrolls colored lines. A glaze banner at the top overlaps that scroll and has no opaque plate of its own, so the lines stay visible in the banner while they move. An opaque bar, the page background color, sits above the scroll and does not overlap it. A fully rounded `GlazeView` sits on that bar. Scrolling the lines does not paint them into that circle. The circle stays the bar color, plus the wash, the noise, and the hairline.
+The page scrolls colored lines. The centered stack holds an opaque bar, the round plus, the glaze text button, the entry panel, and the dark title panel. The round glaze sits on that opaque bar. The mica buttons stay on `MicaTestPage`.
 
-The centered samples stay: the round plus, the glaze text button, the entry panel, and the dark title panel.
+The dark title panel's hairline is a linear gradient. `StartPoint` is `(0, 0.5)` and `EndPoint` is `(1, 0.5)`. Offset `0` is white at alpha 46. Offset `1` is `#3D7EFF`. `StrokeThickness` is `2`. `CornerRadius` stays `22`. The other panels keep the default solid hairline.
 
 ## Out of scope
 
-`MicaView`. A new public button type. Replacing the iOS material. A package version bump.
+`MicaView`. A radial gradient. Animating the gradient stops. Reflect and repeat spread. A new public button type. Replacing the iOS material. A package version bump.
 
 ## Done when
 
@@ -85,3 +115,9 @@ The centered samples stay: the round plus, the glaze text button, the entry pane
 - [x] On iOS, both of those layouts match the behavior they have today.
 - [x] The child of the panel is sharp. Tint, noise, stroke, and corner are unchanged.
 - [x] The library and KitTests build for `net10.0` with no warnings. Android compiles. iOS compiles when the shared glaze files change. Windows is not required on the Mac.
+- [ ] `Stroke(Color)` still paints the solid hairline it paints today, on iOS and on Android.
+- [ ] A left-to-right `LinearGradientBrush` paints that same rounded hairline on iOS, on Android, and on Mac Catalyst.
+- [ ] `StrokeThickness` of `0` draws no gradient.
+- [ ] A radial brush paints the default solid hairline.
+- [ ] The dark title panel on `GlazeTestPage` shows the sample gradient above.
+- [ ] The library and KitTests build for `net10.0` with no warnings. Android compiles. iOS compiles. Windows is not required on the Mac.

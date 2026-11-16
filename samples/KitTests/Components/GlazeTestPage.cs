@@ -67,7 +67,18 @@ sealed class GlazeTestPage : Component
                     .Spacing(16))
                 .Padding(16)
                 .CornerRadius(22)
-                .TintColor(Color.FromArgb("#1C1C1E")))
+                .TintColor(Color.FromArgb("#1C1C1E"))
+                .Stroke(new LinearGradientBrush
+                {
+                    StartPoint = new Point(0, 0.5),
+                    EndPoint = new Point(1, 0.5),
+                    GradientStops =
+                    {
+                        new GradientStop(Color.FromRgba(255, 255, 255, 46), 0),
+                        new GradientStop(Color.FromArgb("#3D7EFF"), 1),
+                    },
+                })
+                .StrokeThickness(2))
             .Spacing(16)
             .Padding(8)
             .Center();

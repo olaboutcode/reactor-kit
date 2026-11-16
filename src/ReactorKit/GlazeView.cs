@@ -45,11 +45,24 @@ public sealed class GlazeView : MauiReactor.ContentView
     public GlazeView NoiseOpacity(Func<double> opacity, IComponentWithState? state = null)
         => this.Set(NativeGlaze.NoiseOpacityProperty, new PropertyValue<double>(opacity, state));
 
-    public GlazeView Stroke(Color color)
-        => this.Set(NativeGlaze.StrokeProperty, color);
+    /// <summary>Paints the hairline with a solid color.</summary>
+    public GlazeView Stroke(Color? color)
+        => this.Set(NativeGlaze.StrokeProperty, Solid(color));
 
+    /// <summary>Paints the hairline from a color the page owns.</summary>
     public GlazeView Stroke(Func<Color> color, IComponentWithState? state = null)
-        => this.Set(NativeGlaze.StrokeProperty, new PropertyValue<Color>(color, state));
+        => this.Set(NativeGlaze.StrokeProperty, new PropertyValue<Brush>(() => Solid(color()), state));
+
+    /// <summary>Paints the hairline with a linear gradient. Any other brush stays the default solid line.</summary>
+    public GlazeView Stroke(Brush? brush)
+        => this.Set(NativeGlaze.StrokeProperty, brush);
+
+    /// <summary>Paints the hairline from a brush the page owns.</summary>
+    public GlazeView Stroke(Func<Brush> brush, IComponentWithState? state = null)
+        => this.Set(NativeGlaze.StrokeProperty, new PropertyValue<Brush>(brush, state));
+
+    static SolidColorBrush Solid(Color? color)
+        => color is null ? Internals.Glaze.GlazeTokens.StrokeBrush : new SolidColorBrush(color);
 
     public GlazeView StrokeThickness(double thickness, RxDoubleAnimation? animation = null)
         => Animate(NativeGlaze.StrokeThicknessProperty, thickness, animation);

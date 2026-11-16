@@ -49,6 +49,8 @@ internal static class GlazeTokens
 
     public static readonly Color Stroke = Color.FromRgba(255, 255, 255, 46);
 
+    public static readonly SolidColorBrush StrokeBrush = new(Stroke);
+
     /// <summary>
     /// A white wash at <paramref name="opacity"/> covers the blur. A dark wash does not.
     /// Ease high-luminance tints so both stay glassy. A material backlight already veils,

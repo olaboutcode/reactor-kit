@@ -18,7 +18,7 @@ internal sealed class GlazeView : ContentView
         nameof(NoiseOpacity), typeof(double), typeof(GlazeView), (double)GlazeTokens.NoiseOpacity);
 
     public static readonly BindableProperty StrokeProperty = BindableProperty.Create(
-        nameof(Stroke), typeof(Color), typeof(GlazeView), GlazeTokens.Stroke);
+        nameof(Stroke), typeof(Brush), typeof(GlazeView), GlazeTokens.StrokeBrush);
 
     public static readonly BindableProperty StrokeThicknessProperty = BindableProperty.Create(
         nameof(StrokeThickness), typeof(double), typeof(GlazeView), 1d);
@@ -50,9 +50,9 @@ internal sealed class GlazeView : ContentView
         set => SetValue(NoiseOpacityProperty, value);
     }
 
-    public Color Stroke
+    public Brush? Stroke
     {
-        get => (Color)GetValue(StrokeProperty);
+        get => (Brush?)GetValue(StrokeProperty);
         set => SetValue(StrokeProperty, value);
     }
 

@@ -86,10 +86,7 @@ sealed class GlazePlatformView : FrameLayout
         ApplyMaterial();
         _tint.SetBackgroundColor(view.TintColor.WithAlpha((float)tintOpacity).ToPlatform());
         _noise.Alpha = (float)view.NoiseOpacity;
-        _stroke.Radius = _corner;
-        _stroke.Paint.StrokeWidth = strokeWidth;
-        _stroke.Paint.Color = view.Stroke.ToPlatform();
-        _stroke.Invalidate();
+        _stroke.SetModel(GlazeStroke.From(view.Stroke), strokeWidth, _corner);
 
         OutlineProvider = _corner > 0 ? new RoundOutline(_corner) : null;
         ClipToOutline = _corner > 0;
@@ -555,24 +552,99 @@ sealed class GlazePlatformView : FrameLayout
 
     sealed class StrokeView : View
     {
+        readonly Paint _paint = new() { AntiAlias = true };
+        GlazeStroke _model;
+        Shader? _shader;
+        int _modelGeneration;
+        int _shaderGeneration = -1;
+        int _shaderWidth;
+        int _shaderHeight;
+        float _radius;
+
         public StrokeView(Android.Content.Context context) : base(context)
         {
             SetWillNotDraw(false);
             Clickable = false;
-            Paint.SetStyle(Paint.Style.Stroke);
+            _paint.SetStyle(Paint.Style.Stroke);
         }
 
-        public Paint Paint { get; } = new() { AntiAlias = true };
+        public void SetModel(GlazeStroke stroke, float widthPx, float radiusPx)
+        {
+            _model = stroke;
+            _modelGeneration++;
+            _radius = radiusPx;
+            var drawGradient = stroke.IsGradient && stroke.Stops.Length >= 2 && widthPx > 0;
+            var drawSolid = !stroke.IsGradient && widthPx > 0;
+            _paint.StrokeWidth = drawGradient || drawSolid ? widthPx : 0;
+            if (!drawGradient)
+            {
+                ReplaceShader(null);
+                if (drawSolid)
+                    _paint.Color = stroke.Solid.ToPlatform();
+            }
 
-        public float Radius { get; set; }
+            Invalidate();
+        }
 
         protected override void OnDraw(Canvas canvas)
         {
-            if (Paint.StrokeWidth <= 0)
+            if (_paint.StrokeWidth <= 0)
                 return;
 
-            var inset = Paint.StrokeWidth / 2f;
-            canvas.DrawRoundRect(new RectF(inset, inset, Width - inset, Height - inset), Radius, Radius, Paint);
+            if (_model.IsGradient)
+            {
+                if (_model.Stops.Length < 2 || !EnsureShader())
+                    return;
+            }
+
+            var inset = _paint.StrokeWidth / 2f;
+            canvas.DrawRoundRect(new RectF(inset, inset, Width - inset, Height - inset), _radius, _radius, _paint);
+        }
+
+        bool EnsureShader()
+        {
+            var width = Width;
+            var height = Height;
+            if (width <= 0 || height <= 0)
+                return false;
+
+            if (_shader is not null && _shaderGeneration == _modelGeneration && _shaderWidth == width && _shaderHeight == height)
+                return true;
+
+            var stops = _model.Stops;
+            var colors = new int[stops.Length];
+            var positions = new float[stops.Length];
+            for (var i = 0; i < stops.Length; i++)
+            {
+                colors[i] = stops[i].Color.ToPlatform().ToArgb();
+                positions[i] = stops[i].Offset;
+            }
+
+            var x0 = (float)(_model.Start.X * width);
+            var y0 = (float)(_model.Start.Y * height);
+            var x1 = (float)(_model.End.X * width);
+            var y1 = (float)(_model.End.Y * height);
+            if (Math.Abs(x1 - x0) < 0.01f && Math.Abs(y1 - y0) < 0.01f)
+                x1 = x0 + 0.01f;
+
+            if (Shader.TileMode.Clamp is not { } tile)
+                return false;
+
+            ReplaceShader(new LinearGradient(x0, y0, x1, y1, colors, positions, tile));
+            _paint.Color = Android.Graphics.Color.White;
+            _shaderGeneration = _modelGeneration;
+            _shaderWidth = width;
+            _shaderHeight = height;
+            return true;
+        }
+
+        void ReplaceShader(Shader? shader)
+        {
+            var previous = _shader;
+            _shader = shader;
+            _paint.SetShader(shader);
+            if (!ReferenceEquals(previous, shader))
+                previous?.Dispose();
         }
     }
 
