@@ -14,7 +14,7 @@ Do these in order. Stop after the design doc.
 4. Write the design doc at `docs/<name>.md`.
 5. Stop. Show the doc and wait for approval.
 
-Do not add the component, the factory, the test page, or a README section before approval. Leave the Done when boxes unchecked. Do not open a pull request, and do not write Fixes or Closes, until asked. Do not bump `Version` or tag.
+Do not add the component, the factory, the test page, or a README section before approval. Leave the Done when boxes unchecked. Do not open a pull request, and do not write Fixes or Closes, until asked. Do not bump `Version` or tag. Follow Push before the branch is pushed.
 
 After approval, update `README.md`, the main doc, with the new component. The steps are in After approval.
 
@@ -34,7 +34,15 @@ The issue is the plan. This doc is the spec. Do not change the control before ap
 
 After approval, implement the spec on that branch. Update `README.md`, the main doc, and `docs/<name>.md` so both match the change. Show the result and wait. When asked for a tweak, make that change, update `README.md` and the spec, and wait again. Do not commit during that wait.
 
-When the implementation is approved, commit and push that branch. Do not push `main`. The message has an imperative subject, a blank line, and paragraphs. Say what was built and what was not run. Do not use Fixes or Closes. Do not merge unless asked.
+When the implementation is approved, commit and push that branch. Do not push `main`. The message has an imperative subject, a blank line, and paragraphs. Say what was built and what was not run. Do not use Fixes or Closes. Do not merge unless asked. Follow Push before the branch is pushed.
+
+## Push
+
+`README.md` matches the change before the push. The README is the main doc.
+
+If the commits on the branch leave the README behind, make one more commit that updates it, then push. Make that docs commit without stopping for approval. When the behavior changed, that commit also updates `docs/<name>.md`.
+
+Do not push `main`. Do not merge unless asked.
 
 ## Design doc
 
