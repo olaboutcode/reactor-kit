@@ -11,6 +11,8 @@ using Border = Microsoft.UI.Xaml.Controls.Border;
 using Image = Microsoft.UI.Xaml.Controls.Image;
 using Color = Windows.UI.Color;
 using WCornerRadius = Microsoft.UI.Xaml.CornerRadius;
+using WGradientStop = Microsoft.UI.Xaml.Media.GradientStop;
+using WLinearGradientBrush = Microsoft.UI.Xaml.Media.LinearGradientBrush;
 
 namespace Reactor.Kit.Internals.Glaze;
 
@@ -65,8 +67,7 @@ sealed class GlazePlatformView : Grid
         _panel.CornerRadius = new WCornerRadius(view.CornerRadius);
         _stroke.RadiusX = view.CornerRadius;
         _stroke.RadiusY = view.CornerRadius;
-        _stroke.Stroke = new SolidColorBrush(ToWindowsColor(view.Stroke));
-        _stroke.StrokeThickness = view.StrokeThickness;
+        ApplyStroke(GlazeStroke.From(view.Stroke), view.StrokeThickness);
         InvalidateArrange();
     }
 
@@ -118,6 +119,40 @@ sealed class GlazePlatformView : Grid
             layout.CrossPlatformArrange(new Microsoft.Maui.Graphics.Rect(0, 0, finalSize.Width, finalSize.Height));
 
         return finalSize;
+    }
+
+    void ApplyStroke(GlazeStroke stroke, double thickness)
+    {
+        if (stroke.IsGradient && (stroke.Stops.Length < 2 || thickness <= 0))
+        {
+            _stroke.StrokeThickness = 0;
+            return;
+        }
+
+        _stroke.StrokeThickness = thickness;
+        _stroke.Stroke = stroke.IsGradient
+            ? WindowsGradient(stroke)
+            : new SolidColorBrush(ToWindowsColor(stroke.Solid));
+    }
+
+    static WLinearGradientBrush WindowsGradient(GlazeStroke stroke)
+    {
+        var brush = new WLinearGradientBrush
+        {
+            MappingMode = BrushMappingMode.RelativeToBoundingBox,
+            StartPoint = new Windows.Foundation.Point(stroke.Start.X, stroke.Start.Y),
+            EndPoint = new Windows.Foundation.Point(stroke.End.X, stroke.End.Y),
+        };
+        foreach (var stop in stroke.Stops)
+        {
+            brush.GradientStops.Add(new WGradientStop
+            {
+                Color = ToWindowsColor(stop.Color),
+                Offset = stop.Offset,
+            });
+        }
+
+        return brush;
     }
 
     static Color ToWindowsColor(Microsoft.Maui.Graphics.Color color) =>

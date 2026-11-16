@@ -128,7 +128,7 @@ List of available components.
 | `TintOpacity` | `0.28` | Requested wash. A light color is eased down, so `#F3F3F3` lands near 6% where a material already veils the backlight. A dark color stays near 25%. |
 | `BlurRadius` | `8`, or `32` on Android | On iOS and Mac Catalyst, any value above 0 turns the system material on. `0` turns it off. On Android this is the blur in dp. Setting it yourself overrides the platform default. |
 | `NoiseOpacity` | `0.015` | Fine dusting over the wash. |
-| `Stroke` | white at 18% | Hairline color. |
+| `Stroke` | white at 18% | Hairline. A color is a solid line. A linear gradient runs from `StartPoint` to `EndPoint`. |
 | `StrokeThickness` | `1` | Hairline width, in dp. |
 | `CornerRadius` | `0` | Rounds the panel. The shadow follows this corner. |
 

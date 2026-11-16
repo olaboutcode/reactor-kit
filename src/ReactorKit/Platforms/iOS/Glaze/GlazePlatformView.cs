@@ -1,4 +1,6 @@
+using CoreAnimation;
 using CoreGraphics;
+using Foundation;
 using Microsoft.Maui.Platform;
 using UIKit;
 
@@ -11,7 +13,16 @@ sealed class GlazePlatformView : UIView
     readonly UIView _tint;
     readonly UIImageView _noise;
     readonly UIView _stroke;
+    readonly CAGradientLayer _gradient = new();
+    readonly CAShapeLayer _gradientMask = new()
+    {
+        FillColor = UIColor.Clear.CGColor,
+        StrokeColor = UIColor.White.CGColor,
+        LineJoin = CAShapeLayer.JoinRound,
+    };
     UIView? _content;
+    bool _gradientStroke;
+    nfloat _gradientWidth;
     static UIImage? _noiseImage;
 
     public GlazePlatformView()
@@ -43,6 +54,9 @@ sealed class GlazePlatformView : UIView
             UserInteractionEnabled = false,
             BackgroundColor = UIColor.Clear,
         };
+        _gradient.Mask = _gradientMask;
+        _gradient.Hidden = true;
+        _stroke.Layer.AddSublayer(_gradient);
 
         AddSubview(_clip);
         _clip.AddSubview(_blur);
@@ -62,9 +76,38 @@ sealed class GlazePlatformView : UIView
         _tint.BackgroundColor = view.TintColor.ToPlatform();
         _tint.Alpha = GlazeTokens.WashOpacity(view.TintColor, view.TintOpacity, GlazeTokens.OverSystemMaterial);
         _noise.Alpha = (nfloat)view.NoiseOpacity;
-        _stroke.Layer.BorderColor = view.Stroke.ToPlatform().CGColor;
-        _stroke.Layer.BorderWidth = (nfloat)view.StrokeThickness;
+        ApplyStroke(GlazeStroke.From(view.Stroke), (nfloat)view.StrokeThickness);
         SetNeedsLayout();
+    }
+
+    void ApplyStroke(GlazeStroke stroke, nfloat thickness)
+    {
+        _gradientStroke = stroke.IsGradient && stroke.Stops.Length >= 2 && thickness > 0;
+        if (!_gradientStroke)
+        {
+            _gradient.Hidden = true;
+            _gradientWidth = 0;
+            _stroke.Layer.BorderWidth = stroke.IsGradient ? 0 : thickness;
+            if (!stroke.IsGradient)
+                _stroke.Layer.BorderColor = stroke.Solid.ToPlatform().CGColor;
+            return;
+        }
+
+        _stroke.Layer.BorderWidth = 0;
+        _gradientWidth = thickness;
+        _gradient.Hidden = false;
+        var colors = new CGColor[stroke.Stops.Length];
+        var locations = new NSNumber[stroke.Stops.Length];
+        for (var i = 0; i < stroke.Stops.Length; i++)
+        {
+            colors[i] = stroke.Stops[i].Color.ToPlatform().CGColor;
+            locations[i] = NSNumber.FromNFloat(stroke.Stops[i].Offset);
+        }
+
+        _gradient.Colors = colors;
+        _gradient.Locations = locations;
+        _gradient.StartPoint = new CGPoint(stroke.Start.X, stroke.Start.Y);
+        _gradient.EndPoint = new CGPoint(stroke.End.X, stroke.End.Y);
     }
 
     public void SetContent(UIView? child)
@@ -100,14 +143,38 @@ sealed class GlazePlatformView : UIView
         _tint.Frame = _clip.Bounds;
         _noise.Frame = _clip.Bounds;
         _stroke.Frame = _clip.Bounds;
-        var inset = _stroke.Layer.BorderWidth / 2f;
+        var width = _gradientStroke ? _gradientWidth : _stroke.Layer.BorderWidth;
+        var inset = width / 2f;
         _stroke.Layer.CornerRadius = (nfloat)Math.Max(0, Layer.CornerRadius - inset);
+        if (_gradientStroke)
+            LayoutGradient(inset);
         Layer.ShadowPath = Bounds.IsEmpty
             ? null
             : UIBezierPath.FromRoundedRect(Bounds, Layer.CornerRadius).CGPath;
 
         if (VirtualView is ICrossPlatformLayout layout)
             layout.CrossPlatformArrange(Bounds.ToRectangle());
+    }
+
+    void LayoutGradient(nfloat inset)
+    {
+        _gradient.Frame = _stroke.Bounds;
+        _gradientMask.Frame = _stroke.Bounds;
+        var bounds = _stroke.Bounds;
+        var rect = new CGRect(
+            bounds.X + inset,
+            bounds.Y + inset,
+            Math.Max(0, bounds.Width - _gradientWidth),
+            Math.Max(0, bounds.Height - _gradientWidth));
+        if (rect.Width <= 0 || rect.Height <= 0)
+        {
+            _gradientMask.Path = null;
+            return;
+        }
+
+        var radius = (nfloat)Math.Max(0, Layer.CornerRadius - inset);
+        _gradientMask.Path = UIBezierPath.FromRoundedRect(rect, radius).CGPath;
+        _gradientMask.LineWidth = _gradientWidth;
     }
 
     static UIImage NoiseImage()
