@@ -125,7 +125,6 @@ Shared code decides the rectangle from the style, the detents, the size class, t
 |---|---|
 | iOS 15+ and Mac Catalyst 17+ | The current page's `UIView` |
 | Android 21+ | The current activity content root |
-| Windows 10.0.17763+ | The current page's native root, in the tree, not compiled on the Mac |
 
 The move between detents and the present and dismiss animations use a spring. `Duration` is 350 milliseconds. `Easing` is `CubicOut`.
 
@@ -152,9 +151,9 @@ The move between detents and the present and dismiss animations use a spring. `D
 - `src/ReactorKit/SheetView.cs` is the public node. `PageSheet` and `FormSheet` are factories on `Reactor.Kit.Extensions`, next to `GlazeView`.
 - `src/ReactorKit/SheetTokens/` holds `SheetStyle`, `SheetDetent`, and the detent id constants. Namespace `Reactor.Kit.SheetTokens`.
 - `src/ReactorKit/Internals/Sheet/` holds the presenter and the detent math. Namespace `Reactor.Kit.Internals.Sheet`.
-- `Platforms/iOS/Sheet/`, `Platforms/Android/Sheet/`, and `Platforms/Windows/Sheet/` insert the layer. The iOS folder is shared with Mac Catalyst the same way glaze is.
+- `Platforms/iOS/Sheet/` and `Platforms/Android/Sheet/` insert the layer. The iOS folder is shared with Mac Catalyst the same way glaze is. Windows has no sheet layer in the tree.
 - `UseReactorKit()` does not need a new flag when the presenter is created by the view rather than a handler.
-- The README gets a short Sheet section: one sentence, the page-sheet example, the bottom-sheet example, and the supported platforms. Detent math stays in this document.
+- The README has a short Sheet section: one sentence, a properties table, the page-sheet example with `DismissBelow`, the bottom-sheet example, and the supported platforms. Detent math stays in this document.
 
 Callers add `global using Reactor.Kit.SheetTokens` beside the other kit usings.
 
@@ -183,7 +182,7 @@ A popover. A full-screen cover, which is `PushModalAsync`. Replacing MAUI modal 
 - [ ] `Grabber(true)` draws the pill. `UndimmedDetent` leaves the page behind interactive at that detent and below, and dims it above.
 - [ ] `ScrollingExpands(false)` scrolls the content instead of growing the sheet. Dragging the grabber still changes detents.
 - [ ] The page can set `SelectedDetent` and the sheet animates there. A user drag raises `OnDetentChanged` and does not call `SetState`.
-- [ ] `SheetTestPage` shows the page sheet, the form sheet, the player sheet, and the edge sheet.
+- [ ] `SheetTestPage` shows the page sheet, the form sheet, the player sheet, the edge sheet, and the below sheet.
 - [x] On iOS 26, "Edge" opens a large page sheet whose card meets the bottom of the screen. The page underneath does not show through that edge.
 - [ ] The library and KitTests build for `net10.0` with no warnings. iOS and Android compile. Windows is not required for the first compile on the Mac.
 - [ ] `DismissBelow` null still dismisses an edge-attached sheet below half the shortest detent, and a centered card after a drag of more than half its height. The flick is unchanged.

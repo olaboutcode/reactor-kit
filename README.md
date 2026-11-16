@@ -38,6 +38,7 @@ A library of custom controls for [MauiReactor](https://github.com/adospace/react
     - [Properties](#properties-7)
     - [Supported platforms](#supported-platforms-7)
   - [Sheet](#sheet)
+    - [Properties](#properties-8)
     - [Supported platforms](#supported-platforms-8)
 - [Handlers](#handlers)
   - [BorderlessEntry](#borderlessentry)
@@ -580,6 +581,31 @@ TimelineView(steps => steps
 ### Sheet
 
 `SheetView` is one sheet on the current page. `PageSheet` and `FormSheet` are that view. `DismissBelow` closes it during the drag once the height goes below a fraction of the full height. Detents and the dismiss line are in [docs/sheet.md](docs/sheet.md).
+
+#### Properties
+
+| Member | Default | Role |
+|---|---|---|
+| `Style` | `Page` on `PageSheet`, `Form` on `FormSheet` | Page card or form card. |
+| `IsOpen` | `false` | The page's open flag. The sheet does not call `SetState`. |
+| `Detents` | `Large` on a page sheet. None on a form sheet until a compact width, then `Large`. | Resting heights, shortest to tallest. |
+| `SelectedDetent` | none | Opens at the largest detent. Setting it animates there. |
+| `Grabber` | `false` | The drag pill. |
+| `CornerRadius` | `10` | Null keeps 10. Top corners on an edge card, every corner on a centered card. |
+| `UndimmedDetent` | none | Largest detent that leaves the page behind bright and interactive. |
+| `BackdropDismiss` | `false` | A tap on the dim closes the sheet. |
+| `DismissDisabled` | `false` | True ignores the swipe, the backdrop, the platform back gesture, and Escape. |
+| `DismissBelow` | none | Fraction of the full height, from 0 to 1. Null keeps the release rule. A value closes during the drag. |
+| `ScrollingExpands` | `true` | A scroll at the top edge grows the sheet. |
+| `EdgeAttachedInCompactHeight` | `true` | Attaches to the bottom edge when the height is compact. |
+| `WidthFollowsPreferredSize` | `false` | An edge sheet on a regular width uses `PreferredWidth`. |
+| `PageSizing` | `true` on `PageSheet`, `false` on `FormSheet` | A regular-width page sheet uses a readable width. |
+| `PreferredWidth` | `540` | Form card width, and an edge sheet when width follows the preferred size. |
+| `PreferredHeight` | `620` | Form card height on a regular width. |
+| `Duration` | `350` | Milliseconds. |
+| `Easing` | `CubicOut` | |
+| `OnDismiss` | none | Raised once when the sheet closes. Setting `IsOpen` false does not raise it. |
+| `OnDetentChanged` | none | Raised when a drag settles on a different detent. The fraction is not a detent. |
 
 ```csharp
 PageSheet(
