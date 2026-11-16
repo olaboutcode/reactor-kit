@@ -37,6 +37,8 @@ A library of custom controls for [MauiReactor](https://github.com/adospace/react
   - [Timeline](#timeline)
     - [Properties](#properties-7)
     - [Supported platforms](#supported-platforms-7)
+  - [Sheet](#sheet)
+    - [Supported platforms](#supported-platforms-8)
 - [Handlers](#handlers)
   - [BorderlessEntry](#borderlessentry)
   - [BorderlessEditor](#borderlesseditor)
@@ -88,13 +90,14 @@ GlazeView(panel => _panel = panel,
 
 ### Namespaces
 
-The namespace is `Reactor.Kit`. Rich text metrics and hits are in `Reactor.Kit.RichTextViewTokens`. Mesh and camera types are in `Reactor.Kit.Object3DViewTokens`. Timeline steps and groups are in `Reactor.Kit.TimelineViewTokens`. Add these lines to the app's global usings.
+The namespace is `Reactor.Kit`. Rich text metrics and hits are in `Reactor.Kit.RichTextViewTokens`. Mesh and camera types are in `Reactor.Kit.Object3DViewTokens`. Timeline steps and groups are in `Reactor.Kit.TimelineViewTokens`. Sheet detents are in `Reactor.Kit.SheetTokens`. Add these lines to the app's global usings.
 
 ```csharp
 global using Reactor.Kit;
 global using Reactor.Kit.Object3DViewTokens;
 global using Reactor.Kit.PopupMenuTokens;
 global using Reactor.Kit.RichTextViewTokens;
+global using Reactor.Kit.SheetTokens;
 global using Reactor.Kit.TimelineViewTokens;
 global using static Reactor.Kit.Extensions;
 ```
@@ -574,6 +577,37 @@ TimelineView(steps => steps
 - Android 21+
 - Windows 10.0.17763+
 
+### Sheet
+
+`SheetView` is one sheet on the current page. `PageSheet` and `FormSheet` are that view. `DismissBelow` closes it during the drag once the height goes below a fraction of the full height. Detents and the dismiss line are in [docs/sheet.md](docs/sheet.md).
+
+```csharp
+PageSheet(
+    VStack(
+        Label("New message").FontSize(17),
+        Editor()))
+    .DismissBelow(0.35)
+    .IsOpen(State.Open)
+    .OnDismiss(Close);
+```
+
+```csharp
+PageSheet(Player())
+    .Detents(SheetDetent.Fraction("peek", 0.3), SheetDetent.Medium, SheetDetent.Large)
+    .SelectedDetent(State.Detent)
+    .OnDetentChanged(id => SetState(s => s.Detent = id))
+    .Grabber(true)
+    .UndimmedDetent("medium")
+    .IsOpen(State.Open)
+    .OnDismiss(Close);
+```
+
+#### Supported platforms
+
+- iOS 15+
+- Mac Catalyst 17+
+- Android 21+
+
 ## Handlers
 
 List of available handlers.
@@ -600,7 +634,7 @@ builder
 
 ## Samples
 
-`samples/KitTests` is a MauiReactor app for the controls. `AppShell` hosts `HomePage`, a content page, with the flyout disabled and the shell navigation bar hidden. Home is a list of the component pages. A row opens its page with `PushModalAsync`, and the page closes with `PopModalAsync`. The last row switches the theme. Sheet's Edge button opens a large page sheet that covers the bottom of the screen on a phone. Model passes the packaged `industrial_microscope.glb` to `PackagedSource`. Sample shadows go through `ShadowElevation`. Level 1, the fallback, is offset `(0.3, 0.3)`, radius 4, opacity 0.28. Level 2 is offset `(0.5, 0.5)`, radius 5, opacity 0.30. Level 3 is offset `(0.7, 0.7)`, radius 6, opacity 0.32. The glaze samples and the back button use level 1. The menu panel uses level 2.
+`samples/KitTests` is a MauiReactor app for the controls. `AppShell` hosts `HomePage`, a content page, with the flyout disabled and the shell navigation bar hidden. Home is a list of the component pages. A row opens its page with `PushModalAsync`, and the page closes with `PopModalAsync`. The last row switches the theme. Sheet's Edge button opens a large page sheet that covers the bottom of the screen on a phone. Below closes its page sheet during the drag, once the height goes below 35% of the large height. Model passes the packaged `industrial_microscope.glb` to `PackagedSource`. Sample shadows go through `ShadowElevation`. Level 1, the fallback, is offset `(0.3, 0.3)`, radius 4, opacity 0.28. Level 2 is offset `(0.5, 0.5)`, radius 5, opacity 0.30. Level 3 is offset `(0.7, 0.7)`, radius 6, opacity 0.32. The glaze samples and the back button use level 1. The menu panel uses level 2.
 
 ## Building
 
